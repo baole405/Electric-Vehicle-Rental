@@ -1,0 +1,7 @@
+# Ignore artifacts:
+build
+coverage
+
+# Others
+dist
+node_modulespnpm exec prettier . --write
