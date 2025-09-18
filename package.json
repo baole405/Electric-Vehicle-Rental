@@ -2,7 +2,10 @@
   "name": "@ev-rental/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "prepare": "husky install",
+  "commitlint": "commitlint --edit $1"
+  },
   "private": true,
   "dependencies": {
     "@react-router/node": "^7.2.0",
@@ -13,6 +16,8 @@
     "react-router": "^7.2.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "@eslint/js": "^9.8.0",
     "@nx/cypress": "21.5.2",
     "@nx/eslint": "21.5.2",
@@ -44,6 +49,7 @@
     "eslint-plugin-jsx-a11y": "6.10.1",
     "eslint-plugin-react": "7.35.0",
     "eslint-plugin-react-hooks": "5.0.0",
+    "husky": "^9.1.7",
     "jiti": "2.4.2",
     "jsdom": "~22.1.0",
     "nx": "21.5.2",
