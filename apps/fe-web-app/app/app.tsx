@@ -5,7 +5,7 @@ export function App() {
     <div>
       <NxWelcome title="@fe-web-app/fe-web-app" />
       <div>
-        This message is used to confirm that the CI workflow is working properly!
+        This message is used to confirm that the CI workflow is working properly.
       </div>
     </div>
   );
