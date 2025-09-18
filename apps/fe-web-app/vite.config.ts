@@ -30,6 +30,7 @@ export default defineConfig(() => ({
     name: '@fe-web-app/fe-web-app',
     watch: false,
     globals: true,
+    passWithNoTests: true,
     environment: 'jsdom',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
