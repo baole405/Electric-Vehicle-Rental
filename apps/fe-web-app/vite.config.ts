@@ -1,10 +1,10 @@
 /// <reference types='vitest' />
-import { defineConfig } from 'vite';
 import { reactRouter } from '@react-router/dev/vite';
+import { defineConfig } from 'vite';
 
 export default defineConfig(() => ({
   root: __dirname,
-  cacheDir: '../../node_modules/.vite/apps/ev-rental',
+  cacheDir: '../../node_modules/.vite/apps/fe-web-app',
   server: {
     port: 4200,
     host: 'localhost',
@@ -27,7 +27,7 @@ export default defineConfig(() => ({
     },
   },
   test: {
-    name: '@ev-rental/ev-rental',
+    name: '@fe-web-app/fe-web-app',
     watch: false,
     globals: true,
     environment: 'jsdom',

@@ -1,10 +1,10 @@
 {
-  "name": "@ev-rental/ev-rental-e2e",
+  "name": "@fe-web-app/fe-web-app-e2e",
   "version": "0.0.1",
   "private": true,
   "nx": {
     "implicitDependencies": [
-      "@ev-rental/ev-rental"
+      "@fe-web-app/fe-web-app"
     ]
   }
 }
