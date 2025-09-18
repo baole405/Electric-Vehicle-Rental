@@ -1,10 +1,10 @@
 {
-  "name": "@ev-rental/source",
+  "name": "@fe-web-app/source",
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
     "prepare": "husky install",
-  "commitlint": "commitlint --edit $1"
+    "commitlint": "commitlint --edit $1"
   },
   "private": true,
   "dependencies": {

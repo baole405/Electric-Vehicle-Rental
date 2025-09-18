@@ -1,5 +1,5 @@
 {
-  "name": "@ev-rental/ev-rental",
+  "name": "@fe-web-app/fe-web-app",
   "private": true,
   "type": "module",
   "scripts": {},
@@ -18,5 +18,7 @@
     "@types/react": "19.0.0",
     "@types/react-dom": "19.0.0"
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }
