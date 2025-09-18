@@ -1,7 +1,9 @@
-# Ignore artifacts:
+# Ignore build artifacts & coverage
 build
 coverage
-
-# Others
 dist
-node_modulespnpm exec prettier . --write
+node_modules
+
+# Nx generated cache
+.nx/cache
+.nx/workspace-data

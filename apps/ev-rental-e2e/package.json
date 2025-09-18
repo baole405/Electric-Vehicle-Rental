@@ -1,0 +1,10 @@
+{
+  "name": "@ev-rental/ev-rental-e2e",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "implicitDependencies": [
+      "@ev-rental/ev-rental"
+    ]
+  }
+}
