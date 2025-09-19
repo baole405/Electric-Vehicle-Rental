@@ -1,7 +1,7 @@
 export default function AboutComponent() {
   return (
     <div>
-      <h1>About!!!</h1>
+      <h1>Test COmmnit!!!</h1>
     </div>
   );
 }
