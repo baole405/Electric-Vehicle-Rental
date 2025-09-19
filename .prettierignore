@@ -1,5 +1,26 @@
 # Add files here to ignore them from prettier formatting
+
+# Root-level outputs
 /dist
+/build
 /coverage
+
+# Monorepo app outputs
+apps/*/dist
+apps/*/build
+
+# Nx cache
 /.nx/cache
 /.nx/workspace-data
+.nx
+
+# Node modules and lockfiles
+/node_modules
+*lock*
+
+# Next.js
+.next
+
+# Git hooks and type declarations
+.husky
+*.d.ts
