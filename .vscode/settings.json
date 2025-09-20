@@ -1,0 +1,22 @@
+{
+  "continue.server": {
+    "mcpServers": {
+      "shadcn-ui": {
+        "command": "npx",
+        "args": ["@jpisnice/shadcn-ui-mcp-server"],
+        "env": {
+          "GITHUB_PERSONAL_ACCESS_TOKEN": "${env:GITHUB_PERSONAL_ACCESS_TOKEN}"
+        }
+      }
+    }
+  },
+  "claude.mcpServers": {
+    "shadcn-ui": {
+      "command": "npx",
+      "args": ["@jpisnice/shadcn-ui-mcp-server"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${env:GITHUB_PERSONAL_ACCESS_TOKEN}"
+      }
+    }
+  }
+}
