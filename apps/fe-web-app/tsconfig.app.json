@@ -12,6 +12,9 @@
   "rootDir": "src",
     "tsBuildInfoFile": "dist/tsconfig.app.tsbuildinfo"
   },
+  "paths": {
+      "@/*": ["./src/*"],
+    },
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
