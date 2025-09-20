@@ -1,10 +1,15 @@
-import NxWelcome from './nx-welcome';
+import "@/app.css";
+import { AppRoutes } from "./routes/route.index";
 
-export function App() {
+const TITLE = "FCinema";
+
+function App() {
   return (
-    <div>
-      <NxWelcome title="@fe-web-app/fe-web-app" />
-    </div>
+      <div>
+        <title>{TITLE}</title>
+          {/* <Toaster position="top-right" /> */}
+          <AppRoutes />
+      </div>
   );
 }
 
