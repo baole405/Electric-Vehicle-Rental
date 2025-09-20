@@ -4,7 +4,11 @@
   "license": "MIT",
   "scripts": {
     "prepare": "husky install",
-    "commitlint": "commitlint --edit $1"
+    "commitlint": "commitlint --edit $1",
+    "mcp:shadcn": "npx @jpisnice/shadcn-ui-mcp-server",
+    "mcp:shadcn:svelte": "npx @jpisnice/shadcn-ui-mcp-server --framework svelte",
+    "mcp:shadcn:vue": "npx @jpisnice/shadcn-ui-mcp-server --framework vue",
+    "mcp:shadcn:rn": "npx @jpisnice/shadcn-ui-mcp-server --framework react-native"
   },
   "private": true,
   "dependencies": {
