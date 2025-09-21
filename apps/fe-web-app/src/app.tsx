@@ -1,7 +1,7 @@
 import "@/app.css";
-import { AppRoutes } from "./routes/route.index";
+import { AppRoutes } from "@/routes/route.index";
 
-const TITLE = "FCinema";
+const TITLE = "Ev-Rental";
 
 function App() {
   return (
