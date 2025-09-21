@@ -9,12 +9,12 @@
     "resolveJsonModule": true,
     "allowJs": true,
     "forceConsistentCasingInFileNames": true,
-  "rootDir": "src",
-    "tsBuildInfoFile": "dist/tsconfig.app.tsbuildinfo"
+    "rootDir": "src",
+    "tsBuildInfoFile": "dist/tsconfig.app.tsbuildinfo",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "paths": {
-      "@/*": ["./src/*"],
-    },
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
