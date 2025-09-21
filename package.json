@@ -4,16 +4,24 @@
   "license": "MIT",
   "scripts": {
     "prepare": "husky install",
-    "commitlint": "commitlint --edit $1"
+    "commitlint": "commitlint --edit $1",
+    "mcp:shadcn": "npx @jpisnice/shadcn-ui-mcp-server",
+    "mcp:shadcn:svelte": "npx @jpisnice/shadcn-ui-mcp-server --framework svelte",
+    "mcp:shadcn:vue": "npx @jpisnice/shadcn-ui-mcp-server --framework vue",
+    "mcp:shadcn:rn": "npx @jpisnice/shadcn-ui-mcp-server --framework react-native"
   },
   "private": true,
   "dependencies": {
     "@react-router/node": "^7.2.0",
     "@react-router/serve": "^7.2.0",
+    "@tanstack/react-query": "^5.89.0",
+    "@tanstack/react-table": "^8.21.3",
+    "@types/react-router-dom": "^5.3.3",
     "isbot": "^4.4.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
-    "react-router": "^7.2.0"
+    "react-router": "^7.2.0",
+    "react-router-dom": "^7.9.1"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
