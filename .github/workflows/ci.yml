@@ -19,7 +19,7 @@ jobs:
             echo "Skipping branch name check for Dependabot."
             exit 0
           fi
-          if echo "$BRANCH" | grep -Eq '^(feature|feat|bugfix|fix|hotfix|chore|refactor|release|docs|test)/[a-z0-9._-]+$'; then
+          if echo "$BRANCH" | grep -Eq '^(feature|feat|bugfix|fix|hotfix|chore|refactor|release|docs|test|codex)/[a-z0-9._-]+$'; then
             echo "Branch name OK"
           else
             echo "::error::Branch '$BRANCH' does not match expected pattern: type/name (e.g., feature/add-cool-thing)"
