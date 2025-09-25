@@ -19,10 +19,10 @@ jobs:
             echo "Skipping branch name check for Dependabot."
             exit 0
           fi
-          if echo "$BRANCH" | grep -Eq '^codex/(feature|feat|bugfix|fix|hotfix|chore|refactor|release|docs|test)/[a-z0-9._-]+$'; then
+          if echo "$BRANCH" | grep -Eq '^codex/[a-z0-9._-]+(/[a-z0-9._-]+)*$'; then
             echo "Branch name OK"
           else
-            echo "::error::Branch '$BRANCH' does not match expected pattern: codex/type/name (e.g., codex/feature/add-cool-thing)"
+            echo "::error::Branch '$BRANCH' must start with 'codex/' (e.g., codex/update-dependency or codex/feature/add-cool-thing)"
             exit 1
           fi
           if [[ "${{ github.base_ref }}" != "dev" ]]; then
