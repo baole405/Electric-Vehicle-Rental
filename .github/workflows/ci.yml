@@ -19,10 +19,12 @@ jobs:
             echo "Skipping branch name check for Dependabot."
             exit 0
           fi
-          if echo "$BRANCH" | grep -Eq '^(codex/)?(feature|feat|bugfix|fix|hotfix|chore|refactor|release|docs|test)/[a-z0-9._-]+$'; then
+          ALLOWED_TYPES="feature|feat|bugfix|fix|hotfix|chore|refactor|release|docs|test|codex"
+          if echo "$BRANCH" | grep -Eq "^(codex/)?(${ALLOWED_TYPES})/[a-z0-9._-]+$"; then
             echo "Branch name OK"
           else
-            echo "::error::Branch '$BRANCH' must match '<type>/<name>' or 'codex/<type>/<name>' where <type> is one of: feature, feat, bugfix, fix, hotfix, chore, refactor, release, docs, test."
+            HUMAN_READABLE_TYPES="${ALLOWED_TYPES//|/, }"
+            echo "::error::Branch '$BRANCH' must match '<type>/<name>' or 'codex/<type>/<name>' where <type> is one of: ${HUMAN_READABLE_TYPES}."
             exit 1
           fi
           if [[ "${{ github.base_ref }}" != "dev" ]]; then
