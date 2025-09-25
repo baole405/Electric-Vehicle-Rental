@@ -1,7 +1,7 @@
 # Electric Vehicle Rental – Agent Workflow Guide
 
 ## Branching and Pull Requests
-- GitHub Actions checks ensure pull request branches start with the `codex/` prefix. You can optionally include additional path segments (for example `codex/update-config` or `codex/feature/add-cool-thing`).
+- GitHub Actions validates pull request branches follow either `type/name` or `codex/type/name`. Allowed `type` values are `feature`, `feat`, `bugfix`, `fix`, `hotfix`, `chore`, `refactor`, `release`, `docs`, and `test`.
 - Open pull requests against the `dev` branch unless explicitly instructed otherwise.
 
 ## Local Development
