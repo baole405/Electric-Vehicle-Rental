@@ -4,7 +4,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/Shadcn/ui/card.tsx';
+} from '@/components/Shadcn/ui/card';
 import { Leaf, Sparkles, Zap } from 'lucide-react';
 
 const values = [
