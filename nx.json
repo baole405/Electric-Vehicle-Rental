@@ -2,7 +2,7 @@
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "defaultBase": "master",
   "workspaceLayout": {
-    "appsDir": ".apps",
+    "appsDir": "apps",
     "libsDir": "libs"
   },
   "namedInputs": {
