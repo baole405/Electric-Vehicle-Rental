@@ -19,7 +19,8 @@ export default defineConfig(() => ({
     alias: {
       '@': resolve(__dirname, './src'),
     },
-    extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
+    extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
+    preserveSymlinks: false,
   },
   build: {
     outDir: './dist',
