@@ -77,28 +77,7 @@ const config = {
     },
   },
   daisyui: {
-    themes: [
-      {
-        evRental: {
-          "primary": "#0f766e",
-          "secondary": "#0284c7",
-          "accent": "#65a30d",
-          "neutral": "#1f2937",
-          "base-100": "#f8fafc",
-          "base-200": "#e0f2f1",
-          "base-300": "#cbd5f5",
-          "info": "#38bdf8",
-          "success": "#22c55e",
-          "warning": "#facc15",
-          "error": "#ef4444",
-          "--rounded-box": "1rem",
-          "--rounded-btn": "0.5rem",
-          "--rounded-badge": "1.9rem",
-        },
-      },
-      "light",
-      "dark",
-    ],
+    themes: ["evRental", "light", "dark"],
   },
   plugins: [require("tailwindcss-animate"), require("daisyui")],
 };

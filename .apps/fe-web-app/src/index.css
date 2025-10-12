@@ -2,60 +2,68 @@
 @tailwind components;
 @tailwind utilities;
 
+@plugin "daisyui/theme" {
+  name: "evRental";
+  default: false;
+  prefersdark: false;
+  color-scheme: "dark";
+  --color-base-100: oklch(24.353% 0 0);
+  --color-base-200: oklch(22.648% 0 0);
+  --color-base-300: oklch(20.944% 0 0);
+  --color-base-content: oklch(84.87% 0 0);
+  --color-primary: oklch(41.703% 0.099 251.473);
+  --color-primary-content: oklch(88.34% 0.019 251.473);
+  --color-secondary: oklch(64.092% 0.027 229.389);
+  --color-secondary-content: oklch(12.818% 0.005 229.389);
+  --color-accent: oklch(67.271% 0.167 35.791);
+  --color-accent-content: oklch(13.454% 0.033 35.791);
+  --color-neutral: oklch(27.441% 0.013 253.041);
+  --color-neutral-content: oklch(85.488% 0.002 253.041);
+  --color-info: oklch(62.616% 0.143 240.033);
+  --color-info-content: oklch(12.523% 0.028 240.033);
+  --color-success: oklch(70.226% 0.094 156.596);
+  --color-success-content: oklch(14.045% 0.018 156.596);
+  --color-warning: oklch(77.482% 0.115 81.519);
+  --color-warning-content: oklch(15.496% 0.023 81.519);
+  --color-error: oklch(51.61% 0.146 29.674);
+  --color-error-content: oklch(90.322% 0.029 29.674);
+  --radius-selector: 0rem;
+  --radius-field: 0.25rem;
+  --radius-box: 0.25rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 215 28% 14%;
-    --card: 210 40% 98%;
-    --card-foreground: 215 28% 14%;
-    --popover: 210 40% 98%;
-    --popover-foreground: 215 28% 14%;
-    --primary: 175 77% 32%;
-    --primary-foreground: 155 92% 96%;
-    --secondary: 200 98% 39%;
-    --secondary-foreground: 210 100% 97%;
-    --muted: 204 32% 90%;
-    --muted-foreground: 215 18% 38%;
-    --accent: 85 85% 38%;
-    --accent-foreground: 110 32% 12%;
-    --destructive: 2 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 210 40% 88%;
-    --input: 210 40% 88%;
-    --ring: 175 77% 32%;
-    --chart-1: 172 66% 45%;
-    --chart-2: 199 78% 52%;
-    --chart-3: 85 72% 45%;
-    --chart-4: 32 94% 60%;
-    --chart-5: 10 82% 56%;
+    --background: 222 24% 12%;
+    --foreground: 220 23% 86%;
+    --card: 222 24% 14%;
+    --card-foreground: 220 23% 88%;
+    --popover: 222 24% 14%;
+    --popover-foreground: 220 23% 88%;
+    --primary: 218 69% 52%;
+    --primary-foreground: 218 83% 92%;
+    --secondary: 230 28% 64%;
+    --secondary-foreground: 232 29% 18%;
+    --muted: 223 18% 28%;
+    --muted-foreground: 222 17% 76%;
+    --accent: 37 82% 60%;
+    --accent-foreground: 33 76% 16%;
+    --destructive: 21 86% 46%;
+    --destructive-foreground: 26 95% 90%;
+    --border: 225 20% 32%;
+    --input: 225 20% 32%;
+    --ring: 218 69% 52%;
+    --chart-1: 218 69% 52%;
+    --chart-2: 230 28% 64%;
+    --chart-3: 37 82% 60%;
+    --chart-4: 156 48% 52%;
+    --chart-5: 12 80% 58%;
     --radius: 0.75rem;
-  }
-
-  .dark {
-    --background: 215 28% 12%;
-    --foreground: 210 40% 96%;
-    --card: 215 28% 16%;
-    --card-foreground: 210 40% 96%;
-    --popover: 215 28% 12%;
-    --popover-foreground: 210 40% 96%;
-    --primary: 175 77% 45%;
-    --primary-foreground: 171 100% 11%;
-    --secondary: 200 94% 62%;
-    --secondary-foreground: 210 45% 12%;
-    --muted: 215 24% 18%;
-    --muted-foreground: 215 19% 70%;
-    --accent: 95 74% 56%;
-    --accent-foreground: 140 25% 12%;
-    --destructive: 0 80% 60%;
-    --destructive-foreground: 0 0% 10%;
-    --border: 217 33% 20%;
-    --input: 217 33% 20%;
-    --ring: 175 77% 50%;
-    --chart-1: 175 70% 50%;
-    --chart-2: 210 62% 54%;
-    --chart-3: 60 70% 52%;
-    --chart-4: 12 82% 58%;
-    --chart-5: 350 76% 56%;
   }
 }
 
