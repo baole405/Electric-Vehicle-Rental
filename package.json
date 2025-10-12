@@ -12,11 +12,14 @@
   },
   "private": true,
   "dependencies": {
+    "@radix-ui/react-aspect-ratio": "^1.1.7",
     "@react-router/node": "^7.2.0",
     "@react-router/serve": "^7.2.0",
+    "@tabler/icons-react": "^3.35.0",
     "@tanstack/react-query": "^5.89.0",
     "@tanstack/react-table": "^8.21.3",
     "@types/react-router-dom": "^5.3.3",
+    "clsx": "^2.1.1",
     "isbot": "^4.4.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
@@ -73,6 +76,6 @@
     "vitest": "^3.0.0"
   },
   "workspaces": [
-    ".apps/*"
+    "apps/*"
   ]
 }
