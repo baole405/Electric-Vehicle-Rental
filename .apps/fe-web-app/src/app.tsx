@@ -5,11 +5,14 @@ const TITLE = "Ev-Rental";
 
 function App() {
   return (
-      <div>
-        <title>{TITLE}</title>
-          {/* <Toaster position="top-right" /> */}
-          <AppRoutes />
-      </div>
+    <div
+      data-theme="evRental"
+      className="min-h-screen bg-base-200 text-base-content"
+    >
+      <title>{TITLE}</title>
+      {/* <Toaster position="top-right" /> */}
+      <AppRoutes />
+    </div>
   );
 }
 
