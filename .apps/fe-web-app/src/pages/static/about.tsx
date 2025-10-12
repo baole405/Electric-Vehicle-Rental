@@ -1,21 +1,97 @@
-import React from 'react';
+import { Leaf, Sparkles, Zap } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/shadcn/ui/card";
+import React from "react";
+
+const values = [
+  {
+    title: "Sustainable mobility",
+    description:
+      "We design every rental program to reduce emissions and keep cities moving cleanly.",
+    icon: Leaf,
+  },
+  {
+    title: "Intelligent energy",
+    description:
+      "Real-time analytics balance charging demand with renewable energy availability.",
+    icon: Zap,
+  },
+  {
+    title: "Premium journeys",
+    description:
+      "From first booking to final drop-off, we craft seamless experiences for every rider.",
+    icon: Sparkles,
+  },
+];
 
 const About: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50 py-16">
-      <div className="container mx-auto px-4">
-        <h1 className="text-4xl font-bold text-center mb-8 text-gray-800">
-          About EV Rental
-        </h1>
-        <div className="max-w-3xl mx-auto">
-          <p className="text-lg text-gray-600 mb-6">
-            We are committed to providing sustainable transportation solutions
-            through our electric vehicle rental service.
+    <div className="min-h-screen bg-base-200 py-16 text-base-content">
+      <div className="mx-auto flex max-w-5xl flex-col gap-10 px-4">
+        <div className="text-center">
+          <p className="text-sm font-semibold uppercase tracking-widest text-primary">
+            About EV Rental
           </p>
-          <p className="text-lg text-gray-600">
-            Join us in creating a cleaner, greener future for transportation.
+          <h1 className="mt-3 text-3xl font-bold md:text-4xl">
+            Electrifying mobility for businesses and modern explorers
+          </h1>
+          <p className="mx-auto mt-4 max-w-2xl text-base text-base-content/70">
+            Our platform unifies electric fleet operations, intelligent charging, and
+            delightful customer experiences so that sustainable travel becomes the default choice.
           </p>
         </div>
+
+        <div className="grid gap-6 md:grid-cols-3">
+          {values.map((value) => (
+            <Card
+              key={value.title}
+              className="border-base-300 bg-base-100/90 shadow-sm"
+            >
+              <CardHeader className="flex flex-row items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <value.icon className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg">{value.title}</CardTitle>
+                  <CardDescription className="text-xs text-base-content/60">
+                    Our promise to the communities we serve.
+                  </CardDescription>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-base-content/70">{value.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <Card className="border-base-300 bg-base-100/95 shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-xl">Looking ahead</CardTitle>
+            <CardDescription>
+              Investing in ultra-fast charging, battery circularity, and data-driven mobility.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-6 text-sm md:grid-cols-3">
+            <div>
+              <p className="text-3xl font-semibold text-primary">150+</p>
+              <p className="mt-1 text-base-content/60">vehicles powered by renewables today</p>
+            </div>
+            <div>
+              <p className="text-3xl font-semibold text-secondary">98%</p>
+              <p className="mt-1 text-base-content/60">customer satisfaction across enterprise clients</p>
+            </div>
+            <div>
+              <p className="text-3xl font-semibold text-accent">24 cities</p>
+              <p className="mt-1 text-base-content/60">with expansion underway for 2025</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
