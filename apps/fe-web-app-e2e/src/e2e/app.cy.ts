@@ -1,13 +1,11 @@
 import { getGreeting } from '../support/app.po';
 
 describe('@fe-web-app/fe-web-app-e2e', () => {
-  beforeEach(() => cy.visit('/'));
+  beforeEach(() => {
+    cy.visit('/');
+  });
 
-  it('should display the dashboard heading', () => {
-    // Custom command example, see `../support/commands.ts` file
-    cy.login('my-email@something.com', 'myPassword');
-
-    // Function helper example, see `../support/app.po.ts` file
-    getGreeting().contains(/Operations dashboard/i);
+  it('should render the marketing hero heading', () => {
+    getGreeting().should('contain.text', 'Rent electric vehicles with real-time fleet intelligence');
   });
 });
