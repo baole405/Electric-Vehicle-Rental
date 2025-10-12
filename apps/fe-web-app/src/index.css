@@ -1,78 +1,147 @@
-@import "tw-animate-css";
+@import 'tw-animate-css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --background: oklch(0.9702 0 0);
-  --foreground: oklch(0.2435 0 0);
-  --card: oklch(0.9911 0 0);
-  --card-foreground: oklch(0.2435 0 0);
-  --popover: oklch(0.9911 0 0);
-  --popover-foreground: oklch(0.2435 0 0);
-  --primary: #d10009;
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.92 0.0651 74.3695);
-  --secondary-foreground: oklch(0.3499 0.0685 40.8288);
-  --muted: oklch(0.9521 0 0);
-  --muted-foreground: oklch(0.5032 0 0);
-  --accent: oklch(0.931 0 0);
-  --accent-foreground: oklch(0.2435 0 0);
-  --destructive: oklch(0.6271 0.1936 33.339);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.8822 0 0);
-  --input: oklch(0.8822 0 0);
-  --ring: oklch(0.4341 0.0392 41.9938);
-  --chart-1: oklch(0.4341 0.0392 41.9938);
-  --chart-2: oklch(0.92 0.0651 74.3695);
-  --chart-3: oklch(0.931 0 0);
-  --chart-4: oklch(0.9367 0.0523 75.5009);
-  --chart-5: oklch(0.4338 0.0437 41.6746);
-  --sidebar: oklch(0.9881 0 0);
-  --sidebar-foreground: oklch(0.2645 0 0);
-  --sidebar-primary: oklch(0.325 0 0);
-  --sidebar-primary-foreground: oklch(0.9881 0 0);
-  --sidebar-accent: oklch(0.9761 0 0);
-  --sidebar-accent-foreground: #d10009;
-  --sidebar-border: oklch(0.9401 0 0);
-  --sidebar-ring: oklch(0.7731 0 0);
+  /* Base colors */
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+
+  /* Primary brand colors */
+  --primary: 0 72% 51%; /* Red primary color for EV theme */
+  --primary-foreground: 210 40% 98%;
+
+  /* Secondary colors */
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222.2 84% 4.9%;
+
+  /* Muted colors */
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+
+  /* Accent colors */
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
+
+  /* Destructive colors */
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+
+  /* Border and input */
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 0 72% 51%;
+
+  /* Chart colors for dashboard */
+  --chart-1: 0 72% 51%; /* Primary red */
+  --chart-2: 120 100% 35%; /* Green for eco-friendly */
+  --chart-3: 210 100% 50%; /* Blue for technology */
+  --chart-4: 45 100% 55%; /* Orange for energy */
+  --chart-5: 270 100% 50%; /* Purple for premium */
+
+  /* Sidebar colors */
+  --sidebar: 0 0% 98%;
+  --sidebar-foreground: 222.2 84% 4.9%;
+  --sidebar-primary: 0 72% 51%;
+  --sidebar-primary-foreground: 210 40% 98%;
+  --sidebar-accent: 210 40% 96%;
+  --sidebar-accent-foreground: 0 72% 51%;
+  --sidebar-border: 214.3 31.8% 91.4%;
+  --sidebar-ring: 215.4 16.3% 46.9%;
+
+  /* Success colors for EV charging */
+  --success: 120 100% 35%;
+  --success-foreground: 210 40% 98%;
+
+  /* Warning colors for battery status */
+  --warning: 45 100% 55%;
+  --warning-foreground: 222.2 84% 4.9%;
+
+  /* Info colors for vehicle status */
+  --info: 210 100% 50%;
+  --info-foreground: 210 40% 98%;
+
+  /* Electric vehicle specific colors */
+  --ev-green: 120 100% 35%; /* For eco-friendly indicators */
+  --ev-blue: 210 100% 50%; /* For technology features */
+  --ev-orange: 45 100% 55%; /* For charging status */
+
   --radius: 0.5rem;
 }
 
 .dark {
-  --background: oklch(0.1776 0 0);
-  --foreground: oklch(0.9491 0 0);
-  --card: oklch(0.2134 0 0);
-  --card-foreground: oklch(0.9491 0 0);
-  --popover: oklch(0.2134 0 0);
-  --popover-foreground: oklch(0.9491 0 0);
-  --primary: oklch(0.9247 0.0524 66.1732);
-  --primary-foreground: oklch(0.2029 0.024 200.1962);
-  --secondary: oklch(0.3163 0.019 63.6992);
-  --secondary-foreground: oklch(0.9247 0.0524 66.1732);
-  --muted: oklch(0.252 0 0);
-  --muted-foreground: oklch(0.7699 0 0);
-  --accent: oklch(0.285 0 0);
-  --accent-foreground: oklch(0.9491 0 0);
-  --destructive: oklch(0.6271 0.1936 33.339);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.2351 0.0115 91.7467);
-  --input: oklch(0.4017 0 0);
-  --ring: oklch(0.9247 0.0524 66.1732);
-  --chart-1: oklch(0.9247 0.0524 66.1732);
-  --chart-2: oklch(0.3163 0.019 63.6992);
-  --chart-3: oklch(0.285 0 0);
-  --chart-4: oklch(0.3481 0.0219 67.0001);
-  --chart-5: oklch(0.9245 0.0533 67.0855);
-  --sidebar: oklch(0.2103 0.0059 285.8852);
-  --sidebar-foreground: oklch(0.9674 0.0013 286.3752);
-  --sidebar-primary: oklch(0.4882 0.2172 264.3763);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.2739 0.0055 286.0326);
-  --sidebar-accent-foreground: oklch(0.9674 0.0013 286.3752);
-  --sidebar-border: oklch(0.2739 0.0055 286.0326);
-  --sidebar-ring: oklch(0.8711 0.0055 286.286);
+  /* Dark mode colors */
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+
+  /* Primary colors in dark mode */
+  --primary: 0 72% 51%;
+  --primary-foreground: 210 40% 98%;
+
+  /* Secondary colors in dark mode */
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+
+  /* Muted colors in dark mode */
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+
+  /* Accent colors in dark mode */
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+
+  /* Destructive colors in dark mode */
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+
+  /* Border and input in dark mode */
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 0 72% 51%;
+
+  /* Chart colors in dark mode */
+  --chart-1: 0 72% 51%;
+  --chart-2: 120 100% 45%;
+  --chart-3: 210 100% 60%;
+  --chart-4: 45 100% 65%;
+  --chart-5: 270 100% 60%;
+
+  /* Sidebar colors in dark mode */
+  --sidebar: 222.2 84% 4.9%;
+  --sidebar-foreground: 210 40% 98%;
+  --sidebar-primary: 0 72% 51%;
+  --sidebar-primary-foreground: 210 40% 98%;
+  --sidebar-accent: 217.2 32.6% 17.5%;
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-border: 217.2 32.6% 17.5%;
+  --sidebar-ring: 215 20.2% 65.1%;
+
+  /* Success colors in dark mode */
+  --success: 120 100% 45%;
+  --success-foreground: 222.2 84% 4.9%;
+
+  /* Warning colors in dark mode */
+  --warning: 45 100% 65%;
+  --warning-foreground: 222.2 84% 4.9%;
+
+  /* Info colors in dark mode */
+  --info: 210 100% 60%;
+  --info-foreground: 222.2 84% 4.9%;
+
+  /* Electric vehicle specific colors in dark mode */
+  --ev-green: 120 100% 45%;
+  --ev-blue: 210 100% 60%;
+  --ev-orange: 45 100% 65%;
 }
 
 @layer base {
@@ -83,12 +152,77 @@
   body {
     @apply bg-background text-foreground antialiased;
   }
+
+  /* Electric Vehicle specific styling */
+  .ev-gradient {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--primary)) 0%,
+      hsl(var(--ev-blue)) 100%
+    );
+  }
+
+  .charging-indicator {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--ev-green)) 0%,
+      hsl(var(--ev-orange)) 100%
+    );
+  }
+
+  .battery-indicator {
+    background: hsl(var(--ev-green));
+  }
+
+  .battery-low {
+    background: hsl(var(--warning));
+  }
+
+  .battery-medium {
+    background: hsl(var(--ev-orange));
+  }
+
+  .battery-high {
+    background: hsl(var(--ev-green));
+  }
+}
+
+@layer components {
+  /* EV specific component styles */
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-colors;
+  }
+
+  .btn-success {
+    @apply bg-success text-success-foreground hover:bg-success/90 transition-colors;
+  }
+
+  .btn-warning {
+    @apply bg-warning text-warning-foreground hover:bg-warning/90 transition-colors;
+  }
+
+  .card-ev {
+    @apply bg-card text-card-foreground border border-border rounded-lg shadow-sm;
+  }
+
+  .status-charging {
+    @apply text-ev-green bg-ev-green/10 px-2 py-1 rounded-full text-xs font-medium;
+  }
+
+  .status-available {
+    @apply text-success bg-success/10 px-2 py-1 rounded-full text-xs font-medium;
+  }
+
+  .status-unavailable {
+    @apply text-destructive bg-destructive/10 px-2 py-1 rounded-full text-xs font-medium;
+  }
 }
 
 @layer base {
   .theme {
     --animate-line-shadow: line-shadow 15s linear infinite;
-    --animate-shimmer-slide: shimmer-slide var(--speed) ease-in-out infinite alternate;
+    --animate-shimmer-slide: shimmer-slide var(--speed) ease-in-out infinite
+      alternate;
     --animate-spin-around: spin-around calc(var(--speed) * 2) infinite linear;
   }
 }
