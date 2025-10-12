@@ -1,14 +1,18 @@
-"use client";
+'use client';
 
-import { format } from "date-fns";
-import { CalendarIcon, Clock } from "lucide-react";
-import * as React from "react";
+import { format } from 'date-fns';
+import { CalendarIcon, Clock } from 'lucide-react';
+import * as React from 'react';
 
-import { Button } from "@/components/Shadcn/ui/button";
-import { Calendar } from "@/components/Shadcn/ui/calendar";
-import { Input } from "@/components/Shadcn/ui/input";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/Shadcn/ui/popover";
-import { cn } from "@/utils/utils";
+import { Button } from '@/components/Shadcn/ui/button';
+import { Calendar } from '@/components/Shadcn/ui/calendar';
+import { Input } from '@/components/Shadcn/ui/input';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/Shadcn/ui/popover';
+import { cn } from '@/utils/utils';
 
 interface DateTimePickerProps {
   date?: Date;
@@ -22,14 +26,14 @@ export function DateTimePicker({
   date,
   setDate,
   disabled = false,
-  placeholder = "Pick a date",
-  showTime = false
+  placeholder = 'Pick a date',
+  showTime = false,
 }: DateTimePickerProps) {
-  const [time, setTime] = React.useState("00:00");
+  const [time, setTime] = React.useState('00:00');
 
   React.useEffect(() => {
     if (date && showTime) {
-      setTime(format(date, "HH:mm"));
+      setTime(format(date, 'HH:mm'));
     }
   }, [date, showTime]);
 
@@ -60,20 +64,20 @@ export function DateTimePicker({
   };
 
   return (
-    <div className={cn("flex gap-2", showTime ? "flex-row" : "flex-col")}>
+    <div className={cn('flex gap-2', showTime ? 'flex-row' : 'flex-col')}>
       <Popover>
         <PopoverTrigger asChild>
           <Button
-            variant={"outline"}
+            variant={'outline'}
             className={cn(
-              "justify-start text-left font-normal",
-              !date && "text-muted-foreground",
-              showTime ? "w-auto" : "w-full"
+              'justify-start text-left font-normal',
+              !date && 'text-muted-foreground',
+              showTime ? 'w-auto' : 'w-full'
             )}
             disabled={disabled}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
-            {date ? format(date, "PPP") : <span>{placeholder}</span>}
+            {date ? format(date, 'PPP') : <span>{placeholder}</span>}
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0">
@@ -116,8 +120,12 @@ export function Calendar24() {
         </label>
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
-            <Button variant="outline" id="date" className="w-32 justify-between font-normal">
-              {date ? date.toLocaleDateString() : "Select date"}
+            <Button
+              variant="outline"
+              id="date"
+              className="w-32 justify-between font-normal"
+            >
+              {date ? date.toLocaleDateString() : 'Select date'}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto overflow-hidden p-0" align="start">
