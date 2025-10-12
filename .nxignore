@@ -1,3 +1,0 @@
-# Exclude reference app from Nx project graph
-
-apps/fe-react-app-ref/**
