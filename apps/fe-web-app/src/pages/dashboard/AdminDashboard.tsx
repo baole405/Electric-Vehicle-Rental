@@ -11,21 +11,21 @@ import {
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import { Badge } from '@/components/Shadcn/ui/badge';
-import { Button } from '@/components/Shadcn/ui/button';
-import { Calendar } from '@/components/Shadcn/ui/calendar';
+import { Badge } from '@/components/shadcn/ui/badge';
+import { Button } from '@/components/shadcn/ui/button';
+import { Calendar } from '@/components/shadcn/ui/calendar';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/Shadcn/ui/card';
+} from '@/components/shadcn/ui/card';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/Shadcn/ui/popover';
+} from '@/components/shadcn/ui/popover';
 import {
   Table,
   TableBody,
@@ -33,7 +33,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/Shadcn/ui/table';
+} from '@/components/shadcn/ui/table';
 import LoadingSpinner from '@/components/shared/LoadingSpinner';
 import { cn } from '@/utils/utils';
 import AdminStatCards from './components/AdminStatCards';
@@ -538,3 +538,4 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+

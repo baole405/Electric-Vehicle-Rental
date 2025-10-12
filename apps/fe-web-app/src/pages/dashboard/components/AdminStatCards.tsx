@@ -3,7 +3,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from '@/components/Shadcn/ui/card';
+} from '@/components/shadcn/ui/card';
 import type { LucideIcon } from 'lucide-react';
 
 type StatCard = {
@@ -53,3 +53,4 @@ const AdminStatCards = ({ items }: AdminStatCardsProps) => {
 };
 
 export default AdminStatCards;
+

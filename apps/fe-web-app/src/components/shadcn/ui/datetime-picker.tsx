@@ -4,14 +4,14 @@ import { format } from 'date-fns';
 import { CalendarIcon, Clock } from 'lucide-react';
 import * as React from 'react';
 
-import { Button } from '@/components/Shadcn/ui/button';
-import { Calendar } from '@/components/Shadcn/ui/calendar';
-import { Input } from '@/components/Shadcn/ui/input';
+import { Button } from '@/components/shadcn/ui/button';
+import { Calendar } from '@/components/shadcn/ui/calendar';
+import { Input } from '@/components/shadcn/ui/input';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/Shadcn/ui/popover';
+} from '@/components/shadcn/ui/popover';
 import { cn } from '@/utils/utils';
 
 interface DateTimePickerProps {
@@ -156,3 +156,4 @@ export function Calendar24() {
     </div>
   );
 }
+

@@ -3,8 +3,8 @@
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
 import * as React from 'react';
 
-import { Button } from '@/components/Shadcn/ui/button';
-import { Input, type InputProps } from '@/components/Shadcn/ui/input';
+import { Button } from '@/components/shadcn/ui/button';
+import { Input, type InputProps } from '@/components/shadcn/ui/input';
 import { cn } from '@/utils/utils';
 
 const PasswordInput = React.forwardRef<HTMLInputElement, InputProps>(
@@ -55,3 +55,4 @@ const PasswordInput = React.forwardRef<HTMLInputElement, InputProps>(
 PasswordInput.displayName = 'PasswordInput';
 
 export { PasswordInput };
+

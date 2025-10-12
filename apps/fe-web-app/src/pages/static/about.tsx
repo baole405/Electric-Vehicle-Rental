@@ -4,7 +4,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/Shadcn/ui/card';
+} from '@/components/shadcn/ui/card';
 import { Leaf, Sparkles, Zap } from 'lucide-react';
 
 const values = [
@@ -105,3 +105,4 @@ const About = () => {
 };
 
 export default About;
+

@@ -3,13 +3,13 @@
 import { format } from 'date-fns';
 import { Calendar as CalendarIcon } from 'lucide-react';
 
-import { Button } from '@/components/Shadcn/ui/button';
-import { Calendar } from '@/components/Shadcn/ui/calendar';
+import { Button } from '@/components/shadcn/ui/button';
+import { Calendar } from '@/components/shadcn/ui/calendar';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/Shadcn/ui/popover';
+} from '@/components/shadcn/ui/popover';
 import { cn } from '@/utils/utils';
 
 interface DatePickerProps {
@@ -51,3 +51,4 @@ export function DatePicker({
     </Popover>
   );
 }
+

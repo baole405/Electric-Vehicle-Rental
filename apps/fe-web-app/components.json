@@ -10,9 +10,9 @@
     "prefix": ""
   },
   "aliases": {
-    "components": "@/components/Shadcn",
+    "components": "@/components/shadcn",
     "utils": "@/utils/utils",
-    "ui": "@/components/Shadcn/ui",
+    "ui": "@/components/shadcn/ui",
     "lib": "@/lib",
     "hooks": "@/hooks"
   },

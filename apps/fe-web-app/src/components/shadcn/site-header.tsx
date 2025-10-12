@@ -1,6 +1,6 @@
-import { Button } from '@/components/Shadcn/ui/button';
-import { Separator } from '@/components/Shadcn/ui/separator';
-import { SidebarTrigger } from '@/components/Shadcn/ui/sidebar';
+import { Button } from '@/components/shadcn/ui/button';
+import { Separator } from '@/components/shadcn/ui/separator';
+import { SidebarTrigger } from '@/components/shadcn/ui/sidebar';
 import { ROUTES } from '@/routes/route.constants';
 
 export function SiteHeader() {
@@ -33,3 +33,4 @@ export function SiteHeader() {
     </header>
   );
 }
+

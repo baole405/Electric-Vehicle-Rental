@@ -6,7 +6,7 @@ import {
   UserCircleIcon,
 } from 'lucide-react';
 
-import { Avatar, AvatarFallback } from '@/components/Shadcn/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/shadcn/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,13 +15,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/Shadcn/ui/dropdown-menu';
+} from '@/components/shadcn/ui/dropdown-menu';
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from '@/components/Shadcn/ui/sidebar';
+} from '@/components/shadcn/ui/sidebar';
 import { useNavigate } from 'react-router-dom';
 
 export function NavUser({
@@ -107,3 +107,4 @@ export function NavUser({
     </SidebarMenu>
   );
 }
+

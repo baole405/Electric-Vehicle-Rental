@@ -1,6 +1,6 @@
 import { IconTrendingDown, IconTrendingUp } from '@tabler/icons-react';
 
-import { Badge } from '@/components/Shadcn/ui/badge';
+import { Badge } from '@/components/shadcn/ui/badge';
 import {
   Card,
   CardAction,
@@ -8,7 +8,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/Shadcn/ui/card';
+} from '@/components/shadcn/ui/card';
 
 export function SectionCards() {
   return (
@@ -100,3 +100,4 @@ export function SectionCards() {
     </div>
   );
 }
+

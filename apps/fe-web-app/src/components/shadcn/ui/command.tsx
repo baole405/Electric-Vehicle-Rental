@@ -10,7 +10,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/Shadcn/ui/dialog';
+} from '@/components/shadcn/ui/dialog';
 import { cn } from '@/utils/utils';
 
 function Command({
@@ -182,3 +182,4 @@ export {
   CommandSeparator,
   CommandShortcut,
 };
+

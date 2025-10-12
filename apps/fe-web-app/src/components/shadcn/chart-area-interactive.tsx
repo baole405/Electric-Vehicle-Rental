@@ -10,23 +10,23 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/Shadcn/ui/card';
+} from '@/components/shadcn/ui/card';
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from '@/components/Shadcn/ui/chart';
+} from '@/components/shadcn/ui/chart';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/Shadcn/ui/select';
+} from '@/components/shadcn/ui/select';
 import {
   ToggleGroup,
   ToggleGroupItem,
-} from '@/components/Shadcn/ui/toggle-group';
+} from '@/components/shadcn/ui/toggle-group';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 export const description = 'An interactive area chart';
@@ -289,3 +289,4 @@ export function ChartAreaInteractive() {
     </Card>
   );
 }
+

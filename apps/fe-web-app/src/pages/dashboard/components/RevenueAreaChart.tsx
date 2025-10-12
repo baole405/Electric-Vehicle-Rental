@@ -4,7 +4,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/Shadcn/ui/card';
+} from '@/components/shadcn/ui/card';
 import {
   Area,
   AreaChart,
@@ -95,3 +95,4 @@ const RevenueAreaChart = ({ data }: RevenueAreaChartProps) => {
 };
 
 export default RevenueAreaChart;
+

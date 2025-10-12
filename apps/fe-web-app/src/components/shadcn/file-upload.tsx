@@ -1,7 +1,7 @@
 'use client';
 
-import { buttonVariants } from '@/components/Shadcn/ui/button';
-import { Input } from '@/components/Shadcn/ui/input';
+import { buttonVariants } from '@/components/shadcn/ui/button';
+import { Input } from '@/components/shadcn/ui/input';
 import { cn } from '@/utils/utils';
 import { Trash2 as RemoveIcon } from 'lucide-react';
 import {
@@ -360,3 +360,4 @@ export const FileInput = forwardRef<
     </div>
   );
 });
+

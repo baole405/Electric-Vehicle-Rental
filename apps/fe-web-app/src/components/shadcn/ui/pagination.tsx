@@ -7,8 +7,8 @@ import {
 } from 'lucide-react';
 import * as React from 'react';
 
-import { Button, buttonVariants } from '@/components/Shadcn/ui/button';
-import { Input } from '@/components/Shadcn/ui/input';
+import { Button, buttonVariants } from '@/components/shadcn/ui/button';
+import { Input } from '@/components/shadcn/ui/input';
 import { cn } from '@/utils/utils';
 
 function Pagination({ className, ...props }: React.ComponentProps<'nav'>) {
@@ -225,3 +225,4 @@ export {
   PaginationNext,
   PaginationPrevious,
 };
+

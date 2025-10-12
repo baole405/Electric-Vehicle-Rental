@@ -50,15 +50,15 @@ import * as React from 'react';
 import { Area, AreaChart, CartesianGrid, XAxis } from 'recharts';
 import { toast } from 'sonner';
 
-import { Badge } from '@/components/Shadcn/ui/badge';
-import { Button } from '@/components/Shadcn/ui/button';
+import { Badge } from '@/components/shadcn/ui/badge';
+import { Button } from '@/components/shadcn/ui/button';
 import {
   type ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from '@/components/Shadcn/ui/chart';
-import { Checkbox } from '@/components/Shadcn/ui/checkbox';
+} from '@/components/shadcn/ui/chart';
+import { Checkbox } from '@/components/shadcn/ui/checkbox';
 import {
   Drawer,
   DrawerClose,
@@ -68,7 +68,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from '@/components/Shadcn/ui/drawer';
+} from '@/components/shadcn/ui/drawer';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -76,17 +76,17 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/Shadcn/ui/dropdown-menu';
-import { Input } from '@/components/Shadcn/ui/input';
-import { Label } from '@/components/Shadcn/ui/label';
+} from '@/components/shadcn/ui/dropdown-menu';
+import { Input } from '@/components/shadcn/ui/input';
+import { Label } from '@/components/shadcn/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/Shadcn/ui/select';
-import { Separator } from '@/components/Shadcn/ui/separator';
+} from '@/components/shadcn/ui/select';
+import { Separator } from '@/components/shadcn/ui/separator';
 import {
   Table,
   TableBody,
@@ -94,13 +94,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/Shadcn/ui/table';
+} from '@/components/shadcn/ui/table';
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
-} from '@/components/Shadcn/ui/tabs';
+} from '@/components/shadcn/ui/tabs';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 type DataTableItem = {
@@ -798,3 +798,4 @@ function TableCellViewer({ item }: { item: DataTableItem }) {
     </Drawer>
   );
 }
+
