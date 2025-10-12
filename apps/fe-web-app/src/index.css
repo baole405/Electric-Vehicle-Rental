@@ -1,0 +1,298 @@
+@import 'tw-animate-css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Base colors */
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+
+  /* Primary brand colors */
+  --primary: 0 72% 51%; /* Red primary color for EV theme */
+  --primary-foreground: 210 40% 98%;
+
+  /* Secondary colors */
+  --secondary: 210 40% 96%;
+  --secondary-foreground: 222.2 84% 4.9%;
+
+  /* Muted colors */
+  --muted: 210 40% 96%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+
+  /* Accent colors */
+  --accent: 210 40% 96%;
+  --accent-foreground: 222.2 84% 4.9%;
+
+  /* Destructive colors */
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+
+  /* Border and input */
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 0 72% 51%;
+
+  /* Chart colors for dashboard */
+  --chart-1: 0 72% 51%; /* Primary red */
+  --chart-2: 120 100% 35%; /* Green for eco-friendly */
+  --chart-3: 210 100% 50%; /* Blue for technology */
+  --chart-4: 45 100% 55%; /* Orange for energy */
+  --chart-5: 270 100% 50%; /* Purple for premium */
+
+  /* Sidebar colors */
+  --sidebar: 0 0% 98%;
+  --sidebar-foreground: 222.2 84% 4.9%;
+  --sidebar-primary: 0 72% 51%;
+  --sidebar-primary-foreground: 210 40% 98%;
+  --sidebar-accent: 210 40% 96%;
+  --sidebar-accent-foreground: 0 72% 51%;
+  --sidebar-border: 214.3 31.8% 91.4%;
+  --sidebar-ring: 215.4 16.3% 46.9%;
+
+  /* Success colors for EV charging */
+  --success: 120 100% 35%;
+  --success-foreground: 210 40% 98%;
+
+  /* Warning colors for battery status */
+  --warning: 45 100% 55%;
+  --warning-foreground: 222.2 84% 4.9%;
+
+  /* Info colors for vehicle status */
+  --info: 210 100% 50%;
+  --info-foreground: 210 40% 98%;
+
+  /* Electric vehicle specific colors */
+  --ev-green: 120 100% 35%; /* For eco-friendly indicators */
+  --ev-blue: 210 100% 50%; /* For technology features */
+  --ev-orange: 45 100% 55%; /* For charging status */
+
+  --radius: 0.5rem;
+}
+
+.dark {
+  /* Dark mode colors */
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+
+  /* Primary colors in dark mode */
+  --primary: 0 72% 51%;
+  --primary-foreground: 210 40% 98%;
+
+  /* Secondary colors in dark mode */
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+
+  /* Muted colors in dark mode */
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+
+  /* Accent colors in dark mode */
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+
+  /* Destructive colors in dark mode */
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+
+  /* Border and input in dark mode */
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 0 72% 51%;
+
+  /* Chart colors in dark mode */
+  --chart-1: 0 72% 51%;
+  --chart-2: 120 100% 45%;
+  --chart-3: 210 100% 60%;
+  --chart-4: 45 100% 65%;
+  --chart-5: 270 100% 60%;
+
+  /* Sidebar colors in dark mode */
+  --sidebar: 222.2 84% 4.9%;
+  --sidebar-foreground: 210 40% 98%;
+  --sidebar-primary: 0 72% 51%;
+  --sidebar-primary-foreground: 210 40% 98%;
+  --sidebar-accent: 217.2 32.6% 17.5%;
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-border: 217.2 32.6% 17.5%;
+  --sidebar-ring: 215 20.2% 65.1%;
+
+  /* Success colors in dark mode */
+  --success: 120 100% 45%;
+  --success-foreground: 222.2 84% 4.9%;
+
+  /* Warning colors in dark mode */
+  --warning: 45 100% 65%;
+  --warning-foreground: 222.2 84% 4.9%;
+
+  /* Info colors in dark mode */
+  --info: 210 100% 60%;
+  --info-foreground: 222.2 84% 4.9%;
+
+  /* Electric vehicle specific colors in dark mode */
+  --ev-green: 120 100% 45%;
+  --ev-blue: 210 100% 60%;
+  --ev-orange: 45 100% 65%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  /* Electric Vehicle specific styling */
+  .ev-gradient {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--primary)) 0%,
+      hsl(var(--ev-blue)) 100%
+    );
+  }
+
+  .charging-indicator {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--ev-green)) 0%,
+      hsl(var(--ev-orange)) 100%
+    );
+  }
+
+  .battery-indicator {
+    background: hsl(var(--ev-green));
+  }
+
+  .battery-low {
+    background: hsl(var(--warning));
+  }
+
+  .battery-medium {
+    background: hsl(var(--ev-orange));
+  }
+
+  .battery-high {
+    background: hsl(var(--ev-green));
+  }
+}
+
+@layer components {
+  /* EV specific component styles */
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-colors;
+  }
+
+  .btn-success {
+    @apply bg-success text-success-foreground hover:bg-success/90 transition-colors;
+  }
+
+  .btn-warning {
+    @apply bg-warning text-warning-foreground hover:bg-warning/90 transition-colors;
+  }
+
+  .card-ev {
+    @apply bg-card text-card-foreground border border-border rounded-lg shadow-sm;
+  }
+
+  .status-charging {
+    @apply text-ev-green bg-ev-green/10 px-2 py-1 rounded-full text-xs font-medium;
+  }
+
+  .status-available {
+    @apply text-success bg-success/10 px-2 py-1 rounded-full text-xs font-medium;
+  }
+
+  .status-unavailable {
+    @apply text-destructive bg-destructive/10 px-2 py-1 rounded-full text-xs font-medium;
+  }
+}
+
+@layer base {
+  .theme {
+    --animate-line-shadow: line-shadow 15s linear infinite;
+    --animate-shimmer-slide: shimmer-slide var(--speed) ease-in-out infinite
+      alternate;
+    --animate-spin-around: spin-around calc(var(--speed) * 2) infinite linear;
+  }
+}
+
+@keyframes line-shadow {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 100% -100%;
+  }
+}
+
+@keyframes shimmer-slide {
+  to {
+    transform: translate(calc(100cqw - 100%), 0);
+  }
+}
+
+@keyframes spin-around {
+  0% {
+    transform: translateZ(0) rotate(0);
+  }
+  15%,
+  35% {
+    transform: translateZ(0) rotate(90deg);
+  }
+  65%,
+  85% {
+    transform: translateZ(0) rotate(270deg);
+  }
+  100% {
+    transform: translateZ(0) rotate(360deg);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background: transparent;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--card, #f4f4f5);
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border, #d1d5db);
+  border-radius: 6px;
+  border: 2px solid var(--card, #f4f4f5);
+  min-height: 32px;
+  transition: background 0.2s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary, #6366f1);
+}
+
+@media (prefers-color-scheme: dark) {
+  ::-webkit-scrollbar-track {
+    background: var(--card, #23272f);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--border, #444950);
+    border: 2px solid var(--card, #23272f);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--primary, #8b5cf6);
+  }
+}
