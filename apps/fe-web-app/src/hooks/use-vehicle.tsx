@@ -7,8 +7,15 @@ export const useVehicleHook = () => {
       queryKey: ["vehicleList"],
       queryFn: () => VehicleApi.getVehicleList(),
     });
-
+  const useVehicleById = (id: string) =>
+    useQuery({
+      queryKey: ["vehicledetail", id],
+      queryFn: () => VehicleApi.getVehicleDetail(id),
+    });
   return {
     useVehicleList,
+    useVehicleById,
   };
+
+
 };

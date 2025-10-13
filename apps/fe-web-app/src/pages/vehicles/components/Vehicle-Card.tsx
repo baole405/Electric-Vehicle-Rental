@@ -2,12 +2,15 @@ import { Button } from "@/components/shadcn/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/shadcn/ui/card";
 import type { TVehicle } from "@/schema/vehicle.schema";
 import { Battery, MapPin, Car } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface VehicleCardListProps {
   vehicles: TVehicle[];
 }
 
 const VehicleCardList: React.FC<VehicleCardListProps> = ({ vehicles = [] }) => {
+  const navigate = useNavigate();
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-6 bg-blue-50">
       {vehicles.map((vehicle) => {
@@ -17,14 +20,20 @@ const VehicleCardList: React.FC<VehicleCardListProps> = ({ vehicles = [] }) => {
           maintenance: "bg-yellow-100 text-yellow-700",
         };
 
+        // 👉 Khi click card thì navigate đến trang chi tiết
+        const handleClick = () => {
+          navigate(`/vehicles/${vehicle._id}`);
+        };
+
         return (
           <Card
             key={vehicle._id}
-            className="p-4 flex flex-col justify-between bg-white shadow-md rounded-2xl hover:shadow-xl transition"
+            onClick={handleClick}
+            className="p-4 flex flex-col justify-between bg-white shadow-md rounded-2xl hover:shadow-xl transition cursor-pointer"
           >
             <CardContent className="p-0">
               {/* Ảnh xe */}
-              <div className="h-40 bg-gray-100 rounded-xl mb-3 flex items-center justify-center">
+              <div className="h-40 bg-gray-100 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
                 <Car className="text-gray-400 w-10 h-10" />
               </div>
 
@@ -61,7 +70,13 @@ const VehicleCardList: React.FC<VehicleCardListProps> = ({ vehicles = [] }) => {
             {/* Footer */}
             <CardFooter className="p-0 mt-3">
               {vehicle.status === "available" ? (
-                <Button className="w-full bg-green-500 hover:bg-green-600 text-white">
+                <Button
+                  className="w-full bg-green-500 hover:bg-green-600 text-white"
+                  onClick={(e) => {
+                    e.stopPropagation(); // tránh trigger click card
+                    navigate(`/booking/${vehicle._id}`);
+                  }}
+                >
                   Đặt ngay
                 </Button>
               ) : (
