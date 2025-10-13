@@ -3,6 +3,9 @@ export const ROUTES = {
   ROOT: "/",
   HOME: "/home",
   ABOUT: "/about",
-  VEHICLE: "/vehicle",
+  VEHICLE: "/vehicles",
+  VEHICLE_DETAIL: "/vehicles/:id",
+  BOOKING: "booking/:id",
   DASHBOARD: "/dashboard",
+  PROFILE: "/profile",
 } as const;

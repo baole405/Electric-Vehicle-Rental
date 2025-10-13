@@ -147,7 +147,7 @@ function NavBar() {
           </nav>
 
           <div className="hidden items-center gap-3 md:flex">
-            <a className="text-sm hover:text-primary" href="#login">
+            <a className="text-sm hover:text-primary" href="vehicles">
               Sign in
             </a>
             <a className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary/90" href="#get-started">
