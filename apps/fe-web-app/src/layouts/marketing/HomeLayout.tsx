@@ -111,6 +111,9 @@ function NavBar() {
             <Link className="hover:text-primary" to="/dashboard">
               Dashboard
             </Link>
+            <Link className="hover:text-primary" to="/users">
+              Users
+            </Link>
             <div className="relative">
               <button type="button" className="inline-flex items-center gap-1 hover:text-primary" onClick={() => setApiOpen((v) => !v)}>
                 API
@@ -177,6 +180,9 @@ function NavBar() {
               </a>
               <Link className="rounded-lg px-3 py-2 text-sm hover:bg-gray-50" to="/dashboard" onClick={() => setOpen(false)}>
                 Dashboard
+              </Link>
+              <Link className="rounded-lg px-3 py-2 text-sm hover:bg-gray-50" to="/users" onClick={() => setOpen(false)}>
+                Users
               </Link>
               <a className="rounded-lg px-3 py-2 text-sm hover:bg-gray-50" href="#api">
                 API Reference
