@@ -3,5 +3,6 @@ export const ROUTES = {
   ROOT: "/",
   HOME: "/home",
   ABOUT: "/about",
+  VEHICLE: "/vehicle",
   DASHBOARD: "/dashboard",
 } as const;
