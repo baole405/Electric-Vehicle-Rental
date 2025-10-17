@@ -1,541 +1,489 @@
-import { addDays, eachDayOfInterval, format, startOfMonth } from 'date-fns';
+import { type ReactNode, useMemo, useState } from "react";
+import HeaderMain from "@/components/header/header-main";
+import { Card } from "@/components/shadcn/ui/card";
+import { Button } from "@/components/shadcn/ui/button";
+import { Badge } from "@/components/shadcn/ui/badge";
+import { Input } from "@/components/shadcn/ui/input";
+import { Label } from "@/components/shadcn/ui/label";
 import {
-  BadgeCheck,
-  BatteryCharging,
-  CalendarIcon,
-  Car,
-  ChartPie,
-  CircleDollarSign,
-  Gauge,
-  Users,
-} from 'lucide-react';
-import { useMemo, useState } from 'react';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/shadcn/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/shadcn/ui/tabs";
+import { useAuthContext } from "@/contexts/auth-context";
+import { useVehicleHook } from "@/hooks/use-vehicle";
+import { useBooking } from "@/hooks/use-booking";
+import { useRentalHook } from "@/hooks/use-rental";
+import { useStationHook } from "@/hooks/use-station";
+import { useHandoverHook } from "@/hooks/use-handover";
+import { BadgeStatus, fmt, mapStatusColor, statusText } from "@/lib/utils";
+import { useNavigate } from "react-router-dom";
+import { ROUTES } from "@/routes/route.constants";
+import type { TVehicle } from "@/schema/vehicle.schema";
+import type { TBooking } from "@/schema/booking.schema";
+import type { TRental } from "@/schema/rental.schema";
+import { Loader2, Upload } from "lucide-react";
 
-import { Badge } from '@/components/shadcn/ui/badge';
-import { Button } from '@/components/shadcn/ui/button';
-import { Calendar } from '@/components/shadcn/ui/calendar';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/shadcn/ui/card';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/shadcn/ui/popover';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/shadcn/ui/table';
-import LoadingSpinner from '@/components/shared/LoadingSpinner';
-import { cn } from '@/utils/utils';
-import AdminStatCards from './components/AdminStatCards';
-import RevenueAreaChart from './components/RevenueAreaChart';
-
-const SUMMARY_STATS = [
-  { title: 'Active rentals', value: '128', delta: '+12.4%', icon: Car },
-  { title: 'Fleet utilization', value: '87%', delta: '+4.1%', icon: Gauge },
-  {
-    title: 'Avg. charge',
-    value: '82 kWh',
-    delta: '-3%',
-    icon: BatteryCharging,
-    trend: 'down' as const,
-  },
-  {
-    title: 'Monthly revenue',
-    value: '$186k',
-    delta: '+9.7%',
-    icon: CircleDollarSign,
-  },
-];
-
-const RECENT_BOOKINGS = [
-  {
-    id: 'EV-1024',
-    customer: 'Alex Johnson',
-    vehicle: 'Tesla Model 3',
-    start: 'Aug 12, 2024',
-    status: 'In Progress',
-  },
-  {
-    id: 'EV-0998',
-    customer: 'Priya Singh',
-    vehicle: 'Nissan Leaf',
-    start: 'Aug 11, 2024',
-    status: 'Completed',
-  },
-  {
-    id: 'EV-0982',
-    customer: 'Michael Lee',
-    vehicle: 'Kia EV6',
-    start: 'Aug 10, 2024',
-    status: 'Scheduled',
-  },
-  {
-    id: 'EV-0965',
-    customer: 'Sofia Martinez',
-    vehicle: 'Hyundai Ioniq 5',
-    start: 'Aug 09, 2024',
-    status: 'Delayed',
-  },
-  {
-    id: 'EV-0952',
-    customer: 'Daniel Wu',
-    vehicle: 'VinFast VF8',
-    start: 'Aug 09, 2024',
-    status: 'Completed',
-  },
-];
-
-const BOOKING_STATUS_STYLE: Record<string, string> = {
-  'In Progress': 'bg-primary/10 text-primary border-primary/20',
-  Completed: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  Scheduled: 'bg-secondary/10 text-secondary border-secondary/20',
-  Delayed: 'bg-amber-100 text-amber-700 border-amber-200',
+type HandoverFormState = {
+  rentalId: string;
+  stationId: string;
+  type: "pickup" | "return";
+  odoReading: string;
+  batteryPercent: string;
+  notes: string;
+  photos: File[];
 };
 
-const TOP_COMBOS = [
-  { name: 'Weekend Explorer', quantity: 92, revenue: 16400 },
-  { name: 'Urban Commute', quantity: 74, revenue: 11100 },
-  { name: 'Executive Premium', quantity: 58, revenue: 13900 },
-];
-
-const TOP_SNACKS = [
-  { name: 'Fast charging add-on', quantity: 142, revenue: 4260 },
-  { name: 'Insurance bundle', quantity: 121, revenue: 6050 },
-  { name: 'In-car Wi-Fi', quantity: 96, revenue: 2880 },
-];
-
-const TOP_VEHICLES = [
-  { name: 'Tesla Model 3', tickets: 312, revenue: 87320 },
-  { name: 'Kia EV6 GT', tickets: 265, revenue: 70250 },
-  { name: 'VinFast VF8 Plus', tickets: 226, revenue: 56400 },
-];
-
-const generateRevenueData = (start: Date, end: Date) => {
-  const base = [
-    { date: '2024-08-01', revenue: 5200 },
-    { date: '2024-08-02', revenue: 6100 },
-    { date: '2024-08-03', revenue: 6400 },
-    { date: '2024-08-04', revenue: 5300 },
-    { date: '2024-08-05', revenue: 7200 },
-    { date: '2024-08-06', revenue: 7600 },
-    { date: '2024-08-07', revenue: 8100 },
-    { date: '2024-08-08', revenue: 8800 },
-    { date: '2024-08-09', revenue: 9400 },
-    { date: '2024-08-10', revenue: 9900 },
-    { date: '2024-08-11', revenue: 10400 },
-    { date: '2024-08-12', revenue: 11200 },
-  ];
-
-  const days = eachDayOfInterval({ start, end });
-
-  return days.map((day) => {
-    const existing = base.find(
-      (entry) => entry.date === format(day, 'yyyy-MM-dd')
-    );
-    if (existing) {
-      return existing;
-    }
-
-    const last = base[base.length - 1];
-    const offset = Math.floor(Math.random() * 1200) + 4200;
-    const revenue = last ? Math.max(4200, last.revenue - 800 + offset) : offset;
-    return {
-      date: format(day, 'yyyy-MM-dd'),
-      revenue,
-    };
-  });
+const defaultHandoverState: HandoverFormState = {
+  rentalId: "",
+  stationId: "",
+  type: "pickup",
+  odoReading: "",
+  batteryPercent: "",
+  notes: "",
+  photos: [],
 };
 
 const AdminDashboard = () => {
-  const today = new Date();
-  const [startDate, setStartDate] = useState<Date>(startOfMonth(today));
-  const [endDate, setEndDate] = useState<Date>(today);
-  const loading = false;
+  const navigate = useNavigate();
+  const { currentUser } = useAuthContext();
+  const { useVehicleList, updateVehicle } = useVehicleHook();
+  const { useBookingList } = useBooking();
+  const { useRentalList } = useRentalHook();
+  const { useStationList } = useStationHook();
+  const handover = useHandoverHook();
 
-  const revenueData = useMemo(
+  const vehicleQuery = useVehicleList();
+  const bookingQuery = useBookingList();
+  const rentalQuery = useRentalList();
+  const stationQuery = useStationList();
+
+  const [handoverForm, setHandoverForm] = useState<HandoverFormState>(defaultHandoverState);
+  const [handoverError, setHandoverError] = useState<string | null>(null);
+  const [handoverSuccess, setHandoverSuccess] = useState<string | null>(null);
+
+  const isStaff = Boolean(currentUser && (currentUser.role === "staff" || currentUser.role === "admin"));
+
+  const vehicles = useMemo(
+    () => ((vehicleQuery.data?.data?.data ?? []) as TVehicle[]),
+    [vehicleQuery.data?.data?.data],
+  );
+  const bookings = useMemo(
+    () => ((bookingQuery.data?.data?.data ?? []) as TBooking[]),
+    [bookingQuery.data?.data?.data],
+  );
+  const rentals = useMemo(
+    () => ((rentalQuery.data?.data?.data ?? []) as TRental[]),
+    [rentalQuery.data?.data?.data],
+  );
+  const stations = useMemo(
     () =>
-      generateRevenueData(startDate, endDate).sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-      ),
-    [startDate, endDate]
+      ((stationQuery.data?.data?.data ?? []) as Array<{ _id: string; name: string }>),
+    [stationQuery.data?.data?.data],
   );
 
-  const totalRevenue = useMemo(
-    () => revenueData.reduce((sum, item) => sum + item.revenue, 0),
-    [revenueData]
-  );
-  const totalBookings = RECENT_BOOKINGS.length + 85;
-  const distinctCustomers = 64;
-
-  const nextMaintenance = useMemo(
-    () => [
-      {
-        vehicle: 'Tesla Model 3',
-        dueDate: format(addDays(today, 5), 'MMM dd, yyyy'),
-        status: 'Scheduled',
-      },
-      {
-        vehicle: 'VinFast VF8',
-        dueDate: format(addDays(today, 12), 'MMM dd, yyyy'),
-        status: 'Awaiting parts',
-      },
-      {
-        vehicle: 'Kia EV6 GT',
-        dueDate: format(addDays(today, 18), 'MMM dd, yyyy'),
-        status: 'Scheduled',
-      },
-    ],
-    [today]
+  const stats = useMemo(
+    () => ({
+      totalVehicles: vehicles.length,
+      availableVehicles: vehicles.filter((vehicle) => vehicle.status === "available").length,
+      activeRentals: rentals.filter((rental) => rental.status === "ongoing").length,
+      pendingBookings: bookings.filter((booking) => booking.status === "pending").length,
+    }),
+    [bookings, rentals, vehicles],
   );
 
-  if (loading) {
-    return <LoadingSpinner label="Loading dashboard" fullHeight />;
+  if (!isStaff) {
+    return (
+      <div className="flex min-h-screen flex-col bg-gray-50">
+        <HeaderMain title="Operations" />
+        <div className="flex flex-1 items-center justify-center px-4">
+          <Card className="max-w-md space-y-4 p-6 text-center">
+            <h2 className="text-lg font-semibold text-gray-900">Staff access required</h2>
+            <p className="text-sm text-gray-600">
+              This dashboard is only available to staff accounts. Contact an administrator if you need access.
+            </p>
+            <Button className="w-full" onClick={() => navigate(ROUTES.REGISTER)}>
+              Back to home
+            </Button>
+          </Card>
+        </div>
+      </div>
+    );
   }
 
+  const handleVehicleStatusChange = (vehicleId: string, status: TVehicle["status"]) => {
+    updateVehicle.mutate({ id: vehicleId, payload: { status } }, { onError: console.error });
+  };
+
+  const handleHandoverInput = <Key extends keyof HandoverFormState>(
+    key: Key,
+    value: HandoverFormState[Key],
+  ) => {
+    setHandoverError(null);
+    setHandoverForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleHandoverSubmit = () => {
+    if (!handoverForm.rentalId || !handoverForm.stationId) {
+      setHandoverError("Rental and station are required.");
+      return;
+    }
+
+    const payload = {
+      rental: handoverForm.rentalId,
+      stationId: handoverForm.stationId,
+      type: handoverForm.type,
+      odoReading: handoverForm.odoReading ? Number(handoverForm.odoReading) : undefined,
+      batteryPercent: handoverForm.batteryPercent
+        ? Number(handoverForm.batteryPercent)
+        : undefined,
+      notes: handoverForm.notes || undefined,
+      photos: handoverForm.photos,
+    };
+
+    handover.createHandover.mutate(payload, {
+      onSuccess: () => {
+        setHandoverSuccess("Handover logged successfully.");
+        setHandoverForm(defaultHandoverState);
+      },
+      onError: (error) => {
+        console.error("Failed to log handover", error);
+        setHandoverError("Failed to log handover. Please try again.");
+      },
+    });
+  };
+
   return (
-    <div className="flex flex-1 flex-col bg-slate-50">
-      <div className="flex flex-1 flex-col gap-2">
-        <div className="flex flex-col gap-4 py-6">
-          <div className="px-4 lg:px-6">
-            <div className="flex flex-col gap-2">
-              <h1 className="text-2xl font-semibold text-gray-900">
-                Operations dashboard
-              </h1>
-              <p className="text-sm text-gray-500">
-                Real-time snapshots of vehicle rentals, charging activity, and
-                revenue performance.
-              </p>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-50 pb-12">
+      <HeaderMain title="Operations dashboard" />
+      <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 pt-6">
+        <section className="grid gap-4 md:grid-cols-4">
+          <StatCard label="Vehicles" value={stats.totalVehicles} meta={`${stats.availableVehicles} available`} />
+          <StatCard label="Active rentals" value={stats.activeRentals} meta="Ongoing handovers" />
+          <StatCard label="Pending bookings" value={stats.pendingBookings} meta="Awaiting approval" />
+          <StatCard
+            label="Last sync"
+            value={new Date().toLocaleTimeString()}
+            meta="Manual refresh"
+            action={
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  vehicleQuery.refetch();
+                  bookingQuery.refetch();
+                  rentalQuery.refetch();
+                }}
+              >
+                Refresh
+              </Button>
+            }
+          />
+        </section>
 
-          <AdminStatCards items={SUMMARY_STATS} />
+        <Tabs defaultValue="bookings">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="bookings">Bookings</TabsTrigger>
+            <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
+            <TabsTrigger value="handovers">Handovers</TabsTrigger>
+          </TabsList>
 
-          <div className="flex flex-col gap-4 px-4 sm:flex-row sm:items-center sm:justify-between lg:px-6">
-            <h2 className="text-lg font-semibold text-gray-900">
-              Analytics by date range
-            </h2>
-            <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-4">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      'w-[200px] justify-start text-left text-sm font-normal',
-                      !startDate && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {startDate ? format(startDate, 'PPP') : 'Pick a start date'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="end" className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={startDate}
-                    onSelect={(value) => value && setStartDate(value)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      'w-[200px] justify-start text-left text-sm font-normal',
-                      !endDate && 'text-muted-foreground'
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {endDate ? format(endDate, 'PPP') : 'Pick an end date'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent align="end" className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={endDate}
-                    onSelect={(value) => value && setEndDate(value)}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-
-          <div className="grid gap-4 px-4 lg:grid-cols-[2fr,1fr] lg:px-6">
-            <RevenueAreaChart data={revenueData} />
-            <Card className="border-gray-200 bg-white shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base font-semibold text-gray-900">
-                  <Users className="h-4 w-4 text-primary" />
-                  Customer spotlight
-                </CardTitle>
-                <CardDescription>
-                  Enterprise accounts driving repeat bookings.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4 text-sm text-gray-600">
-                <div className="flex items-start justify-between rounded-xl border border-gray-100 bg-gray-50 p-4">
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      EcoFleet Logistics
-                    </p>
-                    <p className="text-xs text-gray-500">42 active vehicles</p>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className="border-emerald-200 bg-emerald-50 text-emerald-700"
-                  >
-                    +18%
-                  </Badge>
-                </div>
-                <div className="flex items-start justify-between rounded-xl border border-gray-100 bg-gray-50 p-4">
-                  <div>
-                    <p className="font-medium text-gray-900">Metro Mobility</p>
-                    <p className="text-xs text-gray-500">
-                      City shuttle partner
-                    </p>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className="border-primary/30 text-primary"
-                  >
-                    960 rentals
-                  </Badge>
-                </div>
-                <div className="flex items-start justify-between rounded-xl border border-gray-100 bg-gray-50 p-4">
-                  <div>
-                    <p className="font-medium text-gray-900">
-                      Adventure Voyages
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Eco-tour experiences
-                    </p>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className="border-amber-200 bg-amber-50 text-amber-700"
-                  >
-                    4.9★ rating
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-4 px-4 lg:grid-cols-3 lg:px-6">
-            <Card className="border-gray-200 bg-white shadow-sm lg:col-span-2">
-              <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <CardTitle className="text-base font-semibold text-gray-900">
-                    Recent bookings
-                  </CardTitle>
-                  <CardDescription>
-                    Live booking status updated every minute.
-                  </CardDescription>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {totalBookings} total bookings • {distinctCustomers} customers
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-24">Booking ID</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Vehicle</TableHead>
-                      <TableHead>Start date</TableHead>
-                      <TableHead className="text-right">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {RECENT_BOOKINGS.map((booking) => (
-                      <TableRow key={booking.id}>
-                        <TableCell className="font-medium text-gray-900">
-                          {booking.id}
-                        </TableCell>
-                        <TableCell>{booking.customer}</TableCell>
-                        <TableCell>{booking.vehicle}</TableCell>
-                        <TableCell>{booking.start}</TableCell>
-                        <TableCell className="text-right">
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              'inline-flex items-center gap-1 text-xs font-medium',
-                              BOOKING_STATUS_STYLE[booking.status] ?? ''
-                            )}
-                          >
-                            {booking.status}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            <Card className="border-gray-200 bg-white shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base font-semibold text-gray-900">
-                  <ChartPie className="h-4 w-4 text-primary" />
-                  Top combos
-                </CardTitle>
-                <CardDescription>Ancillary revenue by bundle.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4 text-sm">
-                <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 shadow-sm">
-                  <div className="text-3xl font-semibold text-gray-900">
-                    ${totalRevenue.toLocaleString()}
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500">
-                    Revenue captured since {format(startDate, 'MMM dd')}.
-                  </p>
-                </div>
-                <ul className="space-y-3">
-                  {TOP_COMBOS.map((combo, index) => (
-                    <li
-                      key={combo.name}
-                      className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-3"
+          <TabsContent value="bookings" className="space-y-4 pt-6">
+            <Card className="overflow-hidden">
+              <div className="border-b px-6 py-4">
+                <h3 className="text-lg font-semibold text-gray-900">Bookings</h3>
+                <p className="text-sm text-gray-600">
+                  Track incoming bookings and contact renters before creating a handover.
+                </p>
+              </div>
+              <div className="divide-y">
+                {bookingQuery.isLoading ? (
+                  <TableLoader />
+                ) : bookings.length === 0 ? (
+                  <EmptyState message="No bookings at the moment." />
+                ) : (
+                  bookings.map((booking) => (
+                    <div
+                      key={booking._id}
+                      className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 text-sm"
                     >
                       <div>
-                        <p className="font-medium text-gray-900">
-                          {index + 1}. {combo.name}
+                        <p className="font-semibold text-gray-900">{booking.vehicle?.model ?? "Vehicle"}</p>
+                        <p className="text-gray-600">
+                          Pickup {fmt(booking.pickupTimeExpected)} -{" "}
+                          {booking.pickupStation?.name ?? "Station unknown"}
                         </p>
-                        <p className="text-xs text-gray-500">
-                          {combo.quantity} orders
+                        <p className="text-gray-500">
+                          Renter: {booking.renter?.fullName ?? "Unknown"}
                         </p>
                       </div>
-                      <p className="text-sm font-semibold text-gray-900">
-                        ${combo.revenue.toLocaleString()}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
+                      <BadgeStatus variant={mapStatusColor(booking.status)}>
+                        {statusText(booking.status)}
+                      </BadgeStatus>
+                    </div>
+                  ))
+                )}
+              </div>
             </Card>
-          </div>
+          </TabsContent>
 
-          <div className="grid gap-4 px-4 lg:grid-cols-3 lg:px-6">
-            <Card className="border-gray-200 bg-white shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base font-semibold text-gray-900">
-                  <BadgeCheck className="h-4 w-4 text-primary" />
-                  Top add-ons
-                </CardTitle>
-                <CardDescription>
-                  High-margin add-ons this period.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Item</TableHead>
-                      <TableHead className="text-right">Qty</TableHead>
-                      <TableHead className="text-right">Revenue</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {TOP_SNACKS.map((snack) => (
-                      <TableRow key={snack.name}>
-                        <TableCell className="font-medium text-gray-900">
-                          {snack.name}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {snack.quantity}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          ${snack.revenue.toLocaleString()}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            <Card className="border-gray-200 bg-white shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-base font-semibold text-gray-900">
-                  Vehicle performance
-                </CardTitle>
-                <CardDescription>
-                  Revenue per vehicle for the selected range.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Vehicle</TableHead>
-                      <TableHead className="text-right">Bookings</TableHead>
-                      <TableHead className="text-right">Revenue</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {TOP_VEHICLES.map((vehicle) => (
-                      <TableRow key={vehicle.name}>
-                        <TableCell className="font-medium text-gray-900">
-                          {vehicle.name}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {vehicle.tickets}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          ${vehicle.revenue.toLocaleString()}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            <Card className="border-gray-200 bg-white shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-base font-semibold text-gray-900">
-                  Maintenance timeline
-                </CardTitle>
-                <CardDescription>
-                  Upcoming service windows for the fleet.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {nextMaintenance.map((item) => (
-                  <div
-                    key={item.vehicle}
-                    className="rounded-xl border border-gray-100 bg-gray-50 p-4"
-                  >
-                    <p className="font-medium text-gray-900">{item.vehicle}</p>
-                    <p className="text-xs text-gray-500">{item.dueDate}</p>
-                    <Badge
-                      variant="outline"
-                      className="mt-2 border-gray-200 text-xs text-gray-600"
+          <TabsContent value="vehicles" className="space-y-4 pt-6">
+            <Card className="overflow-hidden">
+              <div className="border-b px-6 py-4">
+                <h3 className="text-lg font-semibold text-gray-900">Fleet status</h3>
+                <p className="text-sm text-gray-600">
+                  Update vehicle availability after maintenance or returns.
+                </p>
+              </div>
+              <div className="divide-y">
+                {vehicleQuery.isLoading ? (
+                  <TableLoader />
+                ) : vehicles.length === 0 ? (
+                  <EmptyState message="No vehicles loaded." />
+                ) : (
+                  vehicles.map((vehicle) => (
+                    <div
+                      key={vehicle._id}
+                      className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 text-sm"
                     >
-                      {item.status}
-                    </Badge>
-                  </div>
-                ))}
-              </CardContent>
+                      <div>
+                        <p className="font-semibold text-gray-900">{vehicle.model}</p>
+                        <p className="text-gray-600">
+                          Plate {vehicle.plateNo ?? "N/A"} - Battery {vehicle.batteryPercent ?? 0}%
+                        </p>
+                        <p className="text-gray-500">Station: {vehicle.stationId ?? "Unassigned"}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">{vehicle.status}</Badge>
+                        <Select
+                          value={vehicle.status}
+                          onValueChange={(value) =>
+                            handleVehicleStatusChange(vehicle._id, value as TVehicle["status"])
+                          }
+                          disabled={updateVehicle.isPending}
+                        >
+                          <SelectTrigger className="w-36">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="available">Available</SelectItem>
+                            <SelectItem value="rented">Rented</SelectItem>
+                            <SelectItem value="maintenance">Maintenance</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </Card>
-          </div>
-        </div>
+          </TabsContent>
+
+          <TabsContent value="handovers" className="space-y-4 pt-6">
+            <Card className="space-y-4 p-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Log vehicle handover</h3>
+                <p className="text-sm text-gray-600">
+                  Record pickup or return to keep rental history accurate.
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="handoverType">Handover type</Label>
+                  <Select
+                    value={handoverForm.type}
+                    onValueChange={(value) =>
+                      handleHandoverInput("type", value as HandoverFormState["type"])
+                    }
+                  >
+                    <SelectTrigger id="handoverType">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pickup">Pickup</SelectItem>
+                      <SelectItem value="return">Return</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="rentalId">Rental ID</Label>
+                  <Input
+                    id="rentalId"
+                    placeholder="Rental identifier"
+                    value={handoverForm.rentalId}
+                    onChange={(event) => handleHandoverInput("rentalId", event.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="handoverStation">Station</Label>
+                  <Select
+                    value={handoverForm.stationId}
+                    onValueChange={(value) => handleHandoverInput("stationId", value)}
+                  >
+                    <SelectTrigger id="handoverStation">
+                      <SelectValue placeholder="Choose station" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {stations.map((station) => (
+                        <SelectItem key={station._id} value={station._id}>
+                          {station.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="handoverOdo">Odometer (km)</Label>
+                  <Input
+                    id="handoverOdo"
+                    type="number"
+                    value={handoverForm.odoReading}
+                    onChange={(event) => handleHandoverInput("odoReading", event.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="handoverBattery">Battery (%)</Label>
+                  <Input
+                    id="handoverBattery"
+                    type="number"
+                    value={handoverForm.batteryPercent}
+                    onChange={(event) => handleHandoverInput("batteryPercent", event.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="handoverNotes">Notes</Label>
+                  <Input
+                    id="handoverNotes"
+                    placeholder="Condition notes"
+                    value={handoverForm.notes}
+                    onChange={(event) => handleHandoverInput("notes", event.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Photos (optional)</Label>
+                <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-sm text-gray-600 hover:border-gray-400">
+                  <Upload className="h-5 w-5" />
+                  <span>Add up to 6 photos</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(event) =>
+                      handleHandoverInput(
+                        "photos",
+                        Array.from(event.target.files ?? []).slice(0, 6),
+                      )
+                    }
+                  />
+                </label>
+                {handoverForm.photos.length > 0 && (
+                  <p className="text-xs text-gray-500">
+                    {handoverForm.photos.length} file(s) attached.
+                  </p>
+                )}
+              </div>
+
+              {handoverError && <p className="text-sm text-red-500">{handoverError}</p>}
+              {handoverSuccess && <p className="text-sm text-emerald-600">{handoverSuccess}</p>}
+
+              <Button
+                className="w-full"
+                onClick={handleHandoverSubmit}
+                disabled={handover.createHandover.isPending}
+              >
+                {handover.createHandover.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...
+                  </>
+                ) : (
+                  "Log handover"
+                )}
+              </Button>
+            </Card>
+
+            <Card className="overflow-hidden">
+              <div className="border-b px-6 py-4">
+                <h3 className="text-lg font-semibold text-gray-900">Current rentals</h3>
+              </div>
+              <div className="divide-y">
+                {rentalQuery.isLoading ? (
+                  <TableLoader />
+                ) : rentals.length === 0 ? (
+                  <EmptyState message="No rentals in progress." />
+                ) : (
+                  rentals.map((rental) => (
+                    <div
+                      key={rental._id}
+                      className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 text-sm"
+                    >
+                      <div>
+                        <p className="font-semibold text-gray-900">
+                          {rental.vehicle?.model ?? "Vehicle"} - {rental.renter?.fullName ?? "Renter"}
+                        </p>
+                        <p className="text-gray-600">
+                          {fmt(rental.pickupTime)} - {fmt(rental.returnTime ?? undefined)}
+                        </p>
+                        <p className="text-gray-500">
+                          Stations: {rental.pickupStation?.name ?? "-"} - {rental.returnStation?.name ?? "-"}
+                          {rental.returnStation?.name ?? "-"}
+                        </p>
+                      </div>
+                      <BadgeStatus variant={mapStatusColor(rental.status)}>
+                        {statusText(rental.status)}
+                      </BadgeStatus>
+                    </div>
+                  ))
+                )}
+              </div>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
 };
 
-export default AdminDashboard;
+const StatCard = ({
+  label,
+  value,
+  meta,
+  action,
+}: {
+  label: string;
+  value: number | string;
+  meta?: string;
+  action?: ReactNode;
+}) => (
+  <Card className="flex flex-col gap-2 p-6">
+    <div className="text-sm text-gray-500">{label}</div>
+    <div className="text-2xl font-semibold text-gray-900">{value}</div>
+    {meta && <div className="text-xs text-gray-500">{meta}</div>}
+    {action}
+  </Card>
+);
 
+const TableLoader = () => (
+  <div className="flex items-center justify-center py-12 text-gray-600">
+    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+    Loading data...
+  </div>
+);
+
+const EmptyState = ({ message }: { message: string }) => (
+  <div className="flex items-center justify-center py-12 text-sm text-gray-500">{message}</div>
+);
+
+export default AdminDashboard;

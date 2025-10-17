@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { ROUTES } from "@/routes/route.constants";
+import { useAuthContext } from "@/contexts/auth-context";
 import {
   BatteryCharging,
-  BookOpen,
   Calendar,
   Car,
   ChevronDown,
@@ -85,6 +86,8 @@ function Container({ children }: { children: ReactNode }) {
 function NavBar() {
   const [open, setOpen] = useState(false);
   const [apiOpen, setApiOpen] = useState(false);
+  const { currentUser } = useAuthContext();
+  const isStaff = currentUser?.role === "staff" || currentUser?.role === "admin";
 
   return (
     <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur">
@@ -108,51 +111,55 @@ function NavBar() {
             <a className="hover:text-primary" href="#pricing">
               Pricing
             </a>
-            <Link className="hover:text-primary" to="/dashboard">
-              Dashboard
-            </Link>
-            <div className="relative">
-              <button type="button" className="inline-flex items-center gap-1 hover:text-primary" onClick={() => setApiOpen((v) => !v)}>
-                API
-                <ChevronDown className="h-4 w-4" />
-              </button>
-              {apiOpen ? (
-                <div className="absolute right-0 mt-2 w-[420px] rounded-2xl border bg-white p-2 shadow-xl">
-                  <div className="grid grid-cols-2 gap-2 text-left">
-                    {API_ITEMS.map((item) => (
-                      <a
-                        key={item.href}
-                        href={item.href}
-                        className="group flex items-start gap-3 rounded-xl p-3 hover:bg-gray-50"
-                      >
-                        <item.icon className="mt-1 h-5 w-5 text-gray-500 group-hover:text-primary" />
-                        <div>
-                          <div className="font-medium">{item.label}</div>
-                          <div className="text-[11px] text-gray-500">
-                            {item.href}
-                            {item.note ? (
-                              <>
-                                <span className="mx-1 text-gray-400">•</span>
-                                <span className="italic">{item.note}</span>
-                              </>
-                            ) : null}
-                          </div>
-                        </div>
-                      </a>
-                    ))}
-                  </div>
+            {isStaff ? (
+              <>
+                <Link className="hover:text-primary" to="/dashboard">
+                  Dashboard
+                </Link>
+                <div className="relative">
+                  <button type="button" className="inline-flex items-center gap-1 hover:text-primary" onClick={() => setApiOpen((v) => !v)}>
+                    API
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                  {apiOpen ? (
+                    <div className="absolute right-0 mt-2 w-[420px] rounded-2xl border bg-white p-2 shadow-xl">
+                      <div className="grid grid-cols-2 gap-2 text-left">
+                        {API_ITEMS.map((item) => (
+                          <a
+                            key={item.href}
+                            href={item.href}
+                            className="group flex items-start gap-3 rounded-xl p-3 hover:bg-gray-50"
+                          >
+                            <item.icon className="mt-1 h-5 w-5 text-gray-500 group-hover:text-primary" />
+                            <div>
+                              <div className="font-medium">{item.label}</div>
+                              <div className="text-[11px] text-gray-500">
+                                {item.href}
+                                {item.note ? (
+                                  <>
+                                    <span className="mx-1 text-gray-400">-</span>
+                                    <span className="italic">{item.note}</span>
+                                  </>
+                                ) : null}
+                              </div>
+                            </div>
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
-            </div>
+              </>
+            ) : null}
           </nav>
 
           <div className="hidden items-center gap-3 md:flex">
-            <a className="text-sm hover:text-primary" href="vehicles">
+            <Link
+              className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary/90"
+              to={ROUTES.LOGIN}
+            >
               Sign in
-            </a>
-            <a className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary/90" href="#get-started">
-              Get started
-            </a>
+            </Link>
           </div>
 
           <button className="inline-flex items-center justify-center rounded-lg border p-2 md:hidden" type="button" onClick={() => setOpen((v) => !v)}>
@@ -175,19 +182,24 @@ function NavBar() {
               <a className="rounded-lg px-3 py-2 text-sm hover:bg-gray-50" href="#pricing">
                 Pricing
               </a>
-              <Link className="rounded-lg px-3 py-2 text-sm hover:bg-gray-50" to="/dashboard" onClick={() => setOpen(false)}>
-                Dashboard
-              </Link>
-              <a className="rounded-lg px-3 py-2 text-sm hover:bg-gray-50" href="#api">
-                API Reference
-              </a>
+              {isStaff ? (
+                <>
+                  <Link className="rounded-lg px-3 py-2 text-sm hover:bg-gray-50" to="/dashboard" onClick={() => setOpen(false)}>
+                    Dashboard
+                  </Link>
+                  <a className="rounded-lg px-3 py-2 text-sm hover:bg-gray-50" href="#api">
+                    API Reference
+                  </a>
+                </>
+              ) : null}
               <div className="grid gap-2">
-                <a className="rounded-lg px-3 py-2 text-sm hover:bg-gray-50" href="#login">
+                <Link
+                  className="rounded-lg bg-primary px-3 py-2 text-center text-sm font-medium text-white hover:bg-primary/90"
+                  to={ROUTES.LOGIN}
+                  onClick={() => setOpen(false)}
+                >
                   Sign in
-                </a>
-                <a className="rounded-lg bg-primary px-3 py-2 text-center text-sm font-medium text-white hover:bg-primary/90" href="#get-started">
-                  Get started
-                </a>
+                </Link>
               </div>
             </div>
           </div>
@@ -479,3 +491,8 @@ const HomeLayout = () => {
 };
 
 export default HomeLayout;
+
+
+
+
+

@@ -18,6 +18,7 @@ import {
 import HeaderMain from "@/components/header/header-main";
 import type { TVehicle } from "@/schema/vehicle.schema";
 import { useVehicleHook } from "@/hooks/use-vehicle";
+import { ROUTES } from "@/routes/route.constants";
 
 /** Hardcode tạm thông tin mẫu (khi chưa có BE) */
 const modelAssets: Record<
@@ -38,14 +39,24 @@ const modelAssets: Record<
       "/images/ev6/5.jpg",
     ],
     features: [
-      { label: "5 chỗ", icon: <Car size={16} /> },
-      { label: "Tự động", icon: <Info size={16} /> },
+      { label: "5 ch?", icon: <Car size={16} /> },
+      { label: "T? d?ng", icon: <Info size={16} /> },
       { label: "285L", icon: <Luggage size={16} /> },
-      { label: "Giới hạn 300 km/ngày", icon: <Route size={16} /> },
-      { label: "1 túi khí", icon: <Shield size={16} /> },
+      { label: "Gi?i h?n 300 km/ng�y", icon: <Route size={16} /> },
+      { label: "1 t�i kh�", icon: <Shield size={16} /> },
       { label: "WLTP ~ 450km*", icon: <Gauge size={16} /> },
     ],
   },
+};
+
+const fallbackAsset = {
+  pricePerDay: 700_000,
+  gallery: ["/images/placeholder-car-1.jpg", "/images/placeholder-car-2.jpg"],
+  features: [
+    { label: "5 cho", icon: <Car size={16} /> },
+    { label: "Tu dong", icon: <Info size={16} /> },
+    { label: "Gioi han 300 km/ngay", icon: <Route size={16} /> },
+  ],
 };
 
 function StatusPill({ status }: { status: TVehicle["status"] }) {
@@ -69,22 +80,14 @@ export default function VehicleDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { useVehicleById } = useVehicleHook();
-  const { data, isLoading, isError } = useVehicleById(id!);
+  const vehicleId = id ?? "";
+  const { data, isLoading, isError } = useVehicleById(vehicleId, { enabled: Boolean(vehicleId) });
 
   const [activeIdx, setActiveIdx] = useState(0);
 
   // ✅ tránh lỗi gọi hook conditionally
   const vehicle = data?.data.data;
-  const asset =
-    modelAssets[vehicle?.model ?? ""] ?? {
-      pricePerDay: 700_000,
-      gallery: ["/images/placeholder-car-1.jpg", "/images/placeholder-car-2.jpg"],
-      features: [
-        { label: "5 chỗ", icon: <Car size={16} /> },
-        { label: "Tự động", icon: <Info size={16} /> },
-        { label: "Giới hạn 300 km/ngày", icon: <Route size={16} /> },
-      ],
-    };
+  const asset = useMemo(() => modelAssets[vehicle?.model ?? ""] ?? fallbackAsset, [vehicle?.model]);
 
   const mainImg = useMemo(
     () => asset.gallery[Math.min(activeIdx, asset.gallery.length - 1)],
@@ -204,7 +207,7 @@ export default function VehicleDetailPage() {
             <Button
               disabled={vehicle.status !== "available"}
               className="bg-emerald-600 hover:bg-emerald-700 text-white px-8"
-              onClick={() => navigate(`/booking/${vehicle._id}`)}
+              onClick={() => navigate(ROUTES.BOOKING.replace(":id", vehicle._id ?? ""))}
             >
               Đặt xe
             </Button>
@@ -223,3 +226,4 @@ export default function VehicleDetailPage() {
     </div>
   );
 }
+

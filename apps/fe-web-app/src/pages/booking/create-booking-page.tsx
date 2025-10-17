@@ -1,192 +1,299 @@
-import { useBooking } from "@/hooks/use-booking";
-import { useStationHook } from "@/hooks/use-station";
-import { useVehicleHook } from "@/hooks/use-vehicle";
-import { Loader2, MapPin, CalendarClock, Car } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { CalendarClock, CheckCircle2, Loader2, MapPin, ShieldAlert } from "lucide-react";
+import HeaderMain from "@/components/header/header-main";
+import { Card } from "@/components/shadcn/ui/card";
 import { Button } from "@/components/shadcn/ui/button";
 import { Input } from "@/components/shadcn/ui/input";
 import { Label } from "@/components/shadcn/ui/label";
-import { Card } from "@/components/shadcn/ui/card";
 import {
   Select,
-  SelectTrigger,
   SelectContent,
-  SelectValue,
   SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/shadcn/ui/select";
-import { useParams } from "react-router";
-import { useState } from "react";
+import { useStationHook } from "@/hooks/use-station";
+import { useVehicleHook } from "@/hooks/use-vehicle";
+import { useBooking } from "@/hooks/use-booking";
+import { useAuthContext } from "@/contexts/auth-context";
+import { useUserDocument } from "@/hooks/use-user-document";
 import type { TCreateBooking } from "@/schema/booking.schema";
+import { ROUTES } from "@/routes/route.constants";
 
-export default function CreateBookingPage() {
-  const { id } = useParams(); // id của vehicle
-  const { createBooking } = useBooking();
-  const { mutate, isPending } = createBooking;
+type BookingFormState = {
+  pickupStationId: string;
+  pickupTimeExpected: string;
+};
 
-  // === Load dữ liệu ===
+const defaultForm: BookingFormState = {
+  pickupStationId: "",
+  pickupTimeExpected: "",
+};
+
+const CreateBookingPage = () => {
+  const { id: vehicleId } = useParams();
+  const navigate = useNavigate();
+  const { currentUser } = useAuthContext();
   const { useStationList } = useStationHook();
-  const { data: stationRes } = useStationList();
-  const stations = stationRes?.data?.data ?? [];
-
   const { useVehicleById } = useVehicleHook();
-  const { data: vehicleRes } = useVehicleById(id!);
-  const vehicle = vehicleRes?.data?.data;
+  const { createBooking } = useBooking();
 
-  // === User giả định đã đăng nhập ===
-  const loggedUser = {
-    _id: "68e718afaf76367c856de771",
-    fullName: "Alice Nguyen",
-    email: "alice.nguyen@example.com",
+  const [form, setForm] = useState<BookingFormState>(defaultForm);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const stationsQuery = useStationList();
+  const vehicleQuery = useVehicleById(vehicleId ?? "");
+  const documentQuery = useUserDocument(currentUser?._id);
+
+  const documentStatus = useMemo(() => {
+    const document = (documentQuery.data?.data?.data ?? [])[0];
+    return document?.status ?? "pending";
+  }, [documentQuery.data]);
+
+  const isBookingAllowed = currentUser && documentStatus === "verified";
+
+  const handleChange = (field: keyof BookingFormState, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    setError(null);
   };
 
-  // === State form ===
-  const [form, setForm] = useState({
-    pickupStation: "",
-    pickupTimeExpected: "",
-  });
-
-  const handleChange = (field: string, value: string) =>
-    setForm((prev) => ({ ...prev, [field]: value }));
-
-  // === Submit payload ===
   const handleSubmit = () => {
-    if (!form.pickupStation || !form.pickupTimeExpected) {
-      alert("Vui lòng chọn trạm và thời gian nhận xe!");
+    if (!currentUser) {
+      setError("Please register and verify your account before booking.");
+      return;
+    }
+    if (!isBookingAllowed) {
+      setError("Your documents are not verified yet. Booking will unlock after approval.");
+      return;
+    }
+    if (!form.pickupStationId || !form.pickupTimeExpected) {
+      setError("Pickup station and time are required.");
+      return;
+    }
+    if (!vehicleId) {
+      setError("Vehicle information is missing.");
       return;
     }
 
     const payload: TCreateBooking = {
-      renter: loggedUser._id,
-      pickupStation: form.pickupStation,
-      vehicle: id ?? null,
+      renter: currentUser._id,
+      pickupStation: form.pickupStationId,
+      vehicle: vehicleId,
       pickupTimeExpected: new Date(form.pickupTimeExpected).toISOString(),
       status: "pending",
     };
 
-    console.log("📦 Payload gửi API:", payload);
-    mutate(payload);
+    createBooking.mutate(payload, {
+      onSuccess: () => {
+        setSuccessMessage("Booking request submitted. Our staff will confirm shortly.");
+      },
+      onError: (mutationError) => {
+        console.error("Failed to create booking", mutationError);
+        setError("Could not create booking. Please try again.");
+      },
+    });
   };
 
-  // === UI ===
+  if (!vehicleId) {
+    return (
+      <div className="flex min-h-screen flex-col bg-gray-50">
+        <HeaderMain title="Book vehicle" />
+        <div className="flex flex-1 items-center justify-center px-4">
+          <Card className="max-w-md p-6 text-center">
+            <ShieldAlert className="mx-auto h-10 w-10 text-red-500" />
+            <h2 className="mt-4 text-lg font-semibold text-gray-900">Vehicle not found</h2>
+            <p className="mt-2 text-sm text-gray-600">
+              We could not identify which vehicle you want to book. Please go back to the fleet and
+              select a vehicle again.
+            </p>
+            <Button className="mt-4 w-full" onClick={() => navigate(ROUTES.VEHICLE)}>
+              Browse vehicles
+            </Button>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="flex min-h-screen flex-col bg-gray-50">
+        <HeaderMain title="Book vehicle" />
+        <div className="flex flex-1 items-center justify-center px-4">
+          <Card className="max-w-md p-6 text-center">
+            <ShieldAlert className="mx-auto h-10 w-10 text-amber-500" />
+            <h2 className="mt-4 text-lg font-semibold text-gray-900">Registration required</h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Create an account and upload your documents before you can request a booking.
+            </p>
+            <Button className="mt-4 w-full" onClick={() => navigate(ROUTES.REGISTER)}>
+              Register now
+            </Button>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  const stations = (stationsQuery.data?.data?.data ?? []) as Array<{
+    _id: string;
+    name: string;
+    address?: string;
+  }>;
+  const vehicle = vehicleQuery.data?.data?.data;
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-6">
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* FORM BÊN TRÁI */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-md space-y-6">
-          <h1 className="text-2xl font-bold">Đăng ký thuê xe</h1>
+    <div className="min-h-screen bg-gray-50 pb-12">
+      <HeaderMain title="Book vehicle" />
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 pt-8 lg:grid-cols-[2fr,1fr]">
+        <Card className="space-y-6 p-6">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">Booking request</h1>
+            <p className="mt-1 text-sm text-gray-600">
+              Complete the details below. Booking is confirmed after staff review.
+            </p>
+          </div>
 
-          {/* Thông tin người thuê */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label>Tên người thuê *</Label>
-              <Input value={loggedUser.fullName} disabled />
+              <Label>Renter name</Label>
+              <Input value={currentUser.fullName} disabled />
             </div>
             <div>
-              <Label>Email *</Label>
-              <Input value={loggedUser.email} disabled />
+              <Label>Email</Label>
+              <Input value={currentUser.email} disabled />
             </div>
           </div>
 
-          {/* Chọn trạm */}
-          <div>
-            <Label>Nơi nhận xe *</Label>
-            <Select onValueChange={(v) => handleChange("pickupStation", v)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn trạm nhận xe" />
-              </SelectTrigger>
-              <SelectContent>
-                {stations.map((st: any) => (
-                  <SelectItem key={st._id} value={st._id}>
-                    {st.name} — {st.address ?? "Không rõ địa chỉ"}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label>Pickup station</Label>
+              <Select
+                value={form.pickupStationId}
+                onValueChange={(value) => handleChange("pickupStationId", value)}
+                disabled={stationsQuery.isLoading || stationsQuery.isError}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a station" />
+                </SelectTrigger>
+                <SelectContent>
+                  {stations.map((station) => (
+                    <SelectItem key={station._id} value={station._id}>
+                      {station.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {stationsQuery.isError && (
+                <p className="mt-1 text-sm text-red-500">Failed to load stations.</p>
+              )}
+            </div>
+            <div>
+              <Label>Pickup time (expected)</Label>
+              <Input
+                type="datetime-local"
+                value={form.pickupTimeExpected}
+                min={new Date().toISOString().slice(0, 16)}
+                onChange={(event) => handleChange("pickupTimeExpected", event.target.value)}
+              />
+            </div>
           </div>
 
-          {/* Thời gian nhận xe */}
-          <div>
-            <Label>Thời gian nhận xe dự kiến *</Label>
-            <Input
-              type="datetime-local"
-              onChange={(e) =>
-                handleChange("pickupTimeExpected", e.target.value)
-              }
-            />
+          <div className="rounded-lg border border-dashed border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+            <p>
+              Document status:{" "}
+              <span className="font-semibold">{documentStatus.replace("_", " ")}</span>. Booking is
+              enabled when status is <strong>verified</strong>.
+            </p>
           </div>
 
-          {/* Nút xác nhận */}
+          {error && <p className="text-sm text-red-500">{error}</p>}
+          {successMessage && (
+            <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+              <CheckCircle2 className="h-4 w-4" />
+              <span>{successMessage}</span>
+            </div>
+          )}
+
           <Button
             onClick={handleSubmit}
-            disabled={isPending}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white w-full py-5 text-lg font-medium"
+            disabled={createBooking.isPending || !isBookingAllowed}
+            className="w-full"
           >
-            {isPending ? (
+            {createBooking.isPending ? (
               <>
-                <Loader2 className="animate-spin w-5 h-5 mr-2" /> Đang xử lý...
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating booking...
               </>
             ) : (
-              "Xác nhận đặt xe"
+              "Submit booking request"
             )}
           </Button>
-        </div>
+        </Card>
 
-        {/* BÊN PHẢI: THÔNG TIN XE & TỔNG KẾT */}
-        <Card className="p-6 shadow-md rounded-2xl bg-white space-y-4">
-          {/* Ảnh & thông tin xe */}
-          <div className="flex items-center gap-3">
-            <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center">
-              <Car className="text-gray-400 w-8 h-8" />
+        <Card className="flex flex-col gap-5 p-6">
+          {vehicleQuery.isLoading ? (
+            <div className="flex items-center justify-center py-10 text-gray-600">
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              Loading vehicle...
             </div>
-            <div>
-              <h2 className="text-lg font-semibold">
-                {vehicle?.model ?? "Xe đang tải..."}
-              </h2>
-              <p className="text-sm text-gray-500">{vehicle?.plateNo}</p>
+          ) : vehicle ? (
+            <>
+              <div className="flex items-center gap-3">
+                <div className="h-16 w-16 rounded-lg bg-gray-100" />
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">{vehicle.model}</h2>
+                  <p className="text-sm text-gray-500">{vehicle.plateNo}</p>
+                </div>
+              </div>
+              <div className="space-y-2 text-sm text-gray-700">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  <span>
+                    Station:{" "}
+                    {form.pickupStationId
+                      ? stations.find((station) => station._id === form.pickupStationId)?.name ??
+                        "Selected station"
+                      : vehicle.stationId ?? "Choose a station"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CalendarClock className="h-4 w-4" />
+                  <span>
+                    Pickup:{" "}
+                    {form.pickupTimeExpected
+                      ? new Date(form.pickupTimeExpected).toLocaleString()
+                      : "Select time"}
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-2 rounded-lg border bg-gray-50 p-4 text-sm">
+                <div className="flex justify-between">
+                  <span>Daily rate</span>
+                  <span className="font-medium text-gray-900">
+                    {vehicle.dailyRate ? `${vehicle.dailyRate.toLocaleString()} VND` : "TBD"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-gray-600">
+                  <span>Deposit estimate</span>
+                  <span>{vehicle.deposit ? `${vehicle.deposit.toLocaleString()} VND` : "Contact staff"}</span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center gap-2 py-10 text-center text-sm text-gray-600">
+              <ShieldAlert className="h-6 w-6 text-amber-500" />
+              <span>Vehicle information could not be loaded.</span>
+              <Button variant="outline" onClick={() => navigate(ROUTES.VEHICLE)}>
+                Back to fleet
+              </Button>
             </div>
-          </div>
-
-          {/* Thông tin chọn */}
-          <div className="text-gray-700 space-y-2 text-sm">
-            <div className="flex items-center gap-2">
-              <MapPin size={16} />
-              Trạm:{" "}
-              {form.pickupStation
-                ? stations.find((s: any) => s._id === form.pickupStation)?.name
-                : "Chưa chọn"}
-            </div>
-            <div className="flex items-center gap-2">
-              <CalendarClock size={16} />
-              Giờ nhận:{" "}
-              {form.pickupTimeExpected
-                ? new Date(form.pickupTimeExpected).toLocaleString("vi-VN")
-                : "Chưa chọn"}
-            </div>
-          </div>
-
-          <hr />
-
-          {/* Chi phí */}
-          <div className="text-sm space-y-1">
-            <div className="flex justify-between">
-              <span>Cước phí niêm yết</span>
-              <span className="font-semibold text-gray-800">590.000₫</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Tiền đặt cọc</span>
-              <span className="font-semibold text-gray-800">5.000.000₫</span>
-            </div>
-            <div className="flex justify-between text-lg font-semibold pt-2 border-t">
-              <span>Tổng thanh toán</span>
-              <span className="text-emerald-600">5.590.000₫</span>
-            </div>
-          </div>
-
-          <p className="text-xs text-gray-400 mt-2">
-            *Giá thuê xe đã bao gồm VAT.
-            <br />*Cần xác nhận từ nhân viên trước khi nhận xe.
-          </p>
+          )}
         </Card>
       </div>
     </div>
   );
-}
+};
+
+export default CreateBookingPage;

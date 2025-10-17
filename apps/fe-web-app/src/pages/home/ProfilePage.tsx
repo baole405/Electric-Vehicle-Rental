@@ -1,267 +1,270 @@
+import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import HeaderMain from "@/components/header/header-main";
 import { Card } from "@/components/shadcn/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/shadcn/ui/tabs";
+import { Badge } from "@/components/shadcn/ui/badge";
+import { Button } from "@/components/shadcn/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/shadcn/ui/tabs";
+import { useAuthContext } from "@/contexts/auth-context";
 import { useUserHook } from "@/hooks/use-user";
+import { useUserDocument } from "@/hooks/use-user-document";
 import { useBooking } from "@/hooks/use-booking";
 import { useRentalHook } from "@/hooks/use-rental";
 import { usePaymentHook } from "@/hooks/use-payment";
-import type { TUser } from "@/schema/user.schema";
-import { fmt, money, mapStatusColor, BadgeStatus, statusText } from "@/lib/utils";
-import {
-  CarFront,
-  CreditCard,
-  Clock,
-  MapPin,
-  CalendarClock as Time,
-  AlertCircle,
-} from "lucide-react";
+import { BadgeStatus, fmt, mapStatusColor, money, statusText } from "@/lib/utils";
+import { ROUTES } from "@/routes/route.constants";
+import type { TBooking } from "@/schema/booking.schema";
+import type { TRental } from "@/schema/rental.schema";
+import type { TPayment } from "@/schema/payment.schema";
+import type { TUserDocument } from "@/schema/user-document.schema";
 
-/* ────────────────────────────── MAIN PAGE ────────────────────────────── */
-export default function ProfilePage() {
-  const currentUserId = "68e718afaf76367c856de76d"; // sau này lấy từ token
+const ProfilePage = () => {
+  const navigate = useNavigate();
+  const { currentUser, refreshUser, isVerified } = useAuthContext();
+  const userId = currentUser?._id ?? "";
+
   const { useUserById } = useUserHook();
-  const { data, isLoading, isError } = useUserById(currentUserId);
-  const user: TUser | null = data?.data?.data ?? null;
+  const userQuery = useUserById(userId, { enabled: Boolean(userId) });
+  const { data: documentResponse, isLoading: documentLoading } = useUserDocument(userId || undefined);
+
+  const { useBookingList } = useBooking();
+  const { useRentalList } = useRentalHook();
+  const { usePaymentList } = usePaymentHook();
+
+  const bookingQuery = useBookingList();
+  const rentalQuery = useRentalList();
+  const paymentQuery = usePaymentList();
+
+  const userFromQuery = userQuery.data?.data?.data;
+  const document = useMemo<TUserDocument | undefined>(
+    () => (documentResponse?.data?.data ?? [])[0],
+    [documentResponse?.data?.data],
+  );
+
+  const documentStatus = document?.status ?? "pending";
+  const documentStatusText = documentStatus.replace("_", " ");
+  const canBook = documentStatus === "verified";
+
+  const bookings = (bookingQuery.data?.data?.data ?? []) as TBooking[];
+  const rentals = (rentalQuery.data?.data?.data ?? []) as TRental[];
+  const payments = (paymentQuery.data?.data?.data ?? []) as TPayment[];
+
+  const targetUserId = currentUser?._id ?? "";
+  const myBookings = bookings.filter((booking) => booking.renter?._id === targetUserId);
+  const myRentals = rentals.filter((rental) => rental.renter?._id === targetUserId);
+  const myPayments = payments.filter(
+    (payment) => payment.rental?.renter?._id === targetUserId,
+  );
+
+  if (!currentUser) {
+    return (
+      <div className="flex min-h-screen flex-col bg-gray-50">
+        <HeaderMain title="Profile" />
+        <div className="flex flex-1 items-center justify-center px-4">
+          <Card className="max-w-md space-y-4 p-6 text-center">
+            <h2 className="text-lg font-semibold text-gray-900">Join EVrent</h2>
+            <p className="text-sm text-gray-600">
+              Create an account and upload your documents to view booking history and manage rentals.
+            </p>
+            <Button className="w-full" onClick={() => navigate(ROUTES.REGISTER)}>
+              Register now
+            </Button>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  const user = userFromQuery ?? currentUser;
+
+  return (
+    <div className="min-h-screen bg-gray-50 pb-10">
+      <HeaderMain title="Profile" />
+      <div className="mx-auto grid max-w-6xl gap-6 px-4 pt-6 lg:grid-cols-[1fr,2fr]">
+        <div className="space-y-4">
+          <Card className="space-y-4 p-6">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">{user.fullName}</h2>
+              <p className="text-sm text-gray-600">{user.email}</p>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs">
+              <Badge variant="secondary">{user.role}</Badge>
+              <Badge variant={isVerified ? "default" : "outline"}>
+                {isVerified ? "Verified renter" : "Pending verification"}
+              </Badge>
+              <Badge variant="outline">Joined {fmt(user.createdAt)}</Badge>
+            </div>
+            <dl className="space-y-2 text-sm text-gray-700">
+              <div className="flex justify-between">
+                <dt>Phone</dt>
+                <dd className="font-medium">{user.phone ?? "Not provided"}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt>User status</dt>
+                <dd className="font-medium">{user.status}</dd>
+              </div>
+            </dl>
+            <Button variant="outline" className="w-full" onClick={() => refreshUser()}>
+              Refresh profile
+            </Button>
+          </Card>
+
+          <Card className="space-y-4 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Document verification</h3>
+                <p className="text-sm text-gray-600">
+                  Upload your ID and driving license to unlock bookings.
+                </p>
+              </div>
+              <BadgeStatus variant={canBook ? "green" : "amber"}>{documentStatusText}</BadgeStatus>
+            </div>
+            <div className="space-y-2 text-sm text-gray-700">
+              <p>
+                Last updated:{" "}
+                {documentLoading
+                  ? "Loading..."
+                  : document?.updatedAt
+                    ? fmt(document.updatedAt)
+                    : "Not submitted"}
+              </p>
+              <p>
+                Reviewed by:{" "}
+                {document?.verifiedBy?.fullName ?? "Awaiting staff review"}
+              </p>
+            </div>
+            <Button
+              className="w-full"
+              variant={canBook ? "outline" : "default"}
+              onClick={() => navigate(ROUTES.REGISTER)}
+            >
+              {canBook ? "Update documents" : "Submit documents"}
+            </Button>
+          </Card>
+        </div>
+
+        <Card className="p-6">
+          <Tabs defaultValue="bookings">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="bookings">Bookings</TabsTrigger>
+              <TabsTrigger value="rentals">Rentals</TabsTrigger>
+              <TabsTrigger value="payments">Payments</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="bookings" className="mt-6 space-y-3">
+              <HistoryState
+                isLoading={bookingQuery.isLoading}
+                isError={bookingQuery.isError}
+                emptyText="You have not created any booking requests yet."
+                items={myBookings.map((booking) => ({
+                  id: booking._id,
+                  title: booking.vehicle?.model ?? "Vehicle booking",
+                  status: booking.status,
+                  meta: [
+                    `Pickup: ${fmt(booking.pickupTimeExpected)}`,
+                    `Station: ${booking.pickupStation?.name ?? "Unknown"}`,
+                  ],
+                }))}
+              />
+            </TabsContent>
+
+            <TabsContent value="rentals" className="mt-6 space-y-3">
+              <HistoryState
+                isLoading={rentalQuery.isLoading}
+                isError={rentalQuery.isError}
+                emptyText="No rentals recorded."
+                items={myRentals.map((rental) => ({
+                  id: rental._id,
+                  title: rental.vehicle?.model ?? "Rental",
+                  status: rental.status,
+                  meta: [
+                    `Pickup: ${fmt(rental.pickupTime)}`,
+                    `Return: ${fmt(rental.returnTime ?? undefined)}`,
+                    `Stations: ${rental.pickupStation?.name ?? "-"} -> ${rental.returnStation?.name ?? "-"}`,
+                  ],
+                }))}
+              />
+            </TabsContent>
+
+            <TabsContent value="payments" className="mt-6 space-y-3">
+              <HistoryState
+                isLoading={paymentQuery.isLoading}
+                isError={paymentQuery.isError}
+                emptyText="No payment records yet."
+                items={myPayments.map((payment) => ({
+                  id: payment._id,
+                  title: payment.rental?.vehicle?.model ?? "Payment",
+                  status: payment.status,
+                  meta: [
+                    `Amount: ${money(payment.totalAmount)}`,
+                    `Created: ${fmt(payment.createdAt)}`,
+                  ],
+                }))}
+              />
+            </TabsContent>
+          </Tabs>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+const HistoryState = ({
+  isLoading,
+  isError,
+  emptyText,
+  items,
+}: {
+  isLoading: boolean;
+  isError: boolean;
+  emptyText: string;
+  items: { id: string; title: string; status: string; meta: string[] }[];
+}) => {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12 text-sm text-gray-600">
+        Loading...
+      </div>
+    );
+  }
 
   if (isError) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center text-red-500">
-        <AlertCircle className="w-8 h-8 mb-3" />
-        <p>Không thể tải thông tin người dùng. Vui lòng thử lại sau.</p>
+      <div className="flex items-center justify-center py-12 text-sm text-red-500">
+        Failed to load data. Please refresh.
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-12 text-sm text-gray-500">
+        {emptyText}
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <HeaderMain title="Thông tin cá nhân" />
-      <div className="container mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Cột trái: Thông tin người dùng */}
-        <div className="lg:col-span-4 space-y-6">
-          <UserProfileCard user={user} isLoading={isLoading} />
-
-          {/* Quick Stats */}
-          <Card className="p-4 rounded-2xl shadow-sm bg-white">
-            <h3 className="font-semibold mb-3">Tổng quan nhanh</h3>
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <StatCard color="emerald" value="12" label="Lượt thuê" />
-              <StatCard color="amber" value="2" label="Đang xử lý" />
-              <StatCard color="indigo" value="4.9" label="Đánh giá" />
+    <div className="space-y-3">
+      {items.map((item) => (
+        <Card key={item.id} className="p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold text-gray-900">{item.title}</p>
+              <div className="mt-1 space-y-1 text-xs text-gray-600">
+                {item.meta.map((line, index) => (
+                  <p key={index}>{line}</p>
+                ))}
+              </div>
             </div>
-          </Card>
-        </div>
-
-        {/* Cột phải: Lịch sử */}
-        <div className="lg:col-span-8 space-y-6">
-          <Card className="p-6 rounded-2xl shadow-sm bg-white">
-            <h3 className="text-lg font-semibold mb-4">Lịch sử</h3>
-            <ProfileHistoryTabs userId={currentUserId} />
-          </Card>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ────────────────────────────── PROFILE CARD ────────────────────────────── */
-function UserProfileCard({ user, isLoading }: { user: TUser | null; isLoading?: boolean }) {
-  const roleStyle: Record<TUser["role"], string> = {
-    renter: "bg-sky-50 text-sky-700 border-sky-200",
-    staff: "bg-amber-50 text-amber-700 border-amber-200",
-    admin: "bg-rose-50 text-rose-700 border-rose-200",
-  };
-  const statusStyle: Record<TUser["status"], string> = {
-    active: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    inactive: "bg-gray-50 text-gray-600 border-gray-200",
-    suspended: "bg-red-50 text-red-700 border-red-200",
-  };
-
-  return (
-    <Card className="p-6 rounded-2xl shadow-sm bg-white">
-      {/* Avatar + Name */}
-      <div className="flex items-center gap-4">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-100 to-indigo-200 flex items-center justify-center">
-          <CarFront className="w-8 h-8 text-indigo-600" />
-        </div>
-        <div className="min-w-0">
-          <h2 className="text-xl font-bold truncate">
-            {isLoading ? "Đang tải..." : user?.fullName}
-          </h2>
-          <p className="text-sm text-gray-500 truncate">{isLoading ? "—" : user?.email}</p>
-        </div>
-      </div>
-
-      {/* Badges */}
-      <div className="mt-4 flex flex-wrap gap-2">
-        <span
-          className={`px-2 py-1 rounded-md border text-xs ${user ? roleStyle[user.role] : ""}`}
-        >
-          {isLoading ? "—" : user?.role.toUpperCase()}
-        </span>
-        <span
-          className={`px-2 py-1 rounded-md border text-xs ${user ? statusStyle[user.status] : ""}`}
-        >
-          {isLoading ? "—" : user?.status}
-        </span>
-      </div>
-
-      {/* Info */}
-      <div className="mt-4 space-y-2 text-sm text-gray-600">
-        <p>
-          <strong>Email:</strong> {user?.email ?? "—"}
-        </p>
-        <p>
-          <strong>SĐT:</strong> {user?.phone ?? "Chưa cập nhật"}
-        </p>
-        <p>
-          <strong>Tạo ngày:</strong>{" "}
-          {user?.createdAt ? new Date(user.createdAt).toLocaleString("vi-VN") : "—"}
-        </p>
-        <p>
-          <strong>Cập nhật:</strong>{" "}
-          {user?.updatedAt ? new Date(user.updatedAt).toLocaleString("vi-VN") : "—"}
-        </p>
-      </div>
-
-      {/* Actions */}
-      <div className="mt-6 flex gap-3">
-        <button className="flex-1 py-2 px-3 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-all">
-          Chỉnh sửa
-        </button>
-        <button className="flex-1 py-2 px-3 text-sm border border-gray-300 rounded-md hover:bg-gray-100 transition-all">
-          Đổi mật khẩu
-        </button>
-      </div>
-    </Card>
-  );
-}
-
-/* ────────────────────────────── HISTORY TABS ────────────────────────────── */
-function ProfileHistoryTabs({ userId }: { userId: string }) {
-  const { useBookingList } = useBooking();
-  const { useRentalList } = useRentalHook();
-  const { usePaymentList } = usePaymentHook();
-
-  const { data: bookingRes, isLoading: bookLoading, isError: bookError } = useBookingList();
-  const { data: rentalRes, isLoading: rentLoading, isError: rentError } = useRentalList();
-  const { data: paymentRes, isLoading: payLoading, isError: payError } = usePaymentList();
-
-  const bookings = bookingRes?.data?.data ?? [];
-  const rentals = rentalRes?.data?.data ?? [];
-  const payments = paymentRes?.data?.data ?? [];
-
-  const myBookings = bookings.filter((b: any) => b?.renter?._id === userId);
-  const myRentals = rentals.filter((r: any) => r?.renter?._id === userId);
-  const myPayments = payments.filter((p: any) => p?.rental?.renter?._id === userId);
-
-  return (
-    <Tabs defaultValue="bookings" className="w-full">
-      {/* Tabs List */}
-      <TabsList className="grid grid-cols-3 w-full mb-6 rounded-xl bg-gray-100 p-1">
-        <TabsTrigger value="bookings" className="flex items-center justify-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-md rounded-lg transition-all duration-200">
-          <Clock className="w-4 h-4" /> Đặt xe
-        </TabsTrigger>
-        <TabsTrigger value="rentals" className="flex items-center justify-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-md rounded-lg transition-all duration-200">
-          <CarFront className="w-4 h-4" /> Thuê xe
-        </TabsTrigger>
-        <TabsTrigger value="payments" className="flex items-center justify-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-md rounded-lg transition-all duration-200">
-          <CreditCard className="w-4 h-4" /> Thanh toán
-        </TabsTrigger>
-      </TabsList>
-
-      {/* Tabs Content */}
-      <TabsContent value="bookings">
-        <HistoryPanel isLoading={bookLoading} isError={bookError} emptyText="Không có lịch sử đặt xe.">
-          {myBookings.map((b: any) => (
-            <HistoryCard
-              key={b._id}
-              title={`#${b._id.slice(-6)} — ${statusText(b.status)}`}
-              status={b.status}
-              fields={[
-                { icon: <Time size={14} />, label: `Dự kiến: ${fmt(b.pickupTimeExpected)}` },
-                { icon: <MapPin size={14} />, label: `Trạm: ${b.pickupStation?.name ?? "—"}` },
-              ]}
-            />
-          ))}
-        </HistoryPanel>
-      </TabsContent>
-
-      <TabsContent value="rentals">
-        <HistoryPanel isLoading={rentLoading} isError={rentError} emptyText="Không có lịch sử thuê xe.">
-          {myRentals.map((r: any) => (
-            <HistoryCard
-              key={r._id}
-              title={`${r.vehicle?.model ?? "Xe"} — #${r._id.slice(-6)}`}
-              status={r.status}
-              fields={[
-                { icon: <Time size={14} />, label: `Nhận: ${fmt(r.pickupTime)}` },
-                { icon: <Time size={14} />, label: `Trả: ${fmt(r.returnTime)}` },
-                { icon: <MapPin size={14} />, label: `Trạm nhận: ${r.pickupStation?.name ?? "—"}` },
-                { icon: <MapPin size={14} />, label: `Trạm trả: ${r.returnStation?.name ?? "—"}` },
-              ]}
-              note={`Odo: ${r.odoStart ?? "—"} → ${r.odoEnd ?? "—"} · ${r.conditionNotes ?? ""}`}
-            />
-          ))}
-        </HistoryPanel>
-      </TabsContent>
-
-      <TabsContent value="payments">
-        <HistoryPanel isLoading={payLoading} isError={payError} emptyText="Không có lịch sử thanh toán.">
-          {myPayments.map((p: any) => (
-            <HistoryCard
-              key={p._id}
-              title={`${p.method.toUpperCase()} · ${p.txnRef ?? "—"}`}
-              status={p.status}
-              fields={[
-                { label: `Tổng tiền: ${money(p.totalAmount)}` },
-                { label: `Gốc: ${money(p.baseAmount)} · Phụ phí: ${money(p.surchargeAmount)}` },
-                { label: `Thuê xe: #${p.rental?._id?.slice(-6) ?? "—"}` },
-              ]}
-              note={`Tạo: ${fmt(p.createdAt)} · Cập nhật: ${fmt(p.updatedAt)}`}
-            />
-          ))}
-        </HistoryPanel>
-      </TabsContent>
-    </Tabs>
-  );
-}
-
-/* ──────────────── Reusable Components ──────────────── */
-function HistoryPanel({ isLoading, isError, emptyText, children }: any) {
-  if (isLoading)
-    return <div className="text-gray-500 text-center p-4 animate-pulse">Đang tải dữ liệu...</div>;
-  if (isError)
-    return <div className="text-red-500 text-center p-4">Lỗi tải dữ liệu. Vui lòng thử lại sau.</div>;
-  if (!children || (Array.isArray(children) && children.length === 0))
-    return <div className="text-gray-500 text-center p-4">{emptyText}</div>;
-  return <div className="space-y-4">{children}</div>;
-}
-
-function HistoryCard({ title, status, fields, note }: any) {
-  return (
-    <div className="p-4 rounded-xl border bg-white shadow-sm hover:shadow-md transition-all duration-200">
-      <div className="flex items-center justify-between mb-2">
-        <div className="font-semibold text-gray-800">{title}</div>
-        <BadgeStatus variant={mapStatusColor(status)}>{statusText(status)}</BadgeStatus>
-      </div>
-      <div className="text-sm text-gray-600 grid sm:grid-cols-2 gap-2">
-        {fields.map((f: any, i: number) => (
-          <div key={i} className="flex items-center gap-2">
-            {f.icon}
-            <span>{f.label}</span>
+            <BadgeStatus variant={mapStatusColor(item.status)}>
+              {statusText(item.status) || item.status}
+            </BadgeStatus>
           </div>
-        ))}
-      </div>
-      {note && <div className="mt-2 text-xs text-gray-500 italic">{note}</div>}
+        </Card>
+      ))}
     </div>
   );
-}
+};
 
-function StatCard({ color, value, label }: any) {
-  return (
-    <div className={`rounded-lg bg-${color}-50 text-${color}-700 py-3 px-2`}>
-      <div className="text-lg font-bold">{value}</div>
-      <div className="text-xs">{label}</div>
-    </div>
-  );
-}
+export default ProfilePage;
