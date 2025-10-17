@@ -16,6 +16,8 @@ export const VehicleSchema = z
     plateNo: z.string().min(1),
     stationId: z.string().min(1),
     status: VehicleStatusSchema,
+    dailyRate: z.number().nonnegative().nullable().optional(),
+    deposit: z.number().nonnegative().nullable().optional(),
     updatedAt: z.string().datetime({ offset: true }),
   })
 

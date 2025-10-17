@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   BatteryCharging,
-  BookOpen,
   Calendar,
   Car,
   ChevronDown,
@@ -479,3 +478,4 @@ const HomeLayout = () => {
 };
 
 export default HomeLayout;
+

@@ -1,12 +1,16 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookingApi } from "@/apis/booking.api";
 import type { TCreateBooking } from "@/schema/booking.schema";
 
 export const useBooking = () => {
-  const createBooking =
-    useMutation({
-      mutationFn: (request: TCreateBooking) => BookingApi.createBooking(request),
-    });
+  const queryClient = useQueryClient();
+
+  const createBooking = useMutation({
+    mutationFn: (request: TCreateBooking) => BookingApi.createBooking(request),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["bookingList"] });
+    },
+  });
   const useBookingList = () =>
     useQuery({
       queryKey: ["bookingList"],
