@@ -8,5 +8,6 @@ export const ROUTES = {
   BOOKING: "/booking/:id",
   DASHBOARD: "/dashboard",
   PROFILE: "/profile",
+  LOGIN: "/auth/login",
   REGISTER: "/auth/register",
 } as const;
