@@ -1,6 +1,5 @@
 import { z } from "zod";
-import { UserRoleSchema } from "./common/user-role.schema";
-import { UserStatusSchema } from "./common/user-status.schema";
+import { UserRoleSchema, UserStatusSchema } from "./common/user-status.schema";
 
 export const UserSchema = z.object({
   _id: z.string().min(1),
