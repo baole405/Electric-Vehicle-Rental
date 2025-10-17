@@ -1,13 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, ShieldCheck, Upload, UserPlus } from "lucide-react";
+import { ChevronLeft, Loader2, ShieldCheck, Upload, UserPlus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/shadcn/ui/card";
 import { Label } from "@/components/shadcn/ui/label";
 import { Input } from "@/components/shadcn/ui/input";
 import { Button } from "@/components/shadcn/ui/button";
-import HeaderMain from "@/components/header/header-main";
 import { CreateUserSchema, type TCreateUser } from "@/schema/user.schema";
 import type { TUser } from "@/schema/user.schema";
 import { UserApi } from "@/apis/user.api";
@@ -19,6 +18,7 @@ import {
 } from "@/schema/user-document.schema";
 import { useUserDocument } from "@/hooks/use-user-document";
 import { Textarea } from "@/components/shadcn/ui/textarea";
+import { ROUTES } from "@/routes/route.constants";
 
 type Step = 1 | 2 | 3;
 
@@ -215,7 +215,6 @@ const RegisterPage = () => {
           </p>
         )}
       </div>
-      {formError && <p className="text-sm text-red-500">{formError}</p>}
       <Button
         type="submit"
         className="w-full"
@@ -229,6 +228,13 @@ const RegisterPage = () => {
           "Continue"
         )}
       </Button>
+      <p className="text-center text-sm text-gray-600">
+        Have an account?{" "}
+        <Link to={ROUTES.LOGIN} className="font-semibold text-primary hover:underline">
+          Sign in
+        </Link>
+      </p>
+      {formError && <p className="text-sm text-red-500">{formError}</p>}
     </form>
   );
 
@@ -310,14 +316,24 @@ const RegisterPage = () => {
         {docError && <p className="text-sm text-red-500">{docError}</p>}
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => navigate("/")}
-            disabled={submitDocument.isPending}
-          >
-            Go back home
-          </Button>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate(ROUTES.ROOT)}
+              disabled={submitDocument.isPending}
+            >
+              Go back home
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleSkipDocuments}
+              disabled={submitDocument.isPending}
+            >
+              Skip for now
+            </Button>
+          </div>
           <Button
             type="button"
             onClick={handleSubmitDocuments}
@@ -338,6 +354,18 @@ const RegisterPage = () => {
     );
   };
 
+  const handleSkipDocuments = () => {
+    navigate(ROUTES.LOGIN);
+  };
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate(ROUTES.ROOT);
+    }
+  };
+
   const renderCompletion = () => (
     <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
       <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
@@ -351,10 +379,10 @@ const RegisterPage = () => {
         </p>
       </div>
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Button variant="outline" onClick={() => navigate("/profile")}>
+        <Button variant="outline" onClick={() => navigate(ROUTES.PROFILE)}>
           View profile
         </Button>
-        <Button onClick={() => navigate("/vehicles")}>Browse vehicles</Button>
+        <Button onClick={() => navigate(ROUTES.VEHICLE)}>Browse vehicles</Button>
       </div>
     </div>
   );
@@ -383,9 +411,14 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <HeaderMain title="Register account" />
-      <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-10">
+    <div className="relative min-h-screen bg-gray-50">
+      <div className="absolute left-4 top-4 z-10">
+        <Button variant="ghost" size="sm" onClick={handleBack} className="gap-2">
+          <ChevronLeft className="h-4 w-4" />
+          Home
+        </Button>
+      </div>
+      <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-16">
         <Card>
           <CardHeader>
             <CardTitle className="text-lg text-gray-900">Get started with EVrent</CardTitle>

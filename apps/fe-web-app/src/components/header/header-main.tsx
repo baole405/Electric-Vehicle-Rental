@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { ChevronDown, Menu, Search } from "lucide-react";
+import { Menu, Search } from "lucide-react";
 import { Button } from "@/components/shadcn/ui/button";
 import { Input } from "@/components/shadcn/ui/input";
 import {
@@ -19,22 +19,34 @@ interface HeaderMainProps {
 }
 
 const NAV_LINKS = [
-  { to: ROUTES.VEHICLE, label: "Electric Fleet" },
+  { to: ROUTES.VEHICLE, label: "Electric Team" },
   { to: "/stations", label: "Stations" },
   { to: "/how-it-works", label: "How it works" },
   { to: "/pricing", label: "Pricing" },
-  { to: ROUTES.DASHBOARD, label: "Dashboard" },
 ];
 
 export default function HeaderMain(_: HeaderMainProps) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { currentUser, clearAuth } = useAuthContext();
+  const previousUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!currentUser && (pathname.startsWith(ROUTES.DASHBOARD) || pathname.startsWith(ROUTES.PROFILE))) {
       navigate(ROUTES.REGISTER, { replace: true });
     }
+  }, [currentUser, navigate, pathname]);
+
+  useEffect(() => {
+    const currentId = currentUser?._id ?? null;
+    const previousId = previousUserIdRef.current;
+    const isAdmin = currentUser?.role === "admin";
+
+    if (isAdmin && currentId && previousId !== currentId && !pathname.startsWith(ROUTES.DASHBOARD)) {
+      navigate(ROUTES.DASHBOARD, { replace: true });
+    }
+
+    previousUserIdRef.current = currentId;
   }, [currentUser, navigate, pathname]);
 
   const handleLogout = () => {
@@ -65,25 +77,6 @@ export default function HeaderMain(_: HeaderMainProps) {
               {item.label}
             </NavLink>
           ))}
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="inline-flex items-center gap-1 text-sm text-gray-700 hover:text-black">
-                API <ChevronDown className="h-4 w-4" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-48">
-              <Link to="/api/docs">
-                <DropdownMenuItem>Docs</DropdownMenuItem>
-              </Link>
-              <Link to="/api/playground">
-                <DropdownMenuItem>Playground</DropdownMenuItem>
-              </Link>
-              <Link to="/api/keys">
-                <DropdownMenuItem>API Keys</DropdownMenuItem>
-              </Link>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </nav>
 
         <div className="flex-1" />
@@ -150,15 +143,6 @@ export default function HeaderMain(_: HeaderMainProps) {
                     {item.label}
                   </Link>
                 ))}
-                <div className="border-t pt-2">
-                  <div className="mb-2 text-xs uppercase text-gray-400">API</div>
-                  <Link to="/api/docs" className="block py-1.5 text-gray-700 hover:text-black">
-                    Docs
-                  </Link>
-                  <Link to="/api/playground" className="block py-1.5 text-gray-700 hover:text-black">
-                    Playground
-                  </Link>
-                </div>
                 <div className="border-t pt-4">
                   {currentUser ? (
                     <>
