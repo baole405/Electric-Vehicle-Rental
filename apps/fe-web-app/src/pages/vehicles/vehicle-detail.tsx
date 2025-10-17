@@ -53,6 +53,7 @@ function StatusPill({ status }: { status: TVehicle["status"] }) {
     available: "bg-emerald-100 text-emerald-700",
     rented: "bg-rose-100 text-rose-700",
     maintenance: "bg-amber-100 text-amber-700",
+    unavailable: "bg-gray-100 text-gray-700",
   };
   const text =
     status === "available"
