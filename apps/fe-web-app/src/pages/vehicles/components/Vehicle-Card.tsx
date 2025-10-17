@@ -18,6 +18,7 @@ const VehicleCardList: React.FC<VehicleCardListProps> = ({ vehicles = [] }) => {
           available: "bg-green-100 text-green-700",
           rented: "bg-red-100 text-red-700",
           maintenance: "bg-yellow-100 text-yellow-700",
+          unavailable: "bg-gray-100 text-gray-700",
         };
 
         // 👉 Khi click card thì navigate đến trang chi tiết
