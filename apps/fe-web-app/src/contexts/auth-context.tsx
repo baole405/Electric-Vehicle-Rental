@@ -6,11 +6,13 @@ import type { TUser } from "@/schema/user.schema";
 type StoredAuth = {
   userId: string;
   token?: string;
+  role?: TUser["role"];
 };
 
 type AuthContextValue = {
   currentUser: TUser | null;
   token: string | null;
+  role: TUser["role"] | null;
   isLoading: boolean;
   isVerified: boolean;
   setAuth: (user: TUser, token?: string) => void;
@@ -25,6 +27,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export const AuthProvider = ({ children }: PropsWithChildren) => {
   const [currentUser, setCurrentUser] = useState<TUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [role, setRole] = useState<TUser["role"] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const persistAuth = useCallback((value: StoredAuth | null) => {
@@ -41,9 +44,11 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
         setIsLoading(true);
         const response = await UserApi.getUserById(userId);
         setCurrentUser(response.data.data);
+        setRole(response.data.data.role);
       } catch (error) {
         console.error("Failed to fetch user profile", error);
         setCurrentUser(null);
+        setRole(null);
         persistAuth(null);
       } finally {
         setIsLoading(false);
@@ -62,6 +67,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
       const parsed = JSON.parse(raw) as StoredAuth;
       setToken(parsed.token ?? null);
+      setRole(parsed.role ?? null);
 
       if (parsed.userId) {
         await fetchUser(parsed.userId);
@@ -82,10 +88,11 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   const setAuth = useCallback(
     (user: TUser, userToken?: string | null) => {
       setCurrentUser(user);
+      setRole(user.role);
       if (userToken !== undefined) {
         setToken(userToken ?? null);
       }
-      const stored: StoredAuth = { userId: user._id };
+      const stored: StoredAuth = { userId: user._id, role: user.role };
       if (userToken) {
         stored.token = userToken;
       }
@@ -97,6 +104,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   const clearAuth = useCallback(() => {
     setCurrentUser(null);
     setToken(null);
+    setRole(null);
     persistAuth(null);
   }, [persistAuth]);
 
@@ -115,13 +123,14 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     () => ({
       currentUser,
       token,
+      role,
       isLoading,
       isVerified: currentUser?.status === "verified",
       setAuth,
       refreshUser,
       clearAuth,
     }),
-    [clearAuth, currentUser, isLoading, refreshUser, setAuth, token],
+    [clearAuth, currentUser, isLoading, refreshUser, role, setAuth, token],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

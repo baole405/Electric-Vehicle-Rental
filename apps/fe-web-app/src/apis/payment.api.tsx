@@ -3,17 +3,24 @@ import { API_SUFFIX } from "./util.api";
 import type { BaseResponse } from "@/schema/common/response.type";
 import type { TPayment } from "@/schema/payment.schema";
 
-
 const getPaymentList = async () =>
   await apiRequest.get<BaseResponse<TPayment[]>>(API_SUFFIX.PAYMENT_API);
-
 
 const getPaymentById = async (id: string) =>
   await apiRequest.get<BaseResponse<TPayment>>(API_SUFFIX.PAYMENT_API + `/${id}`);
 
+const createPayment = async (payload: Partial<TPayment>) =>
+  await apiRequest.post<BaseResponse<TPayment>>(API_SUFFIX.PAYMENT_API, payload);
 
+const updatePayment = async (id: string, payload: Partial<TPayment>) =>
+  await apiRequest.put<BaseResponse<TPayment>>(API_SUFFIX.PAYMENT_API + `/${id}`, payload);
+
+const deletePayment = async (id: string) => await apiRequest.delete(API_SUFFIX.PAYMENT_API + `/${id}`);
 
 export const PaymentApi = {
   getPaymentList,
   getPaymentById,
+  createPayment,
+  updatePayment,
+  deletePayment,
 };

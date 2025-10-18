@@ -28,8 +28,9 @@ const NAV_LINKS = [
 export default function HeaderMain(_: HeaderMainProps) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { currentUser, clearAuth } = useAuthContext();
-  const isStaff = currentUser?.role === "admin" || currentUser?.role === "staff";
+  const { currentUser, role, clearAuth } = useAuthContext();
+  const effectiveRole = role ?? currentUser?.role;
+  const isStaff = effectiveRole === "admin" || effectiveRole === "staff";
   const previousUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -41,14 +42,14 @@ export default function HeaderMain(_: HeaderMainProps) {
   useEffect(() => {
     const currentId = currentUser?._id ?? null;
     const previousId = previousUserIdRef.current;
-    const shouldRedirect = currentUser && (currentUser.role === "admin" || currentUser.role === "staff");
+    const shouldRedirect = effectiveRole === "admin" || effectiveRole === "staff";
 
     if (shouldRedirect && currentId && previousId !== currentId && !pathname.startsWith(ROUTES.DASHBOARD)) {
       navigate(ROUTES.DASHBOARD, { replace: true });
     }
 
     previousUserIdRef.current = currentId;
-  }, [currentUser, navigate, pathname]);
+  }, [currentUser, effectiveRole, navigate, pathname]);
 
   const handleLogout = () => {
     clearAuth();

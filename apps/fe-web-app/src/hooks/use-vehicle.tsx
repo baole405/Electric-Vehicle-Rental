@@ -17,6 +17,13 @@ export const useVehicleHook = () => {
       enabled: options?.enabled ?? Boolean(id),
     });
 
+  const createVehicle = useMutation({
+    mutationFn: (payload: Partial<TVehicle>) => VehicleApi.createVehicle(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["vehicleList"] });
+    },
+  });
+
   const updateVehicle = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: Partial<TVehicle> }) =>
       VehicleApi.updateVehicle(id, payload),
@@ -26,9 +33,18 @@ export const useVehicleHook = () => {
     },
   });
 
+  const deleteVehicle = useMutation({
+    mutationFn: (id: string) => VehicleApi.deleteVehicle(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["vehicleList"] });
+    },
+  });
+
   return {
     useVehicleList,
     useVehicleById,
+    createVehicle,
     updateVehicle,
+    deleteVehicle,
   };
 };

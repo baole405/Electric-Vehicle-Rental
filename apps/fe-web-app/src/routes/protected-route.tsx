@@ -18,7 +18,7 @@ type ProtectedRouteProps = {
 };
 
 export const ProtectedRoute = ({ children, allowedRoles, redirectTo = ROUTES.LOGIN }: ProtectedRouteProps) => {
-  const { currentUser, isLoading } = useAuthContext();
+  const { currentUser, role, isLoading } = useAuthContext();
 
   if (isLoading) {
     return <LoadingFallback />;
@@ -28,8 +28,10 @@ export const ProtectedRoute = ({ children, allowedRoles, redirectTo = ROUTES.LOG
     return <Navigate to={redirectTo} replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(currentUser.role)) {
-    const fallback = currentUser.role === "admin" || currentUser.role === "staff" ? ROUTES.DASHBOARD : ROUTES.ROOT;
+  const effectiveRole = role ?? currentUser.role;
+
+  if (allowedRoles && !allowedRoles.includes(effectiveRole)) {
+    const fallback = effectiveRole === "admin" || effectiveRole === "staff" ? ROUTES.DASHBOARD : ROUTES.ROOT;
     return <Navigate to={fallback} replace />;
   }
 

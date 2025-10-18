@@ -22,9 +22,9 @@ type DashboardLayoutProps = {
 
 const DashboardLayout = ({ title, subtitle, children }: DashboardLayoutProps) => {
   const navigate = useNavigate();
-  const { currentUser, clearAuth } = useAuthContext();
+  const { currentUser, role, clearAuth } = useAuthContext();
 
-  const role = currentUser?.role ?? "renter";
+  const effectiveRole = role ?? currentUser?.role ?? "renter";
   const name = currentUser?.fullName ?? "User";
 
   const handleLogout = () => {
@@ -42,7 +42,7 @@ const DashboardLayout = ({ title, subtitle, children }: DashboardLayoutProps) =>
           EVrent Ops
         </div>
         <nav className="flex flex-1 flex-col gap-1 text-sm">
-          {DASHBOARD_MENU.filter((item) => item.roles.includes(role)).map((item) => (
+          {DASHBOARD_MENU.filter((item) => item.roles.includes(effectiveRole)).map((item) => (
             <NavLink
               key={item.href}
               to={item.href}
@@ -59,7 +59,7 @@ const DashboardLayout = ({ title, subtitle, children }: DashboardLayoutProps) =>
         </nav>
         <div className="mt-6 rounded-lg border border-dashed border-gray-200 bg-gray-50 p-4 text-xs text-gray-600">
           Signed in as <strong>{name}</strong>
-          <div className="mt-1 capitalize text-gray-500">{role}</div>
+          <div className="mt-1 capitalize text-gray-500">{effectiveRole}</div>
         </div>
       </aside>
 
