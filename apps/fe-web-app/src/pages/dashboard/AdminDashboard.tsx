@@ -1,5 +1,5 @@
 import { type ReactNode, useMemo, useState } from "react";
-import HeaderMain from "@/components/header/header-main";
+import DashboardLayout from "@/layouts/dashboard/dashboard-layout";
 import { Card } from "@/components/shadcn/ui/card";
 import { Button } from "@/components/shadcn/ui/button";
 import { Badge } from "@/components/shadcn/ui/badge";
@@ -97,25 +97,20 @@ const AdminDashboard = () => {
 
   if (!isStaff) {
     return (
-      <div className="flex min-h-screen flex-col bg-gray-50">
-        <HeaderMain title="Operations" />
-        <div className="flex flex-1 items-center justify-center px-4">
+      <DashboardLayout title="Operations">
+        <div className="flex min-h-[60vh] items-center justify-center px-4">
           <Card className="max-w-md space-y-4 p-6 text-center">
             <h2 className="text-lg font-semibold text-gray-900">Staff access required</h2>
             <p className="text-sm text-gray-600">
               This dashboard is only available to staff accounts. Contact an administrator if you need access.
             </p>
-            <Button className="w-full" onClick={() => navigate(ROUTES.REGISTER)}>
+            <Button className="w-full" onClick={() => navigate(ROUTES.ROOT)}>
               Back to home
             </Button>
           </Card>
         </div>
-      </div>
+      </DashboardLayout>
     );
-  }
-
-  const handleVehicleStatusChange = (vehicleId: string, status: TVehicle["status"]) => {
-    updateVehicle.mutate({ id: vehicleId, payload: { status } }, { onError: console.error });
   };
 
   const handleHandoverInput = <Key extends keyof HandoverFormState>(
@@ -157,8 +152,7 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-12">
-      <HeaderMain title="Operations dashboard" />
+    <DashboardLayout title="Operations dashboard">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 pt-6">
         <section className="grid gap-4 md:grid-cols-4">
           <StatCard label="Vehicles" value={stats.totalVehicles} meta={`${stats.availableVehicles} available`} />
@@ -452,7 +446,7 @@ const AdminDashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 
@@ -487,3 +481,9 @@ const EmptyState = ({ message }: { message: string }) => (
 );
 
 export default AdminDashboard;
+
+
+
+
+
+

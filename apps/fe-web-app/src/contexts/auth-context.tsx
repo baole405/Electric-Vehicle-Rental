@@ -80,12 +80,16 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   }, [hydrateFromStorage]);
 
   const setAuth = useCallback(
-    (user: TUser, userToken?: string) => {
+    (user: TUser, userToken?: string | null) => {
       setCurrentUser(user);
-      if (userToken) {
-        setToken(userToken);
+      if (userToken !== undefined) {
+        setToken(userToken ?? null);
       }
-      persistAuth({ userId: user._id, token: userToken });
+      const stored: StoredAuth = { userId: user._id };
+      if (userToken) {
+        stored.token = userToken;
+      }
+      persistAuth(stored);
     },
     [persistAuth],
   );
@@ -130,3 +134,4 @@ export const useAuthContext = () => {
   }
   return context;
 };
+
