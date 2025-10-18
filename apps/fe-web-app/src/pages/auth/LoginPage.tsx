@@ -3,12 +3,15 @@ import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { AxiosError } from "axios";
 import { ChevronLeft, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/shadcn/ui/card";
 import { Input } from "@/components/shadcn/ui/input";
 import { Label } from "@/components/shadcn/ui/label";
 import { Button } from "@/components/shadcn/ui/button";
 import { ROUTES } from "@/routes/route.constants";
+import { AuthApi } from "@/apis/auth.api";
+import { useAuthContext } from "@/contexts/auth-context";
 
 const LoginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -19,6 +22,7 @@ type TLogin = z.infer<typeof LoginSchema>;
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const { setAuth } = useAuthContext();
   const [error, setError] = useState<string | null>(null);
   const {
     handleSubmit,
@@ -43,12 +47,22 @@ const LoginPage = () => {
   const onSubmit = async (values: TLogin) => {
     setError(null);
     try {
-      // TODO: Replace with real authentication API call.
-      console.info("Login submitted", values);
-      setError("Authentication service is not configured yet.");
+      const response = await AuthApi.login(values);
+      const { token, user } = response.data.data;
+      setAuth(user, token);
+
+      if (user.role === "admin" || user.role === "staff") {
+        navigate(ROUTES.DASHBOARD, { replace: true });
+      } else {
+        navigate(ROUTES.ROOT, { replace: true });
+      }
     } catch (exception) {
-      console.error("Failed to sign in", exception);
-      setError("Could not sign in. Please try again.");
+      if (exception instanceof AxiosError) {
+        const message = exception.response?.data?.message ?? "Incorrect email or password.";
+        setError(message);
+      } else {
+        setError("Could not sign in. Please try again.");
+      }
     }
   };
 
@@ -96,9 +110,9 @@ const LoginPage = () => {
             </form>
 
             <p className="mt-6 text-center text-sm text-gray-600">
-              Chưa có tài khoản?{" "}
+              Don&apos;t have an account?{" "}
               <Link to={ROUTES.REGISTER} className="font-semibold text-primary hover:underline">
-                Đăng ký ngay
+                Create one
               </Link>
             </p>
           </CardContent>
@@ -109,4 +123,3 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
-

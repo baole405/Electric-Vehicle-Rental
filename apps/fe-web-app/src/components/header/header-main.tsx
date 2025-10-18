@@ -19,7 +19,7 @@ interface HeaderMainProps {
 }
 
 const NAV_LINKS = [
-  { to: ROUTES.VEHICLE, label: "Electric Team" },
+  { to: ROUTES.VEHICLE, label: "Electric Fleet" },
   { to: "/stations", label: "Stations" },
   { to: "/how-it-works", label: "How it works" },
   { to: "/pricing", label: "Pricing" },
@@ -29,20 +29,21 @@ export default function HeaderMain(_: HeaderMainProps) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { currentUser, clearAuth } = useAuthContext();
+  const isStaff = currentUser?.role === "admin" || currentUser?.role === "staff";
   const previousUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!currentUser && (pathname.startsWith(ROUTES.DASHBOARD) || pathname.startsWith(ROUTES.PROFILE))) {
-      navigate(ROUTES.REGISTER, { replace: true });
+      navigate(ROUTES.LOGIN, { replace: true });
     }
   }, [currentUser, navigate, pathname]);
 
   useEffect(() => {
     const currentId = currentUser?._id ?? null;
     const previousId = previousUserIdRef.current;
-    const isAdmin = currentUser?.role === "admin";
+    const shouldRedirect = currentUser && (currentUser.role === "admin" || currentUser.role === "staff");
 
-    if (isAdmin && currentId && previousId !== currentId && !pathname.startsWith(ROUTES.DASHBOARD)) {
+    if (shouldRedirect && currentId && previousId !== currentId && !pathname.startsWith(ROUTES.DASHBOARD)) {
       navigate(ROUTES.DASHBOARD, { replace: true });
     }
 
@@ -77,6 +78,17 @@ export default function HeaderMain(_: HeaderMainProps) {
               {item.label}
             </NavLink>
           ))}
+          {isStaff ? (
+            <NavLink
+              to={ROUTES.DASHBOARD}
+              className={cn(
+                "text-sm text-gray-700 transition-colors hover:text-black",
+                pathname.startsWith(ROUTES.DASHBOARD) && "font-semibold text-black",
+              )}
+            >
+              Dashboard
+            </NavLink>
+          ) : null}
         </nav>
 
         <div className="flex-1" />
@@ -109,11 +121,11 @@ export default function HeaderMain(_: HeaderMainProps) {
           </DropdownMenu>
         ) : (
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => navigate(ROUTES.REGISTER)}>
-              Register
+            <Button variant="outline" size="sm" onClick={() => navigate(ROUTES.LOGIN)}>
+              Sign in
             </Button>
             <Button size="sm" onClick={() => navigate(ROUTES.REGISTER)}>
-              Get started
+              Register
             </Button>
           </div>
         )}
@@ -143,6 +155,17 @@ export default function HeaderMain(_: HeaderMainProps) {
                     {item.label}
                   </Link>
                 ))}
+                {isStaff ? (
+                  <Link
+                    to={ROUTES.DASHBOARD}
+                    className={cn(
+                      "text-base text-gray-700 hover:text-black",
+                      pathname.startsWith(ROUTES.DASHBOARD) && "font-medium text-black",
+                    )}
+                  >
+                    Dashboard
+                  </Link>
+                ) : null}
                 <div className="border-t pt-4">
                   {currentUser ? (
                     <>
@@ -160,12 +183,14 @@ export default function HeaderMain(_: HeaderMainProps) {
                       </button>
                     </>
                   ) : (
-                    <button
-                      onClick={() => navigate(ROUTES.REGISTER)}
-                      className="block w-full py-1.5 text-left text-gray-700 hover:text-black"
-                    >
-                      Register to rent
-                    </button>
+                    <div className="flex flex-col gap-2">
+                      <Button variant="outline" size="sm" onClick={() => navigate(ROUTES.LOGIN)}>
+                        Sign in
+                      </Button>
+                      <Button size="sm" onClick={() => navigate(ROUTES.REGISTER)}>
+                        Register
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -176,3 +201,4 @@ export default function HeaderMain(_: HeaderMainProps) {
     </header>
   );
 }
+

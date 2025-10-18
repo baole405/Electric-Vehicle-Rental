@@ -1,8 +1,16 @@
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ROUTES } from "@/routes/route.constants";
 import { useAuthContext } from "@/contexts/auth-context";
+import { useVehicleHook } from "@/hooks/use-vehicle";
+import { useStationHook } from "@/hooks/use-station";
+import { useBooking } from "@/hooks/use-booking";
+import { useRentalHook } from "@/hooks/use-rental";
+import type { TVehicle } from "@/schema/vehicle.schema";
+import type { TStation } from "@/schema/station.schema";
+import type { TBooking } from "@/schema/booking.schema";
+import type { TRental } from "@/schema/rental.schema";
 import {
   BatteryCharging,
   Calendar,
@@ -29,13 +37,6 @@ type ApiItem = {
   note?: string;
 };
 
-type VehicleItem = {
-  name: string;
-  pricePerDay: number;
-  image: string;
-  range: number;
-  fastCharge: number;
-};
 
 const API_ITEMS: ApiItem[] = [
   { label: "Users", href: "/api/users", icon: User },
@@ -48,36 +49,13 @@ const API_ITEMS: ApiItem[] = [
   { label: "Payments", href: "/api/payments", icon: CreditCard, note: "rental" },
 ];
 
-const MOCK_VEHICLES: VehicleItem[] = [
-  {
-    name: "Tesla Model 3 Long Range",
-    pricePerDay: 95,
-    image: "https://images.unsplash.com/photo-1619767886558-efdc259cde1b?q=80&w=1920&auto=format&fit=crop",
-    range: 560,
-    fastCharge: 30,
-  },
-  {
-    name: "Kia EV6 GT-Line",
-    pricePerDay: 80,
-    image: "https://images.unsplash.com/photo-1650554043095-9b6ce79076d4?q=80&w=1920&auto=format&fit=crop",
-    range: 500,
-    fastCharge: 18,
-  },
-  {
-    name: "VinFast VF8 Plus",
-    pricePerDay: 70,
-    image: "https://images.unsplash.com/photo-1605559424843-9e4b2b9f5d8a?q=80&w=1920&auto=format&fit=crop",
-    range: 471,
-    fastCharge: 27,
-  },
-  {
-    name: "Hyundai Ioniq 5",
-    pricePerDay: 75,
-    image: "https://images.unsplash.com/photo-1627627251072-b88f6a3bd86c?q=80&w=1920&auto=format&fit=crop",
-    range: 507,
-    fastCharge: 17,
-  },
+const VEHICLE_IMAGES = [
+  "https://images.unsplash.com/photo-1619767886558-efdc259cde1b?q=80&w=1920&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1650554043095-9b6ce79076d4?q=80&w=1920&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1605559424843-9e4b2b9f5d8a?q=80&w=1920&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1627627251072-b88f6a3bd86c?q=80&w=1920&auto=format&fit=crop",
 ];
+
 
 function Container({ children }: { children: ReactNode }) {
   return <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">{children}</div>;
@@ -210,6 +188,58 @@ function NavBar() {
 }
 
 function Hero() {
+  const { useVehicleList } = useVehicleHook();
+  const vehicleQuery = useVehicleList();
+
+  const vehicles = (vehicleQuery.data?.data?.data ?? []) as TVehicle[];
+  const availableVehicles = vehicles.filter((vehicle) => vehicle.status === "available").length;
+  const sampleVehicles = vehicles.slice(0, 2);
+
+  const sampleContent = () => {
+    if (vehicleQuery.isLoading) {
+      return Array.from({ length: 2 }).map((_, index) => (
+        <div key={`hero-skeleton-${index}`} className="flex items-center gap-4 rounded-2xl border border-gray-100 p-4">
+          <div className="h-16 w-24 animate-pulse rounded-xl bg-gray-200" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 w-32 animate-pulse rounded bg-gray-200" />
+            <div className="h-3 w-40 animate-pulse rounded bg-gray-200" />
+          </div>
+          <div className="space-y-1 text-right">
+            <div className="h-4 w-16 animate-pulse rounded bg-gray-200" />
+            <div className="h-3 w-20 animate-pulse rounded bg-gray-200" />
+          </div>
+        </div>
+      ));
+    }
+
+    if (!sampleVehicles.length) {
+      return (
+        <div className="rounded-2xl border border-gray-200 bg-white p-4 text-sm text-gray-600">
+          Add vehicles to your fleet to see highlights here.
+        </div>
+      );
+    }
+
+    return sampleVehicles.map((vehicle, index) => (
+      <div key={vehicle._id ?? index} className="flex items-center gap-4 rounded-2xl border border-gray-100 p-4">
+        <div
+          className="h-16 w-24 rounded-xl bg-cover bg-center"
+          style={{ backgroundImage: `url(${VEHICLE_IMAGES[index % VEHICLE_IMAGES.length]})` }}
+        />
+        <div className="flex-1">
+          <div className="font-semibold text-gray-900">{vehicle.model}</div>
+          <div className="text-xs text-gray-500">
+            Station {vehicle.stationId} | Plate {vehicle.plateNo}
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="text-sm font-semibold text-gray-900">{formatCurrency(vehicle.dailyRate)}</div>
+          <div className="text-xs text-gray-500">per day</div>
+        </div>
+      </div>
+    ));
+  };
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-white via-white to-gray-50">
       <Container>
@@ -222,8 +252,7 @@ function Hero() {
               Rent electric vehicles with real-time fleet intelligence
             </h1>
             <p className="max-w-xl text-base text-gray-600">
-              Manage bookings, charging, and fleet performance with one modern workspace. API friendly, operations ready, and designed for teams that
-              move fast.
+              Manage bookings, charging, and fleet performance with one modern workspace. API friendly, operations ready, and designed for teams that move fast.
             </p>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -238,12 +267,12 @@ function Hero() {
 
             <dl className="grid gap-4 text-sm text-gray-700 sm:grid-cols-3">
               <div className="rounded-2xl border border-gray-200 bg-white p-4">
-                <div className="text-2xl font-semibold text-gray-900">12k+</div>
-                <div className="text-xs text-gray-500">Annual rentals</div>
+                <div className="text-2xl font-semibold text-gray-900">{vehicleQuery.isLoading ? "--" : `${vehicles.length}`}</div>
+                <div className="text-xs text-gray-500">Total vehicles</div>
               </div>
               <div className="rounded-2xl border border-gray-200 bg-white p-4">
-                <div className="text-2xl font-semibold text-gray-900">40+</div>
-                <div className="text-xs text-gray-500">Charging hubs</div>
+                <div className="text-2xl font-semibold text-gray-900">{vehicleQuery.isLoading ? "--" : `${availableVehicles}`}</div>
+                <div className="text-xs text-gray-500">Available today</div>
               </div>
               <div className="rounded-2xl border border-gray-200 bg-white p-4">
                 <div className="text-2xl font-semibold text-gray-900">98%</div>
@@ -258,28 +287,17 @@ function Hero() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-gray-500">Available today</p>
-                  <p className="text-lg font-semibold text-gray-900">73 vehicles</p>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {vehicleQuery.isLoading ? "Updating..." : `${availableVehicles} vehicles`}
+                  </p>
                 </div>
                 <div className="rounded-full bg-primary/10 p-3 text-primary">
                   <BatteryCharging className="h-5 w-5" />
                 </div>
               </div>
-              <div className="mt-6 space-y-4">
-                {MOCK_VEHICLES.slice(0, 2).map((vehicle) => (
-                  <div key={vehicle.name} className="flex items-center gap-4 rounded-2xl border border-gray-100 p-4">
-                    <div className="h-16 w-24 rounded-xl bg-cover bg-center" style={{ backgroundImage: `url(${vehicle.image})` }} />
-                    <div className="flex-1">
-                      <div className="font-semibold text-gray-900">{vehicle.name}</div>
-                      <div className="text-xs text-gray-500">
-                        {vehicle.range} km range • {vehicle.fastCharge} min fast charge
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-semibold text-gray-900">${vehicle.pricePerDay}</div>
-                      <div className="text-xs text-gray-500">per day</div>
-                    </div>
-                  </div>
-                ))}
+              <div className="mt-6 space-y-4">{sampleContent()}</div>
+              <div className="mt-6 rounded-2xl border border-gray-100 bg-gray-50 p-4 text-xs text-gray-500">
+                API-first architecture � Webhooks � Real-time telematics
               </div>
             </div>
           </div>
@@ -289,55 +307,39 @@ function Hero() {
   );
 }
 
-function VehicleCard({ vehicle }: { vehicle: VehicleItem }) {
-  return (
-    <div className="group flex h-full flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-lg">
-      <div className="relative aspect-[4/3] w-full overflow-hidden">
-        <img alt={vehicle.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" src={vehicle.image} />
-      </div>
-      <div className="flex flex-1 flex-col gap-3 p-5">
-        <div>
-          <h3 className="text-base font-semibold text-gray-900">{vehicle.name}</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            {vehicle.range} km range • {vehicle.fastCharge} min fast charge
-          </p>
-        </div>
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-gray-900">${vehicle.pricePerDay}/day</span>
-          <button className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 hover:border-primary/40 hover:text-primary" type="button">
-            <Car className="h-4 w-4" />
-            Reserve
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FeaturedVehicles() {
-  return (
-    <section id="vehicles" className="border-t bg-gray-50 py-12 lg:py-16">
-      <Container>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-900 sm:text-3xl">Featured vehicles</h2>
-            <p className="text-sm text-gray-600">Weekly spotlight on the most rented EVs</p>
-          </div>
-          <a className="text-sm font-semibold text-primary hover:underline" href="#all-cars">
-            View fleet
-          </a>
-        </div>
-        <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {MOCK_VEHICLES.map((vehicle) => (
-            <VehicleCard key={vehicle.name} vehicle={vehicle} />
-          ))}
-        </div>
-      </Container>
-    </section>
-  );
-}
-
 function StationsPreview() {
+  const { useStationList } = useStationHook();
+  const stationQuery = useStationList();
+
+  const stations = (stationQuery.data?.data?.data ?? []) as TStation[];
+  const activeStations = stations.filter((station) => station.status === "active");
+  const topStations = activeStations.slice(0, 3);
+
+  let stationList: ReactNode;
+  if (stationQuery.isLoading) {
+    stationList = Array.from({ length: 3 }).map((_, index) => (
+      <li key={`station-skeleton-${index}`} className="h-6 w-full animate-pulse rounded bg-gray-200" />
+    ));
+  } else if (stationQuery.isError) {
+    stationList = (
+      <li className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+        Unable to load stations right now. Please try again later.
+      </li>
+    );
+  } else if (!topStations.length) {
+    stationList = <li className="rounded border border-gray-200 bg-white p-3 text-sm text-gray-600">No stations configured yet.</li>;
+  } else {
+    stationList = topStations.map((station) => (
+      <li key={station._id} className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-white/60 px-3 py-2">
+        <MapPin className="h-4 w-4 text-primary" />
+        <div className="flex flex-col">
+          <span className="text-sm font-semibold text-gray-900">{station.name}</span>
+          <span className="text-xs text-gray-600">{station.address ?? "Address updating"}</span>
+        </div>
+      </li>
+    ));
+  }
+
   return (
     <section id="stations" className="py-12 lg:py-16">
       <Container>
@@ -345,25 +347,15 @@ function StationsPreview() {
           <div className="space-y-4">
             <h2 className="text-2xl font-semibold text-gray-900 sm:text-3xl">Charging & pickup network</h2>
             <p className="text-sm text-gray-600">
-              Connected to fast DC and AC charging stations across the city. Pick a hub closest to your route and keep the fleet moving.
+              EVrent currently operates {activeStations.length} active hubs across the network. Choose the location that best fits your route.
             </p>
-            <ul className="space-y-2 text-sm text-gray-700">
-              <li className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-primary" />
-                District 1 • 6 hubs • 24/7 service
-              </li>
-              <li className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-primary" />
-                District 3 • 4 hubs • DC fast chargers
-              </li>
-              <li className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-primary" />
-                Thu Duc • 5 hubs • dedicated logistics bay
-              </li>
-            </ul>
+            <ul className="space-y-2 text-sm text-gray-700">{stationList}</ul>
           </div>
           <div className="rounded-3xl border border-gray-200 bg-white p-2 shadow-sm">
-            <div className="aspect-video w-full overflow-hidden rounded-2xl bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1502920917128-1aa500764cbd?q=80&w=1600&auto=format&fit=crop')" }} />
+            <div
+              className="aspect-video w-full overflow-hidden rounded-2xl bg-cover bg-center"
+              style={{ backgroundImage: "url('https://images.unsplash.com/photo-1502920917128-1aa500764cbd?q=80&w=1600&auto=format&fit=crop')" }}
+            />
           </div>
         </div>
       </Container>
@@ -405,24 +397,60 @@ function ProcessSteps() {
 }
 
 function KPISection() {
-  const stats = [
-    { value: "12k+", label: "Rentals per year" },
-    { value: "98.6%", label: "Customer satisfaction" },
-    { value: "40+", label: "Fast charging hubs" },
-    { value: "100%", label: "Electric fleet" },
-  ];
+  const { useVehicleList } = useVehicleHook();
+  const { useStationList } = useStationHook();
+  const { useBookingList } = useBooking();
+  const { useRentalList } = useRentalHook();
+
+  const vehicleQuery = useVehicleList();
+  const stationQuery = useStationList();
+  const bookingQuery = useBookingList();
+  const rentalQuery = useRentalList();
+
+  const vehicles = (vehicleQuery.data?.data?.data ?? []) as TVehicle[];
+  const stations = (stationQuery.data?.data?.data ?? []) as TStation[];
+  const bookings = (bookingQuery.data?.data?.data ?? []) as TBooking[];
+  const rentals = (rentalQuery.data?.data?.data ?? []) as TRental[];
+
+  const activeStations = stations.filter((station) => station.status === "active").length;
+  const availableVehicles = vehicles.filter((vehicle) => vehicle.status === "available").length;
+  const activeRentals = rentals.filter((rental) => rental.status === "ongoing").length;
+
+  const isLoading =
+    vehicleQuery.isLoading || stationQuery.isLoading || bookingQuery.isLoading || rentalQuery.isLoading;
+  const isError = vehicleQuery.isError || stationQuery.isError || bookingQuery.isError || rentalQuery.isError;
+
+  let statsContent: ReactNode;
+  if (isLoading) {
+    statsContent = Array.from({ length: 4 }).map((_, index) => (
+      <div key={`kpi-skeleton-${index}`} className="h-28 animate-pulse rounded-2xl border border-gray-200 bg-white" />
+    ));
+  } else if (isError) {
+    statsContent = (
+      <div className="col-span-full rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+        Unable to load latest metrics right now. Please refresh the page.
+      </div>
+    );
+  } else {
+    const stats = [
+      { value: activeStations.toString(), label: "Stations online" },
+      { value: vehicles.length.toString(), label: "Vehicles in fleet" },
+      { value: availableVehicles.toString(), label: "Vehicles available" },
+      { value: activeRentals.toString(), label: "Active rentals" },
+    ];
+
+    statsContent = stats.map((stat) => (
+      <div key={stat.label} className="rounded-2xl border border-gray-200 bg-white p-6 text-center">
+        <div className="text-3xl font-semibold text-gray-900">{stat.value}</div>
+        <div className="mt-1 text-xs text-gray-600">{stat.label}</div>
+      </div>
+    ));
+  }
 
   return (
     <section className="border-b bg-gray-50 py-12 lg:py-16">
       <Container>
-        <div className="grid grid-cols-2 gap-6 text-center md:grid-cols-4">
-          {stats.map((stat) => (
-            <div key={stat.label} className="rounded-2xl border border-gray-200 bg-white p-6">
-              <div className="text-3xl font-semibold text-gray-900">{stat.value}</div>
-              <div className="mt-1 text-xs text-gray-600">{stat.label}</div>
-            </div>
-          ))}
-        </div>
+        <div className="grid grid-cols-2 gap-6 md:grid-cols-4">{statsContent}</div>
       </Container>
     </section>
   );

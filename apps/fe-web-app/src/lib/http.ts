@@ -1,13 +1,16 @@
-
 import { envConfig } from "@/schema/config.schema";
 import axios from "axios";
 
-const parseParams = (params: Record<string, any>) =>
+const parseParams = (params: Record<string, unknown>) =>
   Object.entries(params)
-    .filter(([_, value]) => value !== null && value !== undefined && value !== "") // 🧹 bỏ rác
+    .filter(([_, value]) => value !== null && value !== undefined && value !== "")
     .map(([key, value]) => {
-      if (Array.isArray(value)) return value.map((v) => `${key}=${encodeURIComponent(v)}`).join("&");
-      if (typeof value === "object" && value !== null) return "";
+      if (Array.isArray(value)) {
+        return value.map((v) => `${key}=${encodeURIComponent(v)}`).join("&");
+      }
+      if (typeof value === "object" && value !== null) {
+        return "";
+      }
       return `${key}=${encodeURIComponent(value)}`;
     })
     .filter(Boolean)
@@ -18,6 +21,20 @@ export const apiRequest = axios.create({
   paramsSerializer: parseParams,
   withCredentials: false,
 });
+
+const getStoredToken = () => {
+  try {
+    const raw = localStorage.getItem("evrental.auth");
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw) as { token?: string };
+    return parsed.token ?? null;
+  } catch (error) {
+    console.warn("Failed to parse stored auth token", error);
+    return null;
+  }
+};
 
 apiRequest.interceptors.request.use((options) => {
   const { method, data } = options;
@@ -30,17 +47,16 @@ apiRequest.interceptors.request.use((options) => {
     }
   }
 
-  // Auto attach token nếu có
-  const token = localStorage.getItem("token");
-  if (token) options.headers!["Authorization"] = `Bearer ${token}`;
+  // Auto attach token if available
+  const token = getStoredToken();
+  if (token) {
+    options.headers!["Authorization"] = `Bearer ${token}`;
+  }
 
   return options;
 });
 
 apiRequest.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // có thể check 401, 403 để logout tự động
-    return Promise.reject(error);
-  },
+  (error) => Promise.reject(error),
 );
