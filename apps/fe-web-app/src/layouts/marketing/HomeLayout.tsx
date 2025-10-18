@@ -1,16 +1,12 @@
-import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { ROUTES } from "@/routes/route.constants";
-import { useAuthContext } from "@/contexts/auth-context";
-import { useVehicleHook } from "@/hooks/use-vehicle";
-import { useStationHook } from "@/hooks/use-station";
-import { useBooking } from "@/hooks/use-booking";
-import { useRentalHook } from "@/hooks/use-rental";
-import type { TVehicle } from "@/schema/vehicle.schema";
-import type { TStation } from "@/schema/station.schema";
-import type { TBooking } from "@/schema/booking.schema";
-import type { TRental } from "@/schema/rental.schema";
+import { useAuthContext } from '@/contexts/auth-context';
+import { useBooking } from '@/hooks/use-booking';
+import { useRentalHook } from '@/hooks/use-rental';
+import { useStationHook } from '@/hooks/use-station';
+import { useVehicleHook } from '@/hooks/use-vehicle';
+import { ROUTES } from '@/routes/route.constants';
+import type { TRental } from '@/schema/rental.schema';
+import type { TStation } from '@/schema/station.schema';
+import type { TVehicle } from '@/schema/vehicle.schema';
 import {
   BatteryCharging,
   Calendar,
@@ -21,14 +17,17 @@ import {
   HandCoins,
   Handshake,
   KeyRound,
-  Menu,
   MapPin,
+  Menu,
   Search,
   ShieldCheck,
   User,
   X,
   type LucideIcon,
-} from "lucide-react";
+} from 'lucide-react';
+import type { ReactNode } from 'react';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 type ApiItem = {
   label: string;
@@ -37,35 +36,63 @@ type ApiItem = {
   note?: string;
 };
 
-
 const API_ITEMS: ApiItem[] = [
-  { label: "Users", href: "/api/users", icon: User },
-  { label: "User documents", href: "/api/user-documents", icon: FileText, note: "user, verifiedBy" },
-  { label: "Stations", href: "/api/stations", icon: MapPin },
-  { label: "Vehicles", href: "/api/vehicles", icon: Car, note: "station" },
-  { label: "Bookings", href: "/api/bookings", icon: Calendar, note: "renter, pickupStation, vehicle" },
-  { label: "Rentals", href: "/api/rentals", icon: KeyRound, note: "booking, renter, vehicle, pickupStation, returnStation" },
-  { label: "Handovers", href: "/api/handovers", icon: Handshake, note: "rental, vehicle, staff" },
-  { label: "Payments", href: "/api/payments", icon: CreditCard, note: "rental" },
+  { label: 'Users', href: '/api/users', icon: User },
+  {
+    label: 'User documents',
+    href: '/api/user-documents',
+    icon: FileText,
+    note: 'user, verifiedBy',
+  },
+  { label: 'Stations', href: '/api/stations', icon: MapPin },
+  { label: 'Vehicles', href: '/api/vehicles', icon: Car, note: 'station' },
+  {
+    label: 'Bookings',
+    href: '/api/bookings',
+    icon: Calendar,
+    note: 'renter, pickupStation, vehicle',
+  },
+  {
+    label: 'Rentals',
+    href: '/api/rentals',
+    icon: KeyRound,
+    note: 'booking, renter, vehicle, pickupStation, returnStation',
+  },
+  {
+    label: 'Handovers',
+    href: '/api/handovers',
+    icon: Handshake,
+    note: 'rental, vehicle, staff',
+  },
+  {
+    label: 'Payments',
+    href: '/api/payments',
+    icon: CreditCard,
+    note: 'rental',
+  },
 ];
 
 const VEHICLE_IMAGES = [
-  "https://images.unsplash.com/photo-1619767886558-efdc259cde1b?q=80&w=1920&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1650554043095-9b6ce79076d4?q=80&w=1920&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1605559424843-9e4b2b9f5d8a?q=80&w=1920&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1627627251072-b88f6a3bd86c?q=80&w=1920&auto=format&fit=crop",
+  'https://images.unsplash.com/photo-1619767886558-efdc259cde1b?q=80&w=1920&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1650554043095-9b6ce79076d4?q=80&w=1920&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1605559424843-9e4b2b9f5d8a?q=80&w=1920&auto=format&fit=crop',
+  'https://images.unsplash.com/photo-1627627251072-b88f6a3bd86c?q=80&w=1920&auto=format&fit=crop',
 ];
 
-
 function Container({ children }: { children: ReactNode }) {
-  return <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">{children}</div>;
+  return (
+    <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+      {children}
+    </div>
+  );
 }
 
 function NavBar() {
   const [open, setOpen] = useState(false);
   const [apiOpen, setApiOpen] = useState(false);
   const { currentUser } = useAuthContext();
-  const isStaff = currentUser?.role === "staff" || currentUser?.role === "admin";
+  const isStaff =
+    currentUser?.role === 'staff' || currentUser?.role === 'admin';
 
   return (
     <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur">
@@ -95,7 +122,11 @@ function NavBar() {
                   Dashboard
                 </Link>
                 <div className="relative">
-                  <button type="button" className="inline-flex items-center gap-1 hover:text-primary" onClick={() => setApiOpen((v) => !v)}>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 hover:text-primary"
+                    onClick={() => setApiOpen((v) => !v)}
+                  >
                     API
                     <ChevronDown className="h-4 w-4" />
                   </button>
@@ -115,7 +146,9 @@ function NavBar() {
                                 {item.href}
                                 {item.note ? (
                                   <>
-                                    <span className="mx-1 text-gray-400">-</span>
+                                    <span className="mx-1 text-gray-400">
+                                      -
+                                    </span>
                                     <span className="italic">{item.note}</span>
                                   </>
                                 ) : null}
@@ -140,7 +173,11 @@ function NavBar() {
             </Link>
           </div>
 
-          <button className="inline-flex items-center justify-center rounded-lg border p-2 md:hidden" type="button" onClick={() => setOpen((v) => !v)}>
+          <button
+            className="inline-flex items-center justify-center rounded-lg border p-2 md:hidden"
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+          >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
@@ -148,24 +185,43 @@ function NavBar() {
         {open ? (
           <div className="pb-4 pt-2 md:hidden">
             <div className="flex flex-col gap-3 rounded-2xl border bg-white p-4 shadow-sm">
-              <a className="rounded-lg px-3 py-2 text-sm hover:bg-gray-50" href="#vehicles">
+              <a
+                className="rounded-lg px-3 py-2 text-sm hover:bg-gray-50"
+                href="#vehicles"
+              >
                 Electric Fleet
               </a>
-              <a className="rounded-lg px-3 py-2 text-sm hover:bg-gray-50" href="#stations">
+              <a
+                className="rounded-lg px-3 py-2 text-sm hover:bg-gray-50"
+                href="#stations"
+              >
                 Stations
               </a>
-              <a className="rounded-lg px-3 py-2 text-sm hover:bg-gray-50" href="#how">
+              <a
+                className="rounded-lg px-3 py-2 text-sm hover:bg-gray-50"
+                href="#how"
+              >
                 How it works
               </a>
-              <a className="rounded-lg px-3 py-2 text-sm hover:bg-gray-50" href="#pricing">
+              <a
+                className="rounded-lg px-3 py-2 text-sm hover:bg-gray-50"
+                href="#pricing"
+              >
                 Pricing
               </a>
               {isStaff ? (
                 <>
-                  <Link className="rounded-lg px-3 py-2 text-sm hover:bg-gray-50" to="/dashboard" onClick={() => setOpen(false)}>
+                  <Link
+                    className="rounded-lg px-3 py-2 text-sm hover:bg-gray-50"
+                    to="/dashboard"
+                    onClick={() => setOpen(false)}
+                  >
                     Dashboard
                   </Link>
-                  <a className="rounded-lg px-3 py-2 text-sm hover:bg-gray-50" href="#api">
+                  <a
+                    className="rounded-lg px-3 py-2 text-sm hover:bg-gray-50"
+                    href="#api"
+                  >
                     API Reference
                   </a>
                 </>
@@ -192,13 +248,18 @@ function Hero() {
   const vehicleQuery = useVehicleList();
 
   const vehicles = (vehicleQuery.data?.data?.data ?? []) as TVehicle[];
-  const availableVehicles = vehicles.filter((vehicle) => vehicle.status === "available").length;
+  const availableVehicles = vehicles.filter(
+    (vehicle) => vehicle.status === 'available'
+  ).length;
   const sampleVehicles = vehicles.slice(0, 2);
 
   const sampleContent = () => {
     if (vehicleQuery.isLoading) {
       return Array.from({ length: 2 }).map((_, index) => (
-        <div key={`hero-skeleton-${index}`} className="flex items-center gap-4 rounded-2xl border border-gray-100 p-4">
+        <div
+          key={`hero-skeleton-${index}`}
+          className="flex items-center gap-4 rounded-2xl border border-gray-100 p-4"
+        >
           <div className="h-16 w-24 animate-pulse rounded-xl bg-gray-200" />
           <div className="flex-1 space-y-2">
             <div className="h-4 w-32 animate-pulse rounded bg-gray-200" />
@@ -221,10 +282,17 @@ function Hero() {
     }
 
     return sampleVehicles.map((vehicle, index) => (
-      <div key={vehicle._id ?? index} className="flex items-center gap-4 rounded-2xl border border-gray-100 p-4">
+      <div
+        key={vehicle._id ?? index}
+        className="flex items-center gap-4 rounded-2xl border border-gray-100 p-4"
+      >
         <div
           className="h-16 w-24 rounded-xl bg-cover bg-center"
-          style={{ backgroundImage: `url(${VEHICLE_IMAGES[index % VEHICLE_IMAGES.length]})` }}
+          style={{
+            backgroundImage: `url(${
+              VEHICLE_IMAGES[index % VEHICLE_IMAGES.length]
+            })`,
+          }}
         />
         <div className="flex-1">
           <div className="font-semibold text-gray-900">{vehicle.model}</div>
@@ -233,7 +301,12 @@ function Hero() {
           </div>
         </div>
         <div className="text-right">
-          <div className="text-sm font-semibold text-gray-900">{formatCurrency(vehicle.dailyRate)}</div>
+          <div className="text-sm font-semibold text-gray-900">
+            {new Intl.NumberFormat('vi-VN', {
+              style: 'currency',
+              currency: 'VND',
+            }).format(vehicle.dailyRate ?? 0)}
+          </div>
           <div className="text-xs text-gray-500">per day</div>
         </div>
       </div>
@@ -252,14 +325,22 @@ function Hero() {
               Rent electric vehicles with real-time fleet intelligence
             </h1>
             <p className="max-w-xl text-base text-gray-600">
-              Manage bookings, charging, and fleet performance with one modern workspace. API friendly, operations ready, and designed for teams that move fast.
+              Manage bookings, charging, and fleet performance with one modern
+              workspace. API friendly, operations ready, and designed for teams
+              that move fast.
             </p>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <a className="inline-flex items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-primary/90" href="#pricing">
+              <a
+                className="inline-flex items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-primary/90"
+                href="#pricing"
+              >
                 Explore pricing
               </a>
-              <a className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-6 py-3 text-sm font-semibold text-gray-900 hover:border-primary/40 hover:text-primary" href="#how">
+              <a
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-6 py-3 text-sm font-semibold text-gray-900 hover:border-primary/40 hover:text-primary"
+                href="#how"
+              >
                 <ShieldCheck className="h-4 w-4" />
                 How we verify vehicles
               </a>
@@ -267,16 +348,22 @@ function Hero() {
 
             <dl className="grid gap-4 text-sm text-gray-700 sm:grid-cols-3">
               <div className="rounded-2xl border border-gray-200 bg-white p-4">
-                <div className="text-2xl font-semibold text-gray-900">{vehicleQuery.isLoading ? "--" : `${vehicles.length}`}</div>
+                <div className="text-2xl font-semibold text-gray-900">
+                  {vehicleQuery.isLoading ? '--' : `${vehicles.length}`}
+                </div>
                 <div className="text-xs text-gray-500">Total vehicles</div>
               </div>
               <div className="rounded-2xl border border-gray-200 bg-white p-4">
-                <div className="text-2xl font-semibold text-gray-900">{vehicleQuery.isLoading ? "--" : `${availableVehicles}`}</div>
+                <div className="text-2xl font-semibold text-gray-900">
+                  {vehicleQuery.isLoading ? '--' : `${availableVehicles}`}
+                </div>
                 <div className="text-xs text-gray-500">Available today</div>
               </div>
               <div className="rounded-2xl border border-gray-200 bg-white p-4">
                 <div className="text-2xl font-semibold text-gray-900">98%</div>
-                <div className="text-xs text-gray-500">Customer satisfaction</div>
+                <div className="text-xs text-gray-500">
+                  Customer satisfaction
+                </div>
               </div>
             </dl>
           </div>
@@ -288,7 +375,9 @@ function Hero() {
                 <div>
                   <p className="text-xs text-gray-500">Available today</p>
                   <p className="text-lg font-semibold text-gray-900">
-                    {vehicleQuery.isLoading ? "Updating..." : `${availableVehicles} vehicles`}
+                    {vehicleQuery.isLoading
+                      ? 'Updating...'
+                      : `${availableVehicles} vehicles`}
                   </p>
                 </div>
                 <div className="rounded-full bg-primary/10 p-3 text-primary">
@@ -297,7 +386,7 @@ function Hero() {
               </div>
               <div className="mt-6 space-y-4">{sampleContent()}</div>
               <div className="mt-6 rounded-2xl border border-gray-100 bg-gray-50 p-4 text-xs text-gray-500">
-                API-first architecture • Webhooks • Real-time telematics
+                API-first architecture ï¿½ Webhooks ï¿½ Real-time telematics
               </div>
             </div>
           </div>
@@ -312,13 +401,18 @@ function StationsPreview() {
   const stationQuery = useStationList();
 
   const stations = (stationQuery.data?.data?.data ?? []) as TStation[];
-  const activeStations = stations.filter((station) => station.status === "active");
+  const activeStations = stations.filter(
+    (station) => station.status === 'active'
+  );
   const topStations = activeStations.slice(0, 3);
 
   let stationList: ReactNode;
   if (stationQuery.isLoading) {
     stationList = Array.from({ length: 3 }).map((_, index) => (
-      <li key={`station-skeleton-${index}`} className="h-6 w-full animate-pulse rounded bg-gray-200" />
+      <li
+        key={`station-skeleton-${index}`}
+        className="h-6 w-full animate-pulse rounded bg-gray-200"
+      />
     ));
   } else if (stationQuery.isError) {
     stationList = (
@@ -327,14 +421,25 @@ function StationsPreview() {
       </li>
     );
   } else if (!topStations.length) {
-    stationList = <li className="rounded border border-gray-200 bg-white p-3 text-sm text-gray-600">No stations configured yet.</li>;
+    stationList = (
+      <li className="rounded border border-gray-200 bg-white p-3 text-sm text-gray-600">
+        No stations configured yet.
+      </li>
+    );
   } else {
     stationList = topStations.map((station) => (
-      <li key={station._id} className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-white/60 px-3 py-2">
+      <li
+        key={station._id}
+        className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-white/60 px-3 py-2"
+      >
         <MapPin className="h-4 w-4 text-primary" />
         <div className="flex flex-col">
-          <span className="text-sm font-semibold text-gray-900">{station.name}</span>
-          <span className="text-xs text-gray-600">{station.address ?? "Address updating"}</span>
+          <span className="text-sm font-semibold text-gray-900">
+            {station.name}
+          </span>
+          <span className="text-xs text-gray-600">
+            {station.address ?? 'Address updating'}
+          </span>
         </div>
       </li>
     ));
@@ -345,16 +450,22 @@ function StationsPreview() {
       <Container>
         <div className="grid items-center gap-8 lg:grid-cols-2">
           <div className="space-y-4">
-            <h2 className="text-2xl font-semibold text-gray-900 sm:text-3xl">Charging & pickup network</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 sm:text-3xl">
+              Charging & pickup network
+            </h2>
             <p className="text-sm text-gray-600">
-              EVrent currently operates {activeStations.length} active hubs across the network. Choose the location that best fits your route.
+              EVrent currently operates {activeStations.length} active hubs
+              across the network. Choose the location that best fits your route.
             </p>
             <ul className="space-y-2 text-sm text-gray-700">{stationList}</ul>
           </div>
           <div className="rounded-3xl border border-gray-200 bg-white p-2 shadow-sm">
             <div
               className="aspect-video w-full overflow-hidden rounded-2xl bg-cover bg-center"
-              style={{ backgroundImage: "url('https://images.unsplash.com/photo-1502920917128-1aa500764cbd?q=80&w=1600&auto=format&fit=crop')" }}
+              style={{
+                backgroundImage:
+                  "url('https://images.unsplash.com/photo-1502920917128-1aa500764cbd?q=80&w=1600&auto=format&fit=crop')",
+              }}
             />
           </div>
         </div>
@@ -365,10 +476,27 @@ function StationsPreview() {
 
 function ProcessSteps() {
   const steps = [
-    { title: "Search & compare", description: "Filter by range, seating, and availability in real time.", icon: Search },
-    { title: "Verify documents", description: "Upload driver credentials for instant verification.", icon: FileText },
-    { title: "Pick up & drive", description: "Collect at the selected hub with a guided handover.", icon: Handshake },
-    { title: "Smart charging", description: "Monitor charging sessions and pay with contactless billing.", icon: HandCoins },
+    {
+      title: 'Search & compare',
+      description: 'Filter by range, seating, and availability in real time.',
+      icon: Search,
+    },
+    {
+      title: 'Verify documents',
+      description: 'Upload driver credentials for instant verification.',
+      icon: FileText,
+    },
+    {
+      title: 'Pick up & drive',
+      description: 'Collect at the selected hub with a guided handover.',
+      icon: Handshake,
+    },
+    {
+      title: 'Smart charging',
+      description:
+        'Monitor charging sessions and pay with contactless billing.',
+      icon: HandCoins,
+    },
   ];
 
   return (
@@ -376,16 +504,26 @@ function ProcessSteps() {
       <Container>
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
           <div>
-            <h2 className="text-2xl font-semibold text-gray-900 sm:text-3xl">Simple, reliable rental workflow</h2>
-            <p className="mt-3 text-sm text-gray-600">Designed for operation teams with visibility into every booking, vehicle, and charging session.</p>
+            <h2 className="text-2xl font-semibold text-gray-900 sm:text-3xl">
+              Simple, reliable rental workflow
+            </h2>
+            <p className="mt-3 text-sm text-gray-600">
+              Designed for operation teams with visibility into every booking,
+              vehicle, and charging session.
+            </p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             {steps.map((step) => (
-              <div key={step.title} className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-5">
+              <div
+                key={step.title}
+                className="flex flex-col gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-5"
+              >
                 <div className="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <step.icon className="h-5 w-5" />
                 </div>
-                <div className="text-sm font-semibold text-gray-900">{step.title}</div>
+                <div className="text-sm font-semibold text-gray-900">
+                  {step.title}
+                </div>
                 <div className="text-xs text-gray-600">{step.description}</div>
               </div>
             ))}
@@ -409,21 +547,36 @@ function KPISection() {
 
   const vehicles = (vehicleQuery.data?.data?.data ?? []) as TVehicle[];
   const stations = (stationQuery.data?.data?.data ?? []) as TStation[];
-  const bookings = (bookingQuery.data?.data?.data ?? []) as TBooking[];
   const rentals = (rentalQuery.data?.data?.data ?? []) as TRental[];
 
-  const activeStations = stations.filter((station) => station.status === "active").length;
-  const availableVehicles = vehicles.filter((vehicle) => vehicle.status === "available").length;
-  const activeRentals = rentals.filter((rental) => rental.status === "ongoing").length;
+  const activeStations = stations.filter(
+    (station) => station.status === 'active'
+  ).length;
+  const availableVehicles = vehicles.filter(
+    (vehicle) => vehicle.status === 'available'
+  ).length;
+  const activeRentals = rentals.filter(
+    (rental) => rental.status === 'ongoing'
+  ).length;
 
   const isLoading =
-    vehicleQuery.isLoading || stationQuery.isLoading || bookingQuery.isLoading || rentalQuery.isLoading;
-  const isError = vehicleQuery.isError || stationQuery.isError || bookingQuery.isError || rentalQuery.isError;
+    vehicleQuery.isLoading ||
+    stationQuery.isLoading ||
+    bookingQuery.isLoading ||
+    rentalQuery.isLoading;
+  const isError =
+    vehicleQuery.isError ||
+    stationQuery.isError ||
+    bookingQuery.isError ||
+    rentalQuery.isError;
 
   let statsContent: ReactNode;
   if (isLoading) {
     statsContent = Array.from({ length: 4 }).map((_, index) => (
-      <div key={`kpi-skeleton-${index}`} className="h-28 animate-pulse rounded-2xl border border-gray-200 bg-white" />
+      <div
+        key={`kpi-skeleton-${index}`}
+        className="h-28 animate-pulse rounded-2xl border border-gray-200 bg-white"
+      />
     ));
   } else if (isError) {
     statsContent = (
@@ -433,14 +586,17 @@ function KPISection() {
     );
   } else {
     const stats = [
-      { value: activeStations.toString(), label: "Stations online" },
-      { value: vehicles.length.toString(), label: "Vehicles in fleet" },
-      { value: availableVehicles.toString(), label: "Vehicles available" },
-      { value: activeRentals.toString(), label: "Active rentals" },
+      { value: activeStations.toString(), label: 'Stations online' },
+      { value: vehicles.length.toString(), label: 'Vehicles in fleet' },
+      { value: availableVehicles.toString(), label: 'Vehicles available' },
+      { value: activeRentals.toString(), label: 'Active rentals' },
     ];
 
     statsContent = stats.map((stat) => (
-      <div key={stat.label} className="rounded-2xl border border-gray-200 bg-white p-6 text-center">
+      <div
+        key={stat.label}
+        className="rounded-2xl border border-gray-200 bg-white p-6 text-center"
+      >
         <div className="text-3xl font-semibold text-gray-900">{stat.value}</div>
         <div className="mt-1 text-xs text-gray-600">{stat.label}</div>
       </div>
@@ -450,7 +606,9 @@ function KPISection() {
   return (
     <section className="border-b bg-gray-50 py-12 lg:py-16">
       <Container>
-        <div className="grid grid-cols-2 gap-6 md:grid-cols-4">{statsContent}</div>
+        <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+          {statsContent}
+        </div>
       </Container>
     </section>
   );
@@ -461,13 +619,23 @@ function CTASection() {
     <section id="pricing" className="py-12 lg:py-16">
       <Container>
         <div className="rounded-3xl border border-gray-200 bg-gradient-to-br from-blue-50 to-white p-8 text-center shadow-sm sm:p-12">
-          <h3 className="text-2xl font-semibold text-gray-900 sm:text-3xl">Ready for greener mobility?</h3>
-          <p className="mt-2 text-sm text-gray-600">Create an account to claim an intro offer for your first rental.</p>
+          <h3 className="text-2xl font-semibold text-gray-900 sm:text-3xl">
+            Ready for greener mobility?
+          </h3>
+          <p className="mt-2 text-sm text-gray-600">
+            Create an account to claim an intro offer for your first rental.
+          </p>
           <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <a className="rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary/90" href="#get-started">
+            <a
+              className="rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white hover:bg-primary/90"
+              href="#get-started"
+            >
               Start now
             </a>
-            <a className="rounded-xl border border-gray-200 px-6 py-3 text-sm font-semibold text-gray-900 hover:border-primary/40" href="#how">
+            <a
+              className="rounded-xl border border-gray-200 px-6 py-3 text-sm font-semibold text-gray-900 hover:border-primary/40"
+              href="#how"
+            >
               View workflow
             </a>
           </div>
@@ -484,7 +652,9 @@ function Footer() {
         <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
           <div className="flex items-center gap-2 text-gray-500">
             <BatteryCharging className="h-4 w-4" />
-            <span>Â© {new Date().getFullYear()} EVrent. All rights reserved.</span>
+            <span>
+              Â© {new Date().getFullYear()} EVrent. All rights reserved.
+            </span>
           </div>
           <div className="flex items-center gap-4">
             <a className="hover:text-primary" href="#privacy">
@@ -508,7 +678,7 @@ const HomeLayout = () => {
     <div className="min-h-screen bg-white">
       <NavBar />
       <Hero />
-      <FeaturedVehicles />
+      {/* <FeaturedVehicles /> */}
       <StationsPreview />
       <ProcessSteps />
       <KPISection />
@@ -519,8 +689,3 @@ const HomeLayout = () => {
 };
 
 export default HomeLayout;
-
-
-
-
-

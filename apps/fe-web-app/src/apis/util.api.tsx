@@ -8,5 +8,6 @@ export const API_SUFFIX = {
   RENTAL_API: "/api/rentals",
   HANDOVER_API: "/api/handovers",
   PAYMENT_API: "/api/payments",
+  BRAND_API: "/api/brands",
 } as const;
 

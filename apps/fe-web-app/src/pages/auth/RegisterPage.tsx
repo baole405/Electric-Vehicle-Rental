@@ -1,28 +1,39 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { AxiosError } from "axios";
-import { ChevronLeft, Loader2, ShieldCheck, Upload, UserPlus } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/shadcn/ui/card";
-import { Label } from "@/components/shadcn/ui/label";
-import { Input } from "@/components/shadcn/ui/input";
-import { Button } from "@/components/shadcn/ui/button";
-import { Textarea } from "@/components/shadcn/ui/textarea";
-import { AuthApi } from "@/apis/auth.api";
-import { useAuthContext } from "@/contexts/auth-context";
-import { useUserDocument } from "@/hooks/use-user-document";
-import { ROUTES } from "@/routes/route.constants";
+import { AuthApi } from '@/apis/auth.api';
+import { Button } from '@/components/shadcn/ui/button';
 import {
-  CreateUserSchema,
-  type TCreateUser,
-  type TUser,
-} from "@/schema/user.schema";
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/shadcn/ui/card';
+import { Input } from '@/components/shadcn/ui/input';
+import { Label } from '@/components/shadcn/ui/label';
+import { Textarea } from '@/components/shadcn/ui/textarea';
+import { useAuthContext } from '@/contexts/auth-context';
+import { useUserDocument } from '@/hooks/use-user-document';
+import { ROUTES } from '@/routes/route.constants';
 import {
   UserDocumentStatusSchema,
   type TCreateUserDocument,
   type TUserDocument,
-} from "@/schema/user-document.schema";
+} from '@/schema/user-document.schema';
+import {
+  CreateUserSchema,
+  type TCreateUser,
+  type TUser,
+} from '@/schema/user.schema';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { AxiosError } from 'axios';
+import {
+  ChevronLeft,
+  Loader2,
+  ShieldCheck,
+  Upload,
+  UserPlus,
+} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { Link, useNavigate } from 'react-router-dom';
 
 type Step = 1 | 2 | 3;
 
@@ -36,17 +47,20 @@ type DocumentFormState = {
 };
 
 const defaultDocumentState: DocumentFormState = {
-  identityNumber: "",
-  drivingLicenseNumber: "",
-  notes: "",
+  identityNumber: '',
+  drivingLicenseNumber: '',
+  notes: '',
   frontImage: null,
   backImage: null,
   drivingLicenseImage: null,
 };
 
-const toPayload = (userId: string, state: DocumentFormState): TCreateUserDocument => ({
+const toPayload = (
+  userId: string,
+  state: DocumentFormState
+): TCreateUserDocument => ({
   user: userId,
-  documentType: "national_id",
+  documentType: 'national_id',
   identityNumber: state.identityNumber,
   drivingLicenseNumber: state.drivingLicenseNumber,
   frontImage: state.frontImage as File,
@@ -61,7 +75,8 @@ const RegisterPage = () => {
   const [createdUser, setCreatedUser] = useState<TUser | null>(currentUser);
   const [formError, setFormError] = useState<string | null>(null);
   const [docError, setDocError] = useState<string | null>(null);
-  const [docState, setDocState] = useState<DocumentFormState>(defaultDocumentState);
+  const [docState, setDocState] =
+    useState<DocumentFormState>(defaultDocumentState);
 
   const {
     handleSubmit,
@@ -70,11 +85,11 @@ const RegisterPage = () => {
   } = useForm<TCreateUser>({
     resolver: zodResolver(CreateUserSchema),
     defaultValues: {
-      fullName: "",
-      email: "",
-      phone: "",
-      password: "",
-      confirmPassword: "",
+      fullName: '',
+      email: '',
+      phone: '',
+      password: '',
+      confirmPassword: '',
     },
   });
 
@@ -88,30 +103,30 @@ const RegisterPage = () => {
 
   const existingDocument = useMemo<TUserDocument | undefined>(
     () => (documentResponse?.data?.data ?? [])[0],
-    [documentResponse?.data?.data],
+    [documentResponse?.data?.data]
   );
 
   const documentStatus = existingDocument?.status;
 
   const documentStatusLabel = documentStatus
     ? documentStatus
-        .split("_")
+        .split('_')
         .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(" ")
-    : "Not submitted";
+        .join(' ')
+    : 'Not submitted';
 
   const isCurrentDocVerified =
     documentStatus !== undefined &&
     UserDocumentStatusSchema.options.includes(documentStatus) &&
-    documentStatus === "verified";
+    documentStatus === 'verified';
 
   useEffect(() => {
     if (existingDocument) {
       setDocState((prev) => ({
         ...prev,
         identityNumber: existingDocument.identityNumber,
-        drivingLicenseNumber: existingDocument.drivingLicenseNumber ?? "",
-        notes: existingDocument.notes ?? "",
+        drivingLicenseNumber: existingDocument.drivingLicenseNumber ?? '',
+        notes: existingDocument.notes ?? '',
       }));
     }
   }, [existingDocument]);
@@ -133,12 +148,16 @@ const RegisterPage = () => {
       setDocState(defaultDocumentState);
       setStep(2);
     } catch (error) {
-      const message = error instanceof AxiosError ? error.response?.data?.message : null;
-      setFormError(message ?? "Could not create account. Please try again.");
+      const message =
+        error instanceof AxiosError ? error.response?.data?.message : null;
+      setFormError(message ?? 'Could not create account. Please try again.');
     }
   };
 
-  const handleDocumentInput = (field: keyof DocumentFormState, value: string | File | null) => {
+  const handleDocumentInput = (
+    field: keyof DocumentFormState,
+    value: string | File | null
+  ) => {
     setDocError(null);
     setDocState((prev) => ({
       ...prev,
@@ -148,11 +167,13 @@ const RegisterPage = () => {
 
   const validateDocState = (state: DocumentFormState) => {
     if (!state.identityNumber || !state.drivingLicenseNumber) {
-      setDocError("Identity and driving license numbers are required.");
+      setDocError('Identity and driving license numbers are required.');
       return false;
     }
     if (!state.frontImage || !state.backImage || !state.drivingLicenseImage) {
-      setDocError("Please attach the required document images before submitting.");
+      setDocError(
+        'Please attach the required document images before submitting.'
+      );
       return false;
     }
     return true;
@@ -160,7 +181,7 @@ const RegisterPage = () => {
 
   const handleSubmitDocuments = () => {
     if (!createdUser) {
-      setDocError("Please complete the registration step first.");
+      setDocError('Please complete the registration step first.');
       return;
     }
 
@@ -176,7 +197,7 @@ const RegisterPage = () => {
         setStep(3);
       },
       onError: () => {
-        setDocError("Could not upload documents. Please retry.");
+        setDocError('Could not upload documents. Please retry.');
       },
     });
   };
@@ -205,13 +226,17 @@ const RegisterPage = () => {
         <span>Account onboarding</span>
       </div>
       <div className="flex flex-wrap gap-3 text-sm text-gray-600">
-        <span className={step >= 1 ? "font-semibold text-gray-900" : ""}>1. Account details</span>
-        <span>></span>
-        <span className={step >= 2 ? "font-semibold text-gray-900" : ""}>
+        <span className={step >= 1 ? 'font-semibold text-gray-900' : ''}>
+          1. Account details
+        </span>
+        <span>&gt;</span>
+        <span className={step >= 2 ? 'font-semibold text-gray-900' : ''}>
           2. Document verification
         </span>
-        <span>></span>
-        <span className={step === 3 ? "font-semibold text-gray-900" : ""}>3. Ready to rent</span>
+        <span>&gt;</span>
+        <span className={step === 3 ? 'font-semibold text-gray-900' : ''}>
+          3. Ready to rent
+        </span>
       </div>
     </div>
   );
@@ -221,13 +246,26 @@ const RegisterPage = () => {
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="fullName">Full name</Label>
-          <Input id="fullName" placeholder="Nguyen Van A" {...register("fullName")} />
-          {errors.fullName && <p className="text-sm text-red-500">{errors.fullName.message}</p>}
+          <Input
+            id="fullName"
+            placeholder="Nguyen Van A"
+            {...register('fullName')}
+          />
+          {errors.fullName && (
+            <p className="text-sm text-red-500">{errors.fullName.message}</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" placeholder="you@example.com" {...register("email")} />
-          {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
+          <Input
+            id="email"
+            type="email"
+            placeholder="you@example.com"
+            {...register('email')}
+          />
+          {errors.email && (
+            <p className="text-sm text-red-500">{errors.email.message}</p>
+          )}
         </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -237,9 +275,11 @@ const RegisterPage = () => {
             id="phone"
             inputMode="tel"
             placeholder="0987 654 321"
-            {...register("phone")}
+            {...register('phone')}
           />
-          {errors.phone && <p className="text-sm text-red-500">{errors.phone.message}</p>}
+          {errors.phone && (
+            <p className="text-sm text-red-500">{errors.phone.message}</p>
+          )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
@@ -247,9 +287,11 @@ const RegisterPage = () => {
             id="password"
             type="password"
             placeholder="At least 8 characters"
-            {...register("password")}
+            {...register('password')}
           />
-          {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
+          {errors.password && (
+            <p className="text-sm text-red-500">{errors.password.message}</p>
+          )}
         </div>
       </div>
       <div className="space-y-2">
@@ -258,10 +300,12 @@ const RegisterPage = () => {
           id="confirmPassword"
           type="password"
           placeholder="Re-enter password"
-          {...register("confirmPassword")}
+          {...register('confirmPassword')}
         />
         {errors.confirmPassword && (
-          <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>
+          <p className="text-sm text-red-500">
+            {errors.confirmPassword.message}
+          </p>
         )}
       </div>
 
@@ -274,13 +318,16 @@ const RegisterPage = () => {
             Creating account...
           </>
         ) : (
-          "Create account"
+          'Create account'
         )}
       </Button>
 
       <p className="text-center text-sm text-gray-600">
-        Already have an account?{" "}
-        <Link to={ROUTES.LOGIN} className="font-semibold text-primary hover:underline">
+        Already have an account?{' '}
+        <Link
+          to={ROUTES.LOGIN}
+          className="font-semibold text-primary hover:underline"
+        >
           Sign in
         </Link>
       </p>
@@ -290,10 +337,12 @@ const RegisterPage = () => {
   const renderDocumentUpload = () => (
     <div className="space-y-6">
       <div className="rounded-md border border-dashed border-gray-200 bg-gray-50 p-4 text-sm">
-        <p className="font-medium text-gray-900">Document status: {documentStatusLabel}</p>
+        <p className="font-medium text-gray-900">
+          Document status: {documentStatusLabel}
+        </p>
         <p className="mt-1 text-gray-600">
-          Upload your identification so staff can verify your renter profile. You can skip this step
-          and return to it later from your profile page.
+          Upload your identification so staff can verify your renter profile.
+          You can skip this step and return to it later from your profile page.
         </p>
       </div>
 
@@ -305,7 +354,9 @@ const RegisterPage = () => {
               id="identityNumber"
               placeholder="123456789"
               value={docState.identityNumber}
-              onChange={(event) => handleDocumentInput("identityNumber", event.target.value)}
+              onChange={(event) =>
+                handleDocumentInput('identityNumber', event.target.value)
+              }
             />
           </div>
           <div className="space-y-2">
@@ -314,7 +365,9 @@ const RegisterPage = () => {
               id="drivingLicenseNumber"
               placeholder="B2-123456"
               value={docState.drivingLicenseNumber}
-              onChange={(event) => handleDocumentInput("drivingLicenseNumber", event.target.value)}
+              onChange={(event) =>
+                handleDocumentInput('drivingLicenseNumber', event.target.value)
+              }
             />
           </div>
         </div>
@@ -325,7 +378,9 @@ const RegisterPage = () => {
             id="notes"
             placeholder="Mention any special documents or conditions for verification."
             value={docState.notes}
-            onChange={(event) => handleDocumentInput("notes", event.target.value)}
+            onChange={(event) =>
+              handleDocumentInput('notes', event.target.value)
+            }
           />
         </div>
 
@@ -334,19 +389,21 @@ const RegisterPage = () => {
             id="frontImage"
             label="ID card - front"
             file={docState.frontImage}
-            onChange={(file) => handleDocumentInput("frontImage", file)}
+            onChange={(file) => handleDocumentInput('frontImage', file)}
           />
           <DocumentUploadField
             id="backImage"
             label="ID card - back"
             file={docState.backImage}
-            onChange={(file) => handleDocumentInput("backImage", file)}
+            onChange={(file) => handleDocumentInput('backImage', file)}
           />
           <DocumentUploadField
             id="drivingLicenseImage"
             label="Driving license"
             file={docState.drivingLicenseImage}
-            onChange={(file) => handleDocumentInput("drivingLicenseImage", file)}
+            onChange={(file) =>
+              handleDocumentInput('drivingLicenseImage', file)
+            }
           />
         </div>
       </div>
@@ -382,9 +439,9 @@ const RegisterPage = () => {
               <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Uploading...
             </>
           ) : isCurrentDocVerified ? (
-            "Documents already verified"
+            'Documents already verified'
           ) : (
-            "Submit documents"
+            'Submit documents'
           )}
         </Button>
       </div>
@@ -397,18 +454,22 @@ const RegisterPage = () => {
         <ShieldCheck className="h-8 w-8" />
       </div>
       <div>
-        <h2 className="text-xl font-semibold text-gray-900">Documents submitted</h2>
+        <h2 className="text-xl font-semibold text-gray-900">
+          Documents submitted
+        </h2>
         <p className="mt-2 text-sm text-gray-600">
-          We are reviewing your documents. You will receive an email once verification is complete.
-          You can continue exploring vehicles now and upload any missing files later in your
-          profile.
+          We are reviewing your documents. You will receive an email once
+          verification is complete. You can continue exploring vehicles now and
+          upload any missing files later in your profile.
         </p>
       </div>
       <div className="flex flex-col gap-2 sm:flex-row">
         <Button variant="outline" onClick={() => navigate(ROUTES.PROFILE)}>
           View profile
         </Button>
-        <Button onClick={() => navigate(ROUTES.VEHICLE)}>Browse vehicles</Button>
+        <Button onClick={() => navigate(ROUTES.VEHICLE)}>
+          Browse vehicles
+        </Button>
       </div>
     </div>
   );
@@ -439,7 +500,12 @@ const RegisterPage = () => {
   return (
     <div className="relative min-h-screen bg-gray-50">
       <div className="absolute left-4 top-4 z-10">
-        <Button variant="ghost" size="sm" onClick={handleBack} className="gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleBack}
+          className="gap-2"
+        >
           <ChevronLeft className="h-4 w-4" />
           Home
         </Button>
@@ -447,7 +513,9 @@ const RegisterPage = () => {
       <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-16">
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg text-gray-900">Get started with EVrent</CardTitle>
+            <CardTitle className="text-lg text-gray-900">
+              Get started with EVrent
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {renderStepHeader()}
@@ -477,7 +545,9 @@ const DocumentUploadField = ({
     <Upload className="h-6 w-6 text-gray-500" />
     <span className="font-medium text-gray-900">{label}</span>
     <span className="text-xs text-gray-500">
-      {file ? `${file.name} (${(file.size / 1024).toFixed(0)} KB)` : "Click to upload JPG or PNG"}
+      {file
+        ? `${file.name} (${(file.size / 1024).toFixed(0)} KB)`
+        : 'Click to upload JPG or PNG'}
     </span>
     <input
       id={id}

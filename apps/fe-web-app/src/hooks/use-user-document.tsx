@@ -30,3 +30,9 @@ export const useUserDocument = (userId?: string) => {
     submitDocument: submitMutation,
   };
 };
+
+export const useAllUserDocuments = () =>
+  useQuery({
+    queryKey: ["userDocumentsAll"],
+    queryFn: () => UserDocumentApi.getAllDocuments(),
+  });
