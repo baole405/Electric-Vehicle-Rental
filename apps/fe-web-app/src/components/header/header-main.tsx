@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Menu, Search } from "lucide-react";
 import { Button } from "@/components/shadcn/ui/button";
@@ -32,6 +32,15 @@ export default function HeaderMain(_: HeaderMainProps) {
   const effectiveRole = role ?? currentUser?.role;
   const isStaff = effectiveRole === "admin" || effectiveRole === "staff";
   const previousUserIdRef = useRef<string | null>(null);
+  const navLinks = useMemo(() => {
+    if (!isStaff) {
+      return NAV_LINKS;
+    }
+    const workspaceLink = { to: ROUTES.DASHBOARD, label: "Workspace" };
+    const combined = [...NAV_LINKS];
+    combined.splice(1, 0, workspaceLink);
+    return combined;
+  }, [isStaff]);
 
   useEffect(() => {
     if (!currentUser && (pathname.startsWith(ROUTES.DASHBOARD) || pathname.startsWith(ROUTES.PROFILE))) {
@@ -44,16 +53,26 @@ export default function HeaderMain(_: HeaderMainProps) {
     const previousId = previousUserIdRef.current;
     const shouldRedirect = effectiveRole === "admin" || effectiveRole === "staff";
 
-    if (shouldRedirect && currentId && previousId !== currentId && !pathname.startsWith(ROUTES.DASHBOARD)) {
+    if (!currentId) {
+      previousUserIdRef.current = null;
+      return;
+    }
+
+    if (
+      shouldRedirect &&
+      previousId &&
+      previousId !== currentId &&
+      !pathname.startsWith(ROUTES.DASHBOARD)
+    ) {
       navigate(ROUTES.DASHBOARD, { replace: true });
     }
 
     previousUserIdRef.current = currentId;
-  }, [currentUser, effectiveRole, navigate, pathname]);
+  }, [currentUser?._id, effectiveRole, navigate, pathname]);
 
   const handleLogout = () => {
     clearAuth();
-    navigate(ROUTES.ROOT);
+    navigate(ROUTES.HOME);
   };
 
   return (
@@ -67,7 +86,7 @@ export default function HeaderMain(_: HeaderMainProps) {
         </Link>
 
         <nav className="ml-6 hidden items-center gap-6 md:flex">
-          {NAV_LINKS.map((item) => (
+          {navLinks.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -79,17 +98,6 @@ export default function HeaderMain(_: HeaderMainProps) {
               {item.label}
             </NavLink>
           ))}
-          {isStaff ? (
-            <NavLink
-              to={ROUTES.DASHBOARD}
-              className={cn(
-                "text-sm text-gray-700 transition-colors hover:text-black",
-                pathname.startsWith(ROUTES.DASHBOARD) && "font-semibold text-black",
-              )}
-            >
-              Dashboard
-            </NavLink>
-          ) : null}
         </nav>
 
         <div className="flex-1" />
@@ -114,6 +122,11 @@ export default function HeaderMain(_: HeaderMainProps) {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-40">
+              {isStaff ? (
+                <DropdownMenuItem onClick={() => navigate(ROUTES.DASHBOARD)}>
+                  Workspace
+                </DropdownMenuItem>
+              ) : null}
               <DropdownMenuItem onClick={() => navigate(ROUTES.PROFILE)}>Profile</DropdownMenuItem>
               <DropdownMenuItem onClick={handleLogout} className="text-red-600">
                 Logout
@@ -144,7 +157,7 @@ export default function HeaderMain(_: HeaderMainProps) {
                 <Input placeholder="Search." className="pl-8" />
               </div>
               <div className="flex flex-col gap-3">
-                {NAV_LINKS.map((item) => (
+                {navLinks.map((item) => (
                   <Link
                     key={item.to}
                     to={item.to}
@@ -156,20 +169,17 @@ export default function HeaderMain(_: HeaderMainProps) {
                     {item.label}
                   </Link>
                 ))}
-                {isStaff ? (
-                  <Link
-                    to={ROUTES.DASHBOARD}
-                    className={cn(
-                      "text-base text-gray-700 hover:text-black",
-                      pathname.startsWith(ROUTES.DASHBOARD) && "font-medium text-black",
-                    )}
-                  >
-                    Dashboard
-                  </Link>
-                ) : null}
                 <div className="border-t pt-4">
                   {currentUser ? (
                     <>
+                      {isStaff ? (
+                        <button
+                          onClick={() => navigate(ROUTES.DASHBOARD)}
+                          className="block w-full py-1.5 text-left text-gray-700 hover:text-black"
+                        >
+                          Workspace
+                        </button>
+                      ) : null}
                       <button
                         onClick={() => navigate(ROUTES.PROFILE)}
                         className="block w-full py-1.5 text-left text-gray-700 hover:text-black"
