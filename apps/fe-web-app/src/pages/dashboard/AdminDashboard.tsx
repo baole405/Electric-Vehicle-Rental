@@ -10,12 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/shadcn/ui/select';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/shadcn/ui/tabs';
 import { Textarea } from '@/components/shadcn/ui/textarea';
 import { useAuthContext } from '@/contexts/auth-context';
 import { useBooking } from '@/hooks/use-booking';
@@ -37,8 +31,24 @@ import type { TStation } from '@/schema/station.schema';
 import type { TUserDocument } from '@/schema/user-document.schema';
 import type { TUser } from '@/schema/user.schema';
 import type { TVehicle } from '@/schema/vehicle.schema';
-import { Check, Loader2, Plus, RefreshCw, Trash2, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import {
+  Check,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Trash2,
+  X,
+  LayoutDashboard,
+  Users,
+  Building2,
+  Car,
+  ClipboardList,
+  Landmark,
+  CreditCard,
+  FileText,
+  type LucideIcon,
+} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 
 // API Request Types (server expects string IDs, not full objects)
@@ -74,7 +84,7 @@ type CreateStationForm = {
 
 type CreateVehicleForm = {
   vin: string;
-  model: string;
+  brandId: string;
   plateNo: string;
   stationId: string;
   status: TVehicle['status'];
@@ -118,11 +128,129 @@ type CreateBrandForm = {
   depositAmount: number;
   description?: string;
 };
+
+const ensureText = (value: unknown, fallback: string): string => {
+  if (value === null || value === undefined) {
+    return fallback;
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (typeof value === 'number' || typeof value === 'bigint') {
+    return value.toString();
+  }
+  if (typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    const candidates = [
+      'fullName',
+      'name',
+      'model',
+      'code',
+      'plateNo',
+      'identityNumber',
+      'vin',
+      '_id',
+    ];
+    for (const key of candidates) {
+      const candidateValue = record[key];
+      if (typeof candidateValue === 'string') {
+        return candidateValue;
+      }
+    }
+  }
+  return fallback;
+};
+
+const ensureArray = <T,>(value: unknown): T[] =>
+  Array.isArray(value) ? (value as T[]) : [];
+
+type SectionKey =
+  | 'overview'
+  | 'users'
+  | 'stations'
+  | 'vehicles'
+  | 'bookings'
+  | 'rentals'
+  | 'payments'
+  | 'documents'
+  | 'brands';
+
+type SectionConfig = {
+  key: SectionKey;
+  label: string;
+  icon: LucideIcon;
+  roles: Array<'admin' | 'staff'>;
+};
+
+const SECTION_CONFIG: SectionConfig[] = [
+  {
+    key: 'overview',
+    label: 'Overview',
+    icon: LayoutDashboard,
+    roles: ['admin'],
+  },
+  { key: 'users', label: 'Users', icon: Users, roles: ['admin'] },
+  { key: 'stations', label: 'Stations', icon: Building2, roles: ['admin'] },
+  { key: 'vehicles', label: 'Vehicles', icon: Car, roles: ['admin'] },
+  {
+    key: 'bookings',
+    label: 'Orders',
+    icon: ClipboardList,
+    roles: ['admin', 'staff'],
+  },
+  { key: 'rentals', label: 'Rentals', icon: Landmark, roles: ['admin'] },
+  { key: 'payments', label: 'Payments', icon: CreditCard, roles: ['admin'] },
+  {
+    key: 'documents',
+    label: 'User documents',
+    icon: FileText,
+    roles: ['admin', 'staff'],
+  },
+  { key: 'brands', label: 'Brands', icon: Building2, roles: ['admin'] },
+];
 const AdminDashboard = () => {
   const { currentUser, role: cachedRole } = useAuthContext();
   const effectiveRole = cachedRole ?? currentUser?.role ?? 'renter';
   const isAdmin = effectiveRole === 'admin';
-  const isStaff = effectiveRole === 'admin' || effectiveRole === 'staff';
+  const isStaff = effectiveRole === 'staff';
+  const hasStaffAccess = isAdmin || isStaff;
+
+  const allowedSections = useMemo(
+    () =>
+      SECTION_CONFIG.filter((item) =>
+        isAdmin
+          ? item.roles.includes('admin')
+          : isStaff
+          ? item.roles.includes('staff')
+          : false
+      ),
+    [isAdmin, isStaff]
+  );
+  const sidebarItems = useMemo(
+    () =>
+      allowedSections.map((item) => {
+        const Icon = item.icon;
+        return {
+          key: item.key,
+          label: item.label,
+          icon: <Icon className="h-4 w-4" />,
+          roles: item.roles,
+        };
+      }),
+    [allowedSections]
+  );
+  const [activeSection, setActiveSection] = useState<SectionKey>(
+    (allowedSections[0]?.key ??
+      (isAdmin ? 'overview' : 'bookings')) as SectionKey
+  );
+  useEffect(() => {
+    if (
+      allowedSections.length > 0 &&
+      !allowedSections.some((item) => item.key === activeSection)
+    ) {
+      setActiveSection(allowedSections[0].key);
+    }
+  }, [activeSection, allowedSections]);
 
   const { useVehicleList, createVehicle, deleteVehicle } = useVehicleHook();
   const { useBookingList, createBooking, updateBooking, deleteBooking } =
@@ -144,35 +272,35 @@ const AdminDashboard = () => {
   const documentQuery = useAllUserDocuments();
 
   const vehicles = useMemo(
-    () => (vehicleQuery.data?.data?.data ?? []) as TVehicle[],
+    () => ensureArray<TVehicle>(vehicleQuery.data?.data?.data),
     [vehicleQuery.data?.data?.data]
   );
   const bookings = useMemo(
-    () => (bookingQuery.data?.data?.data ?? []) as TBooking[],
+    () => ensureArray<TBooking>(bookingQuery.data?.data?.data),
     [bookingQuery.data?.data?.data]
   );
   const rentals = useMemo(
-    () => (rentalQuery.data?.data?.data ?? []) as TRental[],
+    () => ensureArray<TRental>(rentalQuery.data?.data?.data),
     [rentalQuery.data?.data?.data]
   );
   const stations = useMemo(
-    () => (stationQuery.data?.data?.data ?? []) as TStation[],
+    () => ensureArray<TStation>(stationQuery.data?.data?.data),
     [stationQuery.data?.data?.data]
   );
   const users = useMemo(
-    () => (userQuery.data?.data?.data ?? []) as TUser[],
+    () => ensureArray<TUser>(userQuery.data?.data?.data),
     [userQuery.data?.data?.data]
   );
   const brands = useMemo(
-    () => (brandQuery.data?.data?.data ?? []) as TBrand[],
+    () => ensureArray<TBrand>(brandQuery.data?.data?.data),
     [brandQuery.data?.data?.data]
   );
   const payments = useMemo(
-    () => (paymentQuery.data?.data?.data ?? []) as TPayment[],
+    () => ensureArray<TPayment>(paymentQuery.data?.data?.data),
     [paymentQuery.data?.data?.data]
   );
   const userDocuments = useMemo(
-    () => (documentQuery.data?.data?.data ?? []) as TUserDocument[],
+    () => ensureArray<TUserDocument>(documentQuery.data?.data?.data),
     [documentQuery.data?.data?.data]
   );
 
@@ -207,7 +335,7 @@ const AdminDashboard = () => {
   const vehicleForm = useForm<CreateVehicleForm>({
     defaultValues: {
       vin: '',
-      model: '',
+      brandId: '',
       plateNo: '',
       stationId: '',
       status: 'available',
@@ -215,6 +343,10 @@ const AdminDashboard = () => {
       odometer: 0,
     },
   });
+
+  useEffect(() => {
+    vehicleForm.register('brandId');
+  }, [vehicleForm]);
 
   const bookingForm = useForm<CreateBookingForm>({
     defaultValues: {
@@ -268,9 +400,15 @@ const AdminDashboard = () => {
   const [paymentFeedback, setPaymentFeedback] = useState<string | null>(null);
   const [brandFeedback, setBrandFeedback] = useState<string | null>(null);
 
-  if (!isStaff) {
+  if (!hasStaffAccess) {
     return (
-      <DashboardLayout title="Restricted">
+      <DashboardLayout
+        title="Restricted"
+        subtitle="Staff workspace only"
+        menuItems={[]}
+        activeKey="overview"
+        onSelect={() => undefined}
+      >
         <Card className="mx-auto mt-20 max-w-lg space-y-4 p-8 text-center">
           <h2 className="text-lg font-semibold text-gray-900">
             Staff access required
@@ -322,8 +460,18 @@ const AdminDashboard = () => {
   const handleVehicleSubmit = vehicleForm.handleSubmit(async (values) => {
     try {
       setVehicleFeedback(null);
+      if (!values.brandId) {
+        setVehicleFeedback('Please select a brand for the vehicle.');
+        return;
+      }
+      const brandRecord = brands.find((brand) => brand._id === values.brandId);
       await createVehicle.mutateAsync({
-        ...values,
+        brand: values.brandId,
+        model: brandRecord?.name ?? 'Unknown model',
+        vin: values.vin,
+        plateNo: values.plateNo,
+        stationId: values.stationId,
+        status: values.status,
         batteryPercent:
           values.batteryPercent !== undefined
             ? Number(values.batteryPercent)
@@ -334,7 +482,7 @@ const AdminDashboard = () => {
       setVehicleFeedback('Vehicle created.');
       vehicleForm.reset({
         vin: '',
-        model: '',
+        brandId: '',
         plateNo: '',
         stationId: '',
         status: 'available',
@@ -468,20 +616,19 @@ const AdminDashboard = () => {
     }
   });
   return (
-    <DashboardLayout title="Operations dashboard">
-      <Tabs defaultValue="overview">
-        <TabsList className="grid w-full grid-cols-3 gap-2 md:grid-cols-6">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="stations">Stations</TabsTrigger>
-          <TabsTrigger value="vehicles">Vehicles</TabsTrigger>
-          <TabsTrigger value="bookings">Bookings</TabsTrigger>
-          <TabsTrigger value="rentals">Rentals</TabsTrigger>
-          <TabsTrigger value="payments">Payments</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="brands">Brands</TabsTrigger>
-        </TabsList>
-        <TabsContent value="overview" className="space-y-6 pt-6">
+    <DashboardLayout
+      title={isAdmin ? 'Operations dashboard' : 'Workspace'}
+      subtitle={
+        isAdmin
+          ? 'Control center for fleet, stations, and orders'
+          : 'Review customer orders and documents'
+      }
+      menuItems={sidebarItems}
+      activeKey={activeSection}
+      onSelect={(key) => setActiveSection(key as SectionKey)}
+    >
+      {activeSection === 'overview' && (
+        <div className="space-y-6 pt-6">
           <section className="grid gap-4 md:grid-cols-4">
             <StatCard
               label="Vehicles"
@@ -535,33 +682,38 @@ const AdminDashboard = () => {
               ) : bookings.length === 0 ? (
                 <EmptyState message="No bookings at the moment." />
               ) : (
-                bookings.slice(0, 6).map((booking) => (
-                  <div
-                    key={booking._id}
-                    className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 text-sm"
-                  >
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        {booking.renter?.fullName ?? 'Unknown renter'}
-                      </p>
-                      <p className="text-gray-600">
-                        Pickup at{' '}
-                        <span className="font-medium">
-                          {booking.pickupStation?.name ?? booking.pickupStation}
-                        </span>
-                        {' on '}
-                        {fmt(booking.pickupTimeExpected)}
-                      </p>
-                      <p className="text-gray-500">
-                        Vehicle: {booking.vehicle?.model ?? 'TBD'} - ID:{' '}
-                        {booking._id}
-                      </p>
+                bookings.slice(0, 6).map((booking) => {
+                  return (
+                    <div
+                      key={booking._id}
+                      className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 text-sm"
+                    >
+                      <div>
+                        <p className="font-semibold text-gray-900">
+                          {ensureText(booking.renter, 'Unknown renter')}
+                        </p>
+                        <p className="text-gray-600">
+                          Pickup at{' '}
+                          <span className="font-medium">
+                            {ensureText(
+                              booking.pickupStation,
+                              'Unknown station'
+                            )}
+                          </span>
+                          {' on '}
+                          {fmt(booking.pickupTimeExpected)}
+                        </p>
+                        <p className="text-gray-500">
+                          Vehicle: {ensureText(booking.vehicle, 'TBD')} - ID:{' '}
+                          {booking._id}
+                        </p>
+                      </div>
+                      <BadgeStatus variant={mapStatusColor(booking.status)}>
+                        {statusText(booking.status)}
+                      </BadgeStatus>
                     </div>
-                    <BadgeStatus variant={mapStatusColor(booking.status)}>
-                      {statusText(booking.status)}
-                    </BadgeStatus>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </Card>
@@ -579,33 +731,42 @@ const AdminDashboard = () => {
               {handover.isLoading ? (
                 <TableLoader />
               ) : handover.data?.data?.data?.length ? (
-                (handover.data.data.data ?? []).slice(0, 5).map((entry) => (
-                  <div
-                    key={entry._id}
-                    className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 text-sm"
-                  >
-                    <div>
-                      <p className="font-semibold text-gray-900 capitalize">
-                        {entry.type}
-                      </p>
-                      <p className="text-gray-600">
-                        Rental: {entry.rental?.vehicle?.model ?? entry.rental} -{' '}
-                        {fmt(entry.createdAt)}
-                      </p>
-                      <p className="text-gray-500">
-                        Station: {entry.stationId} - Staff:{' '}
-                        {entry.staff?.fullName ?? 'unknown'}
-                      </p>
+                (handover.data.data.data ?? []).slice(0, 5).map((entry) => {
+                  return (
+                    <div
+                      key={entry._id}
+                      className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 text-sm"
+                    >
+                      <div>
+                        <p className="font-semibold text-gray-900 capitalize">
+                          {entry.type}
+                        </p>
+                        <p className="text-gray-600">
+                          Rental:{' '}
+                          {ensureText(
+                            entry.rental?.vehicle ?? entry.rental,
+                            'Unknown rental'
+                          )}{' '}
+                          - {fmt(entry.createdAt)}
+                        </p>
+                        <p className="text-gray-500">
+                          Station:{' '}
+                          {ensureText(entry.stationId, 'Unknown station')} -
+                          Staff: {ensureText(entry.staff, 'unknown')}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               ) : (
                 <EmptyState message="No handovers recorded." />
               )}
             </div>
           </Card>
-        </TabsContent>
-        <TabsContent value="users" className="space-y-6 pt-6">
+        </div>
+      )}
+      {activeSection === 'users' && (
+        <div className="space-y-6 pt-6">
           {isAdmin ? (
             <Card className="p-6">
               <div className="mb-4 flex items-center justify-between">
@@ -702,37 +863,41 @@ const AdminDashboard = () => {
               ) : users.length === 0 ? (
                 <EmptyState message="No users were found." />
               ) : (
-                users.map((user) => (
-                  <div
-                    key={user._id}
-                    className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 text-sm"
-                  >
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        {user.fullName}
-                      </p>
-                      <p className="text-gray-600">{user.email}</p>
-                      <p className="text-xs text-gray-500 capitalize">
-                        {user.role} - status: {user.status}
-                      </p>
+                users.map((user) => {
+                  return (
+                    <div
+                      key={user._id}
+                      className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 text-sm"
+                    >
+                      <div>
+                        <p className="font-semibold text-gray-900">
+                          {user.fullName}
+                        </p>
+                        <p className="text-gray-600">{user.email}</p>
+                        <p className="text-xs text-gray-500 capitalize">
+                          {user.role} - status: {user.status}
+                        </p>
+                      </div>
+                      {isAdmin ? (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={deleteUser.isPending}
+                          onClick={() => deleteUser.mutate(user._id)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" /> Remove
+                        </Button>
+                      ) : null}
                     </div>
-                    {isAdmin ? (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={deleteUser.isPending}
-                        onClick={() => deleteUser.mutate(user._id)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" /> Remove
-                      </Button>
-                    ) : null}
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </Card>
-        </TabsContent>
-        <TabsContent value="stations" className="space-y-6 pt-6">
+        </div>
+      )}
+      {activeSection === 'stations' && (
+        <div className="space-y-6 pt-6">
           {isAdmin ? (
             <Card className="p-6">
               <div className="mb-4 flex items-center justify-between">
@@ -810,39 +975,43 @@ const AdminDashboard = () => {
               ) : stations.length === 0 ? (
                 <EmptyState message="No station records found." />
               ) : (
-                stations.map((station) => (
-                  <div
-                    key={station._id}
-                    className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 text-sm"
-                  >
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        {station.name}
-                      </p>
-                      <p className="text-gray-600">
-                        {station.code} - {station.address ?? 'No address'}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Status: {station.status}
-                      </p>
+                stations.map((station) => {
+                  return (
+                    <div
+                      key={station._id}
+                      className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 text-sm"
+                    >
+                      <div>
+                        <p className="font-semibold text-gray-900">
+                          {station.name}
+                        </p>
+                        <p className="text-gray-600">
+                          {station.code} - {station.address ?? 'No address'}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Status: {station.status}
+                        </p>
+                      </div>
+                      {isAdmin ? (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={deleteStation.isPending}
+                          onClick={() => deleteStation.mutate(station._id)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        </Button>
+                      ) : null}
                     </div>
-                    {isAdmin ? (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={deleteStation.isPending}
-                        onClick={() => deleteStation.mutate(station._id)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" /> Delete
-                      </Button>
-                    ) : null}
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </Card>
-        </TabsContent>
-        <TabsContent value="vehicles" className="space-y-6 pt-6">
+        </div>
+      )}
+      {activeSection === 'vehicles' && (
+        <div className="space-y-6 pt-6">
           {isAdmin ? (
             <Card className="p-6">
               <div className="mb-4 flex items-center justify-between">
@@ -863,8 +1032,24 @@ const AdminDashboard = () => {
                   <Input id="vehicleVin" {...vehicleForm.register('vin')} />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="vehicleModel">Model</Label>
-                  <Input id="vehicleModel" {...vehicleForm.register('model')} />
+                  <Label htmlFor="vehicleBrand">Brand</Label>
+                  <Select
+                    value={vehicleForm.watch('brandId')}
+                    onValueChange={(value) =>
+                      vehicleForm.setValue('brandId', value)
+                    }
+                  >
+                    <SelectTrigger id="vehicleBrand">
+                      <SelectValue placeholder="Select brand" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {brands.map((brand) => (
+                        <SelectItem key={brand._id} value={brand._id}>
+                          {brand.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="vehiclePlate">Plate number</Label>
@@ -971,165 +1156,181 @@ const AdminDashboard = () => {
               ) : vehicles.length === 0 ? (
                 <EmptyState message="No vehicles registered." />
               ) : (
-                vehicles.map((vehicle) => (
-                  <div
-                    key={vehicle._id}
-                    className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 text-sm"
-                  >
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        {vehicle.model} ({vehicle.plateNo})
-                      </p>
-                      <p className="text-gray-600">
-                        VIN {vehicle.vin} - Station {vehicle.stationId}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Battery {vehicle.batteryPercent}% - Odo{' '}
-                        {vehicle.odometer} km
-                      </p>
+                vehicles.map((vehicle) => {
+                  const brandLabel =
+                    typeof vehicle.brand === 'string'
+                      ? vehicle.brand
+                      : vehicle.brand?.name;
+                  return (
+                    <div
+                      key={vehicle._id}
+                      className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 text-sm"
+                    >
+                      <div>
+                        <p className="font-semibold text-gray-900">
+                          {brandLabel ?? vehicle.model} ({vehicle.plateNo})
+                        </p>
+                        <p className="text-gray-600">Model: {vehicle.model}</p>
+                        <p className="text-gray-600">
+                          VIN {vehicle.vin} - Station {vehicle.stationId}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Battery {vehicle.batteryPercent}% - Odo{' '}
+                          {vehicle.odometer} km
+                        </p>
+                      </div>
+                      {isAdmin ? (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={deleteVehicle.isPending}
+                          onClick={() => deleteVehicle.mutate(vehicle._id)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        </Button>
+                      ) : null}
                     </div>
-                    {isAdmin ? (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={deleteVehicle.isPending}
-                        onClick={() => deleteVehicle.mutate(vehicle._id)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" /> Delete
-                      </Button>
-                    ) : null}
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </Card>
-        </TabsContent>
-        <TabsContent value="bookings" className="space-y-6 pt-6">
-          <Card className="p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Create booking
-              </h3>
-              <RefreshButton
-                onClick={() => bookingQuery.refetch()}
-                loading={bookingQuery.isLoading}
-              />
-            </div>
-            <form
-              className="grid gap-4 md:grid-cols-2"
-              onSubmit={handleBookingSubmit}
-            >
-              <div className="space-y-2">
-                <Label htmlFor="bookingRenter">Renter (userId)</Label>
-                <Input id="bookingRenter" {...bookingForm.register('renter')} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bookingStation">Pickup station</Label>
-                <Input
-                  id="bookingStation"
-                  {...bookingForm.register('pickupStation')}
+        </div>
+      )}
+      {activeSection === 'bookings' && (
+        <div className="space-y-6 pt-6">
+          {isAdmin ? (
+            <Card className="p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Create booking
+                </h3>
+                <RefreshButton
+                  onClick={() => bookingQuery.refetch()}
+                  loading={bookingQuery.isLoading}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="bookingVehicle">Vehicle (optional)</Label>
-                <Input
-                  id="bookingVehicle"
-                  {...bookingForm.register('vehicle')}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bookingTime">Pickup time</Label>
-                <Input
-                  id="bookingTime"
-                  type="datetime-local"
-                  {...bookingForm.register('pickupTimeExpected')}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bookingStatus">Status</Label>
-                <Select
-                  value={bookingForm.watch('status')}
-                  onValueChange={(value) =>
-                    bookingForm.setValue('status', value)
-                  }
-                >
-                  <SelectTrigger id="bookingStatus">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-end">
-                <Button type="submit" disabled={createBooking.isPending}>
-                  {createBooking.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />{' '}
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="mr-2 h-4 w-4" /> Create booking
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-            {bookingFeedback && (
-              <p className="mt-4 text-sm text-gray-600">{bookingFeedback}</p>
-            )}
-          </Card>
+              <form
+                className="grid gap-4 md:grid-cols-2"
+                onSubmit={handleBookingSubmit}
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="bookingRenter">Renter (userId)</Label>
+                  <Input
+                    id="bookingRenter"
+                    {...bookingForm.register('renter')}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bookingStation">Pickup station</Label>
+                  <Input
+                    id="bookingStation"
+                    {...bookingForm.register('pickupStation')}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bookingVehicle">Vehicle (optional)</Label>
+                  <Input
+                    id="bookingVehicle"
+                    {...bookingForm.register('vehicle')}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bookingTime">Pickup time</Label>
+                  <Input
+                    id="bookingTime"
+                    type="datetime-local"
+                    {...bookingForm.register('pickupTimeExpected')}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bookingStatus">Status</Label>
+                  <Select
+                    value={bookingForm.watch('status')}
+                    onValueChange={(value) =>
+                      bookingForm.setValue('status', value)
+                    }
+                  >
+                    <SelectTrigger id="bookingStatus">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="confirmed">Confirmed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-end">
+                  <Button type="submit" disabled={createBooking.isPending}>
+                    {createBooking.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />{' '}
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="mr-2 h-4 w-4" /> Create booking
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+              {bookingFeedback && (
+                <p className="mt-4 text-sm text-gray-600">{bookingFeedback}</p>
+              )}
+            </Card>
+          ) : null}
 
-          <Card className="p-6">
-            <h3 className="mb-4 text-lg font-semibold text-gray-900">
-              Update booking status
-            </h3>
-            <form
-              className="grid gap-4 md:grid-cols-3"
-              onSubmit={handleBookingStatusSubmit}
-            >
-              <div className="space-y-2">
-                <Label htmlFor="bookingId">Booking ID</Label>
-                <Input id="bookingId" {...bookingStatusForm.register('id')} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bookingUpdateStatus">Status</Label>
-                <Select
-                  value={bookingStatusForm.watch('status')}
-                  onValueChange={(value) =>
-                    bookingStatusForm.setValue('status', value)
-                  }
-                >
-                  <SelectTrigger id="bookingUpdateStatus">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-end">
-                <Button type="submit" disabled={updateBooking.isPending}>
-                  {updateBooking.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />{' '}
-                      Updating...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="mr-2 h-4 w-4" /> Update
-                    </>
-                  )}
-                </Button>
-              </div>
-            </form>
-          </Card>
+          {isAdmin ? (
+            <Card className="p-6">
+              <h3 className="mb-4 text-lg font-semibold text-gray-900">
+                Update booking status
+              </h3>
+              <form
+                className="grid gap-4 md:grid-cols-3"
+                onSubmit={handleBookingStatusSubmit}
+              >
+                <div className="space-y-2">
+                  <Label htmlFor="bookingId">Booking ID</Label>
+                  <Input id="bookingId" {...bookingStatusForm.register('id')} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bookingUpdateStatus">Status</Label>
+                  <Select
+                    value={bookingStatusForm.watch('status')}
+                    onValueChange={(value) =>
+                      bookingStatusForm.setValue('status', value)
+                    }
+                  >
+                    <SelectTrigger id="bookingUpdateStatus">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="confirmed">Confirmed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-end">
+                  <Button type="submit" disabled={updateBooking.isPending}>
+                    {updateBooking.isPending ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />{' '}
+                        Updating...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="mr-2 h-4 w-4" /> Update
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          ) : null}
 
           <Card className="overflow-hidden">
             <div className="border-b px-6 py-4">
@@ -1143,43 +1344,49 @@ const AdminDashboard = () => {
               ) : bookings.length === 0 ? (
                 <EmptyState message="No bookings found." />
               ) : (
-                bookings.map((booking) => (
-                  <div
-                    key={booking._id}
-                    className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 text-sm"
-                  >
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        {booking._id}
-                      </p>
-                      <p className="text-gray-600">
-                        Renter: {booking.renter?.fullName ?? booking.renter}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Status: {booking.status} - Vehicle:{' '}
-                        {booking.vehicle?.model ?? booking.vehicle ?? 'TBD'}
-                      </p>
+                bookings.map((booking) => {
+                  return (
+                    <div
+                      key={booking._id}
+                      className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 text-sm"
+                    >
+                      <div>
+                        <p className="font-semibold text-gray-900">
+                          {booking._id}
+                        </p>
+                        <p className="text-gray-600">
+                          Renter: {ensureText(booking.renter, 'Unknown renter')}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Status: {booking.status} - Vehicle:{' '}
+                          {ensureText(booking.vehicle, 'TBD')}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <BadgeStatus variant={mapStatusColor(booking.status)}>
+                          {statusText(booking.status)}
+                        </BadgeStatus>
+                        {isAdmin ? (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            disabled={deleteBooking.isPending}
+                            onClick={() => deleteBooking.mutate(booking._id)}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> Remove
+                          </Button>
+                        ) : null}
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <BadgeStatus variant={mapStatusColor(booking.status)}>
-                        {statusText(booking.status)}
-                      </BadgeStatus>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={deleteBooking.isPending}
-                        onClick={() => deleteBooking.mutate(booking._id)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" /> Remove
-                      </Button>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </Card>
-        </TabsContent>
-        <TabsContent value="rentals" className="space-y-6 pt-6">
+        </div>
+      )}
+      {activeSection === 'rentals' && (
+        <div className="space-y-6 pt-6">
           <Card className="p-6">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900">
@@ -1270,43 +1477,47 @@ const AdminDashboard = () => {
               ) : rentals.length === 0 ? (
                 <EmptyState message="No rental records found." />
               ) : (
-                rentals.map((rental) => (
-                  <div
-                    key={rental._id}
-                    className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 text-sm"
-                  >
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        {rental.vehicle?.model ?? rental.vehicle}
-                      </p>
-                      <p className="text-gray-600">
-                        Renter: {rental.renter?.fullName ?? rental.renter}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {fmt(rental.pickupTime)} →{' '}
-                        {fmt(rental.returnTime ?? undefined)}
-                      </p>
+                rentals.map((rental) => {
+                  return (
+                    <div
+                      key={rental._id}
+                      className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 text-sm"
+                    >
+                      <div>
+                        <p className="font-semibold text-gray-900">
+                          {ensureText(rental.vehicle, 'Unknown vehicle')}
+                        </p>
+                        <p className="text-gray-600">
+                          Renter: {ensureText(rental.renter, 'Unknown renter')}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {fmt(rental.pickupTime)} ΓåÆ{' '}
+                          {fmt(rental.returnTime ?? undefined)}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <BadgeStatus variant={mapStatusColor(rental.status)}>
+                          {statusText(rental.status)}
+                        </BadgeStatus>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={deleteRental.isPending}
+                          onClick={() => deleteRental.mutate(rental._id)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-2">
-                      <BadgeStatus variant={mapStatusColor(rental.status)}>
-                        {statusText(rental.status)}
-                      </BadgeStatus>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={deleteRental.isPending}
-                        onClick={() => deleteRental.mutate(rental._id)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" /> Delete
-                      </Button>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </Card>
-        </TabsContent>
-        <TabsContent value="payments" className="space-y-6 pt-6">
+        </div>
+      )}
+      {activeSection === 'payments' && (
+        <div className="space-y-6 pt-6">
           <Card className="p-6">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900">
@@ -1406,38 +1617,42 @@ const AdminDashboard = () => {
               ) : payments.length === 0 ? (
                 <EmptyState message="No payment records available." />
               ) : (
-                payments.map((payment) => (
-                  <div
-                    key={payment._id}
-                    className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 text-sm"
-                  >
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        #{payment._id}
-                      </p>
-                      <p className="text-gray-600">
-                        {payment.method} - {payment.status}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Total: {payment.totalAmount ?? 0} - Surcharge:{' '}
-                        {payment.surchargeAmount ?? 0}
-                      </p>
-                    </div>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      disabled={deletePayment.isPending}
-                      onClick={() => deletePayment.mutate(payment._id)}
+                payments.map((payment) => {
+                  return (
+                    <div
+                      key={payment._id}
+                      className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 text-sm"
                     >
-                      <Trash2 className="mr-2 h-4 w-4" /> Delete
-                    </Button>
-                  </div>
-                ))
+                      <div>
+                        <p className="font-semibold text-gray-900">
+                          #{payment._id}
+                        </p>
+                        <p className="text-gray-600">
+                          {payment.method} - {payment.status}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Total: {payment.totalAmount ?? 0} - Surcharge:{' '}
+                          {payment.surchargeAmount ?? 0}
+                        </p>
+                      </div>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        disabled={deletePayment.isPending}
+                        onClick={() => deletePayment.mutate(payment._id)}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" /> Delete
+                      </Button>
+                    </div>
+                  );
+                })
               )}
             </div>
           </Card>
-        </TabsContent>
-        <TabsContent value="documents" className="space-y-6 pt-6">
+        </div>
+      )}
+      {activeSection === 'documents' && (
+        <div className="space-y-6 pt-6">
           <Card className="overflow-hidden">
             <div className="border-b px-6 py-4">
               <h3 className="text-lg font-semibold text-gray-900">
@@ -1453,76 +1668,85 @@ const AdminDashboard = () => {
               ) : userDocuments.length === 0 ? (
                 <EmptyState message="No documents submitted yet." />
               ) : (
-                userDocuments.map((doc) => (
-                  <div
-                    key={doc._id}
-                    className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 text-sm"
-                  >
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        {doc.user?.fullName ?? doc.user} - {doc.documentType}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Status: {doc.status} - Submitted: {fmt(doc.submittedAt)}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={async () => {
-                          try {
-                            await UserDocumentApi.updateDocument(doc._id, {
-                              status: 'verified',
-                            });
-                            documentQuery.refetch();
-                          } catch (error) {
-                            console.error('Failed to update document', error);
-                          }
-                        }}
-                      >
-                        <Check className="mr-2 h-4 w-4" /> Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={async () => {
-                          try {
-                            await UserDocumentApi.updateDocument(doc._id, {
-                              status: 'rejected',
-                            });
-                            documentQuery.refetch();
-                          } catch (error) {
-                            console.error('Failed to update document', error);
-                          }
-                        }}
-                      >
-                        <X className="mr-2 h-4 w-4" /> Reject
-                      </Button>
-                      {isAdmin ? (
+                userDocuments.map((doc) => {
+                  return (
+                    <div
+                      key={doc._id}
+                      className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 text-sm"
+                    >
+                      <div>
+                        <p className="font-semibold text-gray-900">
+                          {ensureText(doc.user, 'Unknown user')} -{' '}
+                          {doc.documentType}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Status: {doc.status} - Submitted:{' '}
+                          {fmt(doc.submittedAt)}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
                         <Button
-                          variant="destructive"
                           size="sm"
+                          variant="outline"
                           onClick={async () => {
                             try {
-                              await UserDocumentApi.deleteDocument(doc._id);
+                              await UserDocumentApi.updateDocument(doc._id, {
+                                status: 'verified',
+                              });
                               documentQuery.refetch();
                             } catch (error) {
-                              console.error('Failed to delete document', error);
+                              console.error('Failed to update document', error);
                             }
                           }}
                         >
-                          <Trash2 className="mr-2 h-4 w-4" /> Delete
+                          <Check className="mr-2 h-4 w-4" /> Approve
                         </Button>
-                      ) : null}
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={async () => {
+                            try {
+                              await UserDocumentApi.updateDocument(doc._id, {
+                                status: 'rejected',
+                              });
+                              documentQuery.refetch();
+                            } catch (error) {
+                              console.error('Failed to update document', error);
+                            }
+                          }}
+                        >
+                          <X className="mr-2 h-4 w-4" /> Reject
+                        </Button>
+                        {isAdmin ? (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                await UserDocumentApi.deleteDocument(doc._id);
+                                documentQuery.refetch();
+                              } catch (error) {
+                                console.error(
+                                  'Failed to delete document',
+                                  error
+                                );
+                              }
+                            }}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete
+                          </Button>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </Card>
-        </TabsContent>
-        <TabsContent value="brands" className="space-y-6 pt-6">
+        </div>
+      )}
+      {activeSection === 'brands' && (
+        <div className="space-y-6 pt-6">
           {isAdmin ? (
             <Card className="p-6">
               <div className="mb-4 flex items-center justify-between">
@@ -1608,40 +1832,42 @@ const AdminDashboard = () => {
               ) : brands.length === 0 ? (
                 <EmptyState message="No brand data." />
               ) : (
-                brands.map((brand) => (
-                  <div
-                    key={brand._id}
-                    className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 text-sm"
-                  >
-                    <div>
-                      <p className="font-semibold text-gray-900">
-                        {brand.name} ({brand.code})
-                      </p>
-                      <p className="text-gray-600">
-                        Rate: {brand.baseDailyRate} - Deposit:{' '}
-                        {brand.depositAmount}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {brand.description ?? 'No description'}
-                      </p>
+                brands.map((brand) => {
+                  return (
+                    <div
+                      key={brand._id}
+                      className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 text-sm"
+                    >
+                      <div>
+                        <p className="font-semibold text-gray-900">
+                          {brand.name} ({brand.code})
+                        </p>
+                        <p className="text-gray-600">
+                          Rate: {brand.baseDailyRate} - Deposit:{' '}
+                          {brand.depositAmount}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {brand.description ?? 'No description'}
+                        </p>
+                      </div>
+                      {isAdmin ? (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          disabled={deleteBrand.isPending}
+                          onClick={() => deleteBrand.mutate(brand._id)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        </Button>
+                      ) : null}
                     </div>
-                    {isAdmin ? (
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        disabled={deleteBrand.isPending}
-                        onClick={() => deleteBrand.mutate(brand._id)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" /> Delete
-                      </Button>
-                    ) : null}
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </Card>
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
     </DashboardLayout>
   );
 };
