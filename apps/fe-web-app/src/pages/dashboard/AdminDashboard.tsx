@@ -23,7 +23,7 @@ import { useAllUserDocuments } from '@/hooks/use-user-document';
 import { useVehicleHook } from '@/hooks/use-vehicle';
 import DashboardLayout from '@/layouts/dashboard/dashboard-layout';
 import { BadgeStatus, cn, fmt, mapStatusColor, statusText } from '@/lib/utils';
-import type { TBooking } from '@/schema/booking.schema';
+import type { TBooking, TCreateBooking } from '@/schema/booking.schema';
 import type { TBrand } from '@/schema/brand.schema';
 import type { TPayment } from '@/schema/payment.schema';
 import type { TRental } from '@/schema/rental.schema';
@@ -93,11 +93,19 @@ type CreateVehicleForm = {
 };
 
 type CreateBookingForm = {
-  renter: string;
-  pickupStation: string;
-  pickupTimeExpected: string;
-  vehicle?: string;
-  status: string;
+  renterName: string;
+  phoneNumber: string;
+  email: string;
+  brandId: string;
+  stationId: string;
+  pickupDate: string;
+  pickupTime: string;
+  returnDate: string;
+  returnTime: string;
+  paymentMethod: string;
+  pickupLocation?: string;
+  promoCode?: string;
+  notes?: string;
 };
 
 type UpdateBookingStatusForm = {
@@ -221,8 +229,8 @@ const AdminDashboard = () => {
         isAdmin
           ? item.roles.includes('admin')
           : isStaff
-          ? item.roles.includes('staff')
-          : false
+            ? item.roles.includes('staff')
+            : false
       ),
     [isAdmin, isStaff]
   );
@@ -313,7 +321,7 @@ const AdminDashboard = () => {
       activeRentals: rentals.filter((rental) => rental.status === 'ongoing')
         .length,
       pendingBookings: bookings.filter(
-        (booking) => booking.status === 'pending'
+        (booking) => booking.status === 'pending_payment'
       ).length,
     }),
     [bookings, rentals, vehicles]
@@ -350,11 +358,16 @@ const AdminDashboard = () => {
 
   const bookingForm = useForm<CreateBookingForm>({
     defaultValues: {
-      renter: '',
-      pickupStation: '',
-      pickupTimeExpected: new Date().toISOString().slice(0, 16),
-      vehicle: '',
-      status: 'pending',
+      renterName: '',
+      phoneNumber: '',
+      email: '',
+      brandId: '',
+      stationId: '',
+      pickupDate: new Date().toISOString().slice(0, 10),
+      pickupTime: '09:00',
+      returnDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
+      returnTime: '09:00',
+      paymentMethod: 'online',
     },
   });
 
@@ -499,19 +512,34 @@ const AdminDashboard = () => {
     try {
       setBookingFeedback(null);
       await createBooking.mutateAsync({
-        renter: values.renter,
-        vehicle: values.vehicle ? values.vehicle : undefined,
-        pickupStation: values.pickupStation,
-        pickupTimeExpected: new Date(values.pickupTimeExpected).toISOString(),
-        status: values.status as TBooking['status'],
+        renterName: values.renterName,
+        phoneNumber: values.phoneNumber,
+        email: values.email,
+        brandId: values.brandId,
+        stationId: values.stationId,
+        pickupDate: values.pickupDate,
+        pickupTime: values.pickupTime,
+        returnDate: values.returnDate,
+        returnTime: values.returnTime,
+        paymentMethod: values.paymentMethod as TCreateBooking['paymentMethod'],
+        agreedToPaymentTerms: true,
+        agreedToDataSharing: true,
+        pickupLocation: values.pickupLocation,
+        promoCode: values.promoCode,
+        notes: values.notes,
       });
       setBookingFeedback('Booking created.');
       bookingForm.reset({
-        renter: '',
-        pickupStation: '',
-        pickupTimeExpected: new Date().toISOString().slice(0, 16),
-        vehicle: '',
-        status: 'pending',
+        renterName: '',
+        phoneNumber: '',
+        email: '',
+        brandId: '',
+        stationId: '',
+        pickupDate: new Date().toISOString().slice(0, 10),
+        pickupTime: '09:00',
+        returnDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
+        returnTime: '09:00',
+        paymentMethod: 'online',
       });
     } catch (error) {
       console.error('Failed to create booking', error);
@@ -629,29 +657,36 @@ const AdminDashboard = () => {
     >
       {activeSection === 'overview' && (
         <div className="space-y-6 pt-6">
-          <section className="grid gap-4 md:grid-cols-4">
+          {/* Stats Grid */}
+          <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             <StatCard
-              label="Vehicles"
+              label="Total Vehicles"
               value={stats.totalVehicles}
               meta={`${stats.availableVehicles} available`}
+              icon={Car}
+              trend={{ value: 12, positive: true }}
             />
             <StatCard
-              label="Active rentals"
+              label="Active Rentals"
               value={stats.activeRentals}
               meta="Ongoing handovers"
+              icon={ClipboardList}
+              trend={{ value: 8, positive: true }}
             />
             <StatCard
-              label="Pending bookings"
+              label="Pending Orders"
               value={stats.pendingBookings}
               meta="Awaiting approval"
+              icon={Loader2}
+              trend={{ value: 5, positive: false }}
             />
             <StatCard
-              label="Refresh data"
-              value="Manual"
-              action={
+              label="Quick Actions"
+              value={
                 <Button
                   size="sm"
                   variant="outline"
+                  className="w-full"
                   onClick={() => {
                     vehicleQuery.refetch();
                     bookingQuery.refetch();
@@ -660,109 +695,154 @@ const AdminDashboard = () => {
                     handover.refetch?.();
                   }}
                 >
-                  <RefreshCw className="mr-2 h-4 w-4" /> Refresh
+                  <RefreshCw className="mr-2 h-4 w-4" /> Refresh All
                 </Button>
               }
+              icon={LayoutDashboard}
             />
           </section>
 
-          <Card className="overflow-hidden">
-            <div className="border-b px-6 py-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Recent bookings
-              </h3>
-              <p className="text-sm text-gray-600">
-                Track incoming bookings and contact renters before creating a
-                handover.
-              </p>
-            </div>
-            <div className="divide-y">
-              {bookingQuery.isLoading ? (
-                <TableLoader />
-              ) : bookings.length === 0 ? (
-                <EmptyState message="No bookings at the moment." />
-              ) : (
-                bookings.slice(0, 6).map((booking) => {
-                  return (
-                    <div
-                      key={booking._id}
-                      className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 text-sm"
-                    >
-                      <div>
-                        <p className="font-semibold text-gray-900">
-                          {ensureText(booking.renter, 'Unknown renter')}
-                        </p>
-                        <p className="text-gray-600">
-                          Pickup at{' '}
-                          <span className="font-medium">
-                            {ensureText(
-                              booking.pickupStation,
-                              'Unknown station'
-                            )}
-                          </span>
-                          {' on '}
-                          {fmt(booking.pickupTimeExpected)}
-                        </p>
-                        <p className="text-gray-500">
-                          Vehicle: {ensureText(booking.vehicle, 'TBD')} - ID:{' '}
-                          {booking._id}
-                        </p>
+          {/* Recent Activity Cards Grid */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Recent Bookings */}
+            <Card className="flex flex-col">
+              <div className="border-b bg-muted/30 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                      <ClipboardList className="h-5 w-5 text-primary" />
+                      Recent Bookings
+                    </h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Latest customer orders and reservations
+                    </p>
+                  </div>
+                  <RefreshButton
+                    onClick={() => bookingQuery.refetch()}
+                    loading={bookingQuery.isLoading}
+                  />
+                </div>
+              </div>
+              <div className="flex-1 divide-y">
+                {bookingQuery.isLoading ? (
+                  <TableLoader />
+                ) : bookings.length === 0 ? (
+                  <EmptyState message="No bookings at the moment." />
+                ) : (
+                  bookings.slice(0, 5).map((booking) => {
+                    return (
+                      <div
+                        key={booking._id}
+                        className="group px-6 py-4 transition-colors hover:bg-muted/50"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 space-y-1">
+                            <p className="font-semibold text-gray-900">
+                              {booking.renterName || 'Unknown renter'}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Building2 className="h-3 w-3" />
+                                {booking.station?.name || booking.pickupStation?.name || 'Unknown station'}
+                              </span>
+                              <span>•</span>
+                              <span>{booking.pickupDate} {booking.pickupTime}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Brand: {booking.brand?.name || 'TBD'}
+                            </p>
+                          </div>
+                          <BadgeStatus variant={mapStatusColor(booking.status)}>
+                            {statusText(booking.status)}
+                          </BadgeStatus>
+                        </div>
                       </div>
-                      <BadgeStatus variant={mapStatusColor(booking.status)}>
-                        {statusText(booking.status)}
-                      </BadgeStatus>
-                    </div>
-                  );
-                })
+                    );
+                  })
+                )}
+              </div>
+              {bookings.length > 0 && (
+                <div className="border-t p-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setActiveSection('bookings')}
+                  >
+                    View all bookings →
+                  </Button>
+                </div>
               )}
-            </div>
-          </Card>
+            </Card>
 
-          <Card className="overflow-hidden">
-            <div className="border-b px-6 py-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Latest handovers
-              </h3>
-              <p className="text-sm text-gray-600">
-                Quick view of recent pickup / return logs.
-              </p>
-            </div>
-            <div className="divide-y">
-              {handover.isLoading ? (
-                <TableLoader />
-              ) : handover.data?.data?.data?.length ? (
-                (handover.data.data.data ?? []).slice(0, 5).map((entry) => {
-                  return (
-                    <div
-                      key={entry._id}
-                      className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 text-sm"
-                    >
-                      <div>
-                        <p className="font-semibold text-gray-900 capitalize">
-                          {entry.type}
-                        </p>
-                        <p className="text-gray-600">
-                          Rental:{' '}
-                          {ensureText(
-                            entry.rental?.vehicle ?? entry.rental,
-                            'Unknown rental'
-                          )}{' '}
-                          - {fmt(entry.createdAt)}
-                        </p>
-                        <p className="text-gray-500">
-                          Station:{' '}
-                          {ensureText(entry.stationId, 'Unknown station')} -
-                          Staff: {ensureText(entry.staff, 'unknown')}
-                        </p>
+            {/* Latest Handovers */}
+            <Card className="flex flex-col">
+              <div className="border-b bg-muted/30 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                      <Landmark className="h-5 w-5 text-primary" />
+                      Latest Handovers
+                    </h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Recent pickup and return logs
+                    </p>
+                  </div>
+                  <RefreshButton
+                    onClick={() => handover.refetch?.()}
+                    loading={handover.isLoading ?? false}
+                  />
+                </div>
+              </div>
+              <div className="flex-1 divide-y">
+                {handover.isLoading ? (
+                  <TableLoader />
+                ) : handover.data?.data?.data?.length ? (
+                  (handover.data.data.data ?? []).slice(0, 5).map((entry) => {
+                    return (
+                      <div
+                        key={entry._id}
+                        className="group px-6 py-4 transition-colors hover:bg-muted/50"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <p className="font-semibold capitalize text-gray-900">
+                              {entry.type}
+                            </p>
+                            <span className="text-xs text-muted-foreground">
+                              {fmt(entry.createdAt)}
+                            </span>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            <p>
+                              Rental:{' '}
+                              {ensureText(
+                                entry.rental?.vehicle ?? entry.rental,
+                                'Unknown rental'
+                              )}
+                            </p>
+                            <div className="mt-1 flex flex-wrap gap-2 text-xs">
+                              <span className="flex items-center gap-1">
+                                <Building2 className="h-3 w-3" />
+                                {ensureText(entry.stationId, 'Unknown station')}
+                              </span>
+                              <span>•</span>
+                              <span className="flex items-center gap-1">
+                                <Users className="h-3 w-3" />
+                                Staff: {ensureText(entry.staff, 'unknown')}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <EmptyState message="No handovers recorded." />
-              )}
-            </div>
-          </Card>
+                    );
+                  })
+                ) : (
+                  <EmptyState message="No handovers recorded." />
+                )}
+              </div>
+            </Card>
+          </div>
         </div>
       )}
       {activeSection === 'users' && (
@@ -1199,187 +1279,383 @@ const AdminDashboard = () => {
       )}
       {activeSection === 'bookings' && (
         <div className="space-y-6 pt-6">
+          {/* Create Booking Form - Admin Only */}
           {isAdmin ? (
-            <Card className="p-6">
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Create booking
-                </h3>
-                <RefreshButton
-                  onClick={() => bookingQuery.refetch()}
-                  loading={bookingQuery.isLoading}
-                />
+            <Card className="overflow-hidden">
+              <div className="border-b bg-muted/30 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                      <Plus className="h-5 w-5 text-primary" />
+                      Create Booking
+                    </h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Create a new booking for customers
+                    </p>
+                  </div>
+                  <RefreshButton
+                    onClick={() => bookingQuery.refetch()}
+                    loading={bookingQuery.isLoading}
+                  />
+                </div>
               </div>
-              <form
-                className="grid gap-4 md:grid-cols-2"
-                onSubmit={handleBookingSubmit}
-              >
-                <div className="space-y-2">
-                  <Label htmlFor="bookingRenter">Renter (userId)</Label>
-                  <Input
-                    id="bookingRenter"
-                    {...bookingForm.register('renter')}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bookingStation">Pickup station</Label>
-                  <Input
-                    id="bookingStation"
-                    {...bookingForm.register('pickupStation')}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bookingVehicle">Vehicle (optional)</Label>
-                  <Input
-                    id="bookingVehicle"
-                    {...bookingForm.register('vehicle')}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bookingTime">Pickup time</Label>
-                  <Input
-                    id="bookingTime"
-                    type="datetime-local"
-                    {...bookingForm.register('pickupTimeExpected')}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bookingStatus">Status</Label>
-                  <Select
-                    value={bookingForm.watch('status')}
-                    onValueChange={(value) =>
-                      bookingForm.setValue('status', value)
-                    }
-                  >
-                    <SelectTrigger id="bookingStatus">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="confirmed">Confirmed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-end">
-                  <Button type="submit" disabled={createBooking.isPending}>
-                    {createBooking.isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />{' '}
-                        Creating...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="mr-2 h-4 w-4" /> Create booking
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </form>
-              {bookingFeedback && (
-                <p className="mt-4 text-sm text-gray-600">{bookingFeedback}</p>
-              )}
+              <div className="p-6">
+                <form
+                  className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+                  onSubmit={handleBookingSubmit}
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="bookingRenterName">
+                      Renter Name <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="bookingRenterName"
+                      {...bookingForm.register('renterName')}
+                      placeholder="Enter renter name"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bookingPhone">
+                      Phone Number <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="bookingPhone"
+                      {...bookingForm.register('phoneNumber')}
+                      placeholder="0xxxxxxxxx"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bookingEmail">
+                      Email <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="bookingEmail"
+                      type="email"
+                      {...bookingForm.register('email')}
+                      placeholder="email@example.com"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bookingBrand">
+                      Brand <span className="text-destructive">*</span>
+                    </Label>
+                    <Select
+                      value={bookingForm.watch('brandId')}
+                      onValueChange={(value) =>
+                        bookingForm.setValue('brandId', value)
+                      }
+                    >
+                      <SelectTrigger id="bookingBrand">
+                        <SelectValue placeholder="Select brand" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {brands.map((brand) => (
+                          <SelectItem key={brand._id} value={brand._id}>
+                            {brand.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bookingStation">
+                      Pickup Station <span className="text-destructive">*</span>
+                    </Label>
+                    <Select
+                      value={bookingForm.watch('stationId')}
+                      onValueChange={(value) =>
+                        bookingForm.setValue('stationId', value)
+                      }
+                    >
+                      <SelectTrigger id="bookingStation">
+                        <SelectValue placeholder="Select station" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {stations.map((station) => (
+                          <SelectItem key={station._id} value={station._id}>
+                            {station.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bookingPayment">
+                      Payment Method <span className="text-destructive">*</span>
+                    </Label>
+                    <Select
+                      value={bookingForm.watch('paymentMethod')}
+                      onValueChange={(value) =>
+                        bookingForm.setValue('paymentMethod', value)
+                      }
+                    >
+                      <SelectTrigger id="bookingPayment">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="online">Online</SelectItem>
+                        <SelectItem value="cash">Cash</SelectItem>
+                        <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                        <SelectItem value="credit_card">Credit Card</SelectItem>
+                        <SelectItem value="e_wallet">E-Wallet</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bookingPickupDate">
+                      Pickup Date <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="bookingPickupDate"
+                      type="date"
+                      {...bookingForm.register('pickupDate')}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bookingPickupTime">
+                      Pickup Time <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="bookingPickupTime"
+                      type="time"
+                      {...bookingForm.register('pickupTime')}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bookingReturnDate">
+                      Return Date <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="bookingReturnDate"
+                      type="date"
+                      {...bookingForm.register('returnDate')}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bookingReturnTime">
+                      Return Time <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="bookingReturnTime"
+                      type="time"
+                      {...bookingForm.register('returnTime')}
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="bookingNotes">Notes (Optional)</Label>
+                    <Input
+                      id="bookingNotes"
+                      {...bookingForm.register('notes')}
+                      placeholder="Additional notes"
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    <Button
+                      type="submit"
+                      disabled={createBooking.isPending}
+                      className="w-full"
+                    >
+                      {createBooking.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Creating...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="mr-2 h-4 w-4" />
+                          Create Booking
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+                {bookingFeedback && (
+                  <div className="mt-4 rounded-md bg-muted px-4 py-3 text-sm text-muted-foreground">
+                    {bookingFeedback}
+                  </div>
+                )}
+              </div>
             </Card>
           ) : null}
 
+          {/* Update Booking Status - Admin Only */}
           {isAdmin ? (
-            <Card className="p-6">
-              <h3 className="mb-4 text-lg font-semibold text-gray-900">
-                Update booking status
-              </h3>
-              <form
-                className="grid gap-4 md:grid-cols-3"
-                onSubmit={handleBookingStatusSubmit}
-              >
-                <div className="space-y-2">
-                  <Label htmlFor="bookingId">Booking ID</Label>
-                  <Input id="bookingId" {...bookingStatusForm.register('id')} />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bookingUpdateStatus">Status</Label>
-                  <Select
-                    value={bookingStatusForm.watch('status')}
-                    onValueChange={(value) =>
-                      bookingStatusForm.setValue('status', value)
-                    }
-                  >
-                    <SelectTrigger id="bookingUpdateStatus">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="confirmed">Confirmed</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-end">
-                  <Button type="submit" disabled={updateBooking.isPending}>
-                    {updateBooking.isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />{' '}
-                        Updating...
-                      </>
-                    ) : (
-                      <>
-                        <Check className="mr-2 h-4 w-4" /> Update
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </form>
+            <Card className="overflow-hidden">
+              <div className="border-b bg-muted/30 px-6 py-4">
+                <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                  <Check className="h-5 w-5 text-primary" />
+                  Update Booking Status
+                </h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Change the status of an existing booking
+                </p>
+              </div>
+              <div className="p-6">
+                <form
+                  className="grid gap-6 md:grid-cols-3"
+                  onSubmit={handleBookingStatusSubmit}
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="bookingId">
+                      Booking ID <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="bookingId"
+                      {...bookingStatusForm.register('id')}
+                      placeholder="Enter booking ID"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="bookingUpdateStatus">
+                      New Status <span className="text-destructive">*</span>
+                    </Label>
+                    <Select
+                      value={bookingStatusForm.watch('status')}
+                      onValueChange={(value) =>
+                        bookingStatusForm.setValue('status', value)
+                      }
+                    >
+                      <SelectTrigger id="bookingUpdateStatus">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="confirmed">Confirmed</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-end">
+                    <Button
+                      type="submit"
+                      disabled={updateBooking.isPending}
+                      className="w-full"
+                    >
+                      {updateBooking.isPending ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Updating...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="mr-2 h-4 w-4" />
+                          Update Status
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </div>
             </Card>
           ) : null}
 
+          {/* All Bookings Table */}
           <Card className="overflow-hidden">
-            <div className="border-b px-6 py-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                All bookings
-              </h3>
+            <div className="border-b bg-muted/30 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                    <ClipboardList className="h-5 w-5 text-primary" />
+                    All Bookings
+                  </h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    View and manage all customer bookings
+                  </p>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Total: <span className="font-semibold">{bookings.length}</span>
+                </div>
+              </div>
             </div>
-            <div className="divide-y">
+            <div className="overflow-x-auto">
               {bookingQuery.isLoading ? (
                 <TableLoader />
               ) : bookings.length === 0 ? (
                 <EmptyState message="No bookings found." />
               ) : (
-                bookings.map((booking) => {
-                  return (
-                    <div
-                      key={booking._id}
-                      className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 text-sm"
-                    >
-                      <div>
-                        <p className="font-semibold text-gray-900">
-                          {booking._id}
-                        </p>
-                        <p className="text-gray-600">
-                          Renter: {ensureText(booking.renter, 'Unknown renter')}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Status: {booking.status} - Vehicle:{' '}
-                          {ensureText(booking.vehicle, 'TBD')}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <BadgeStatus variant={mapStatusColor(booking.status)}>
-                          {statusText(booking.status)}
-                        </BadgeStatus>
-                        {isAdmin ? (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            disabled={deleteBooking.isPending}
-                            onClick={() => deleteBooking.mutate(booking._id)}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" /> Remove
-                          </Button>
-                        ) : null}
-                      </div>
-                    </div>
-                  );
-                })
+                <table className="w-full">
+                  <thead className="border-b bg-muted/50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Booking ID
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Renter
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Vehicle
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Pickup Station
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Pickup Time
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Status
+                      </th>
+                      {isAdmin ? (
+                        <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          Actions
+                        </th>
+                      ) : null}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {bookings.map((booking) => {
+                      return (
+                        <tr
+                          key={booking._id}
+                          className="transition-colors hover:bg-muted/50"
+                        >
+                          <td className="px-6 py-4">
+                            <div className="font-mono text-xs text-muted-foreground">
+                              {booking.bookingCode || booking._id.slice(-8)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="font-medium text-gray-900">
+                              {booking.renterName || 'Unknown renter'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm text-muted-foreground">
+                              {booking.brand?.name || 'TBD'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm text-muted-foreground">
+                              {booking.station?.name || booking.pickupStation?.name || 'Unknown'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm text-muted-foreground">
+                              {booking.pickupDate} {booking.pickupTime}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <BadgeStatus variant={mapStatusColor(booking.status)}>
+                              {statusText(booking.status)}
+                            </BadgeStatus>
+                          </td>
+                          {isAdmin ? (
+                            <td className="px-6 py-4 text-right">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={deleteBooking.isPending}
+                                onClick={() => deleteBooking.mutate(booking._id)}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </td>
+                          ) : null}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               )}
             </div>
           </Card>
@@ -1654,95 +1930,190 @@ const AdminDashboard = () => {
       {activeSection === 'documents' && (
         <div className="space-y-6 pt-6">
           <Card className="overflow-hidden">
-            <div className="border-b px-6 py-4">
-              <h3 className="text-lg font-semibold text-gray-900">
-                User documents
-              </h3>
-              <p className="text-sm text-gray-600">
-                Approve or reject renter verification documents.
-              </p>
+            <div className="border-b bg-muted/30 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
+                    <FileText className="h-5 w-5 text-primary" />
+                    User Documents Verification
+                  </h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Review and approve customer verification documents
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="text-sm text-muted-foreground">
+                    Total: <span className="font-semibold">{userDocuments.length}</span>
+                  </div>
+                  <RefreshButton
+                    onClick={() => documentQuery.refetch()}
+                    loading={documentQuery.isLoading}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="divide-y">
+            <div className="overflow-x-auto">
               {documentQuery.isLoading ? (
                 <TableLoader />
               ) : userDocuments.length === 0 ? (
                 <EmptyState message="No documents submitted yet." />
               ) : (
-                userDocuments.map((doc) => {
-                  return (
-                    <div
-                      key={doc._id}
-                      className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 text-sm"
-                    >
-                      <div>
-                        <p className="font-semibold text-gray-900">
-                          {ensureText(doc.user, 'Unknown user')} -{' '}
-                          {doc.documentType}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Status: {doc.status} - Submitted:{' '}
-                          {fmt(doc.submittedAt)}
-                        </p>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={async () => {
-                            try {
-                              await UserDocumentApi.updateDocument(doc._id, {
-                                status: 'verified',
-                              });
-                              documentQuery.refetch();
-                            } catch (error) {
-                              console.error('Failed to update document', error);
-                            }
-                          }}
+                <table className="w-full">
+                  <thead className="border-b bg-muted/50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        User
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Document Type
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        ID Number
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Submitted
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {userDocuments.map((doc) => {
+                      const isPending = doc.status === 'pending';
+                      const isVerified = doc.status === 'verified';
+
+                      return (
+                        <tr
+                          key={doc._id}
+                          className="transition-colors hover:bg-muted/50"
                         >
-                          <Check className="mr-2 h-4 w-4" /> Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={async () => {
-                            try {
-                              await UserDocumentApi.updateDocument(doc._id, {
-                                status: 'rejected',
-                              });
-                              documentQuery.refetch();
-                            } catch (error) {
-                              console.error('Failed to update document', error);
-                            }
-                          }}
-                        >
-                          <X className="mr-2 h-4 w-4" /> Reject
-                        </Button>
-                        {isAdmin ? (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={async () => {
-                              try {
-                                await UserDocumentApi.deleteDocument(doc._id);
-                                documentQuery.refetch();
-                              } catch (error) {
-                                console.error(
-                                  'Failed to delete document',
-                                  error
-                                );
+                          <td className="px-6 py-4">
+                            <div className="font-medium text-gray-900">
+                              {ensureText(doc.user, 'Unknown user')}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm capitalize text-muted-foreground">
+                              {doc.documentType.replace('_', ' ')}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="font-mono text-xs text-muted-foreground">
+                              {doc.identityNumber || doc.drivingLicenseNumber || 'N/A'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <BadgeStatus
+                              variant={
+                                isVerified
+                                  ? 'success'
+                                  : isPending
+                                    ? 'warning'
+                                    : 'destructive'
                               }
-                            }}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" /> Delete
-                          </Button>
-                        ) : null}
-                      </div>
-                    </div>
-                  );
-                })
+                            >
+                              {statusText(doc.status)}
+                            </BadgeStatus>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm text-muted-foreground">
+                              {fmt(doc.submittedAt)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center justify-end gap-2">
+                              {isPending && (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-green-600 hover:bg-green-50 hover:text-green-700"
+                                    onClick={async () => {
+                                      try {
+                                        await UserDocumentApi.updateDocument(doc._id, {
+                                          status: 'verified',
+                                        });
+                                        documentQuery.refetch();
+                                      } catch (error) {
+                                        console.error('Failed to update document', error);
+                                      }
+                                    }}
+                                  >
+                                    <Check className="mr-1 h-4 w-4" />
+                                    Approve
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                                    onClick={async () => {
+                                      try {
+                                        await UserDocumentApi.updateDocument(doc._id, {
+                                          status: 'rejected',
+                                        });
+                                        documentQuery.refetch();
+                                      } catch (error) {
+                                        console.error('Failed to update document', error);
+                                      }
+                                    }}
+                                  >
+                                    <X className="mr-1 h-4 w-4" />
+                                    Reject
+                                  </Button>
+                                </>
+                              )}
+                              {isAdmin && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={async () => {
+                                    try {
+                                      await UserDocumentApi.deleteDocument(doc._id);
+                                      documentQuery.refetch();
+                                    } catch (error) {
+                                      console.error('Failed to delete document', error);
+                                    }
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               )}
             </div>
           </Card>
+
+          {/* Document Statistics */}
+          <div className="grid gap-6 md:grid-cols-3">
+            <StatCard
+              label="Pending Review"
+              value={userDocuments.filter((d) => d.status === 'pending').length}
+              meta="Documents awaiting approval"
+              icon={Loader2}
+            />
+            <StatCard
+              label="Verified"
+              value={userDocuments.filter((d) => d.status === 'verified').length}
+              meta="Approved documents"
+              icon={Check}
+            />
+            <StatCard
+              label="Rejected"
+              value={userDocuments.filter((d) => d.status === 'rejected').length}
+              meta="Declined documents"
+              icon={X}
+            />
+          </div>
         </div>
       )}
       {activeSection === 'brands' && (
@@ -1876,19 +2247,59 @@ const StatCard = ({
   value,
   meta,
   action,
+  icon,
+  trend,
 }: {
   label: string;
-  value: number | string;
+  value: number | string | React.ReactNode;
   meta?: string;
   action?: React.ReactNode;
-}) => (
-  <Card className="flex flex-col gap-2 p-6">
-    <div className="text-sm text-gray-500">{label}</div>
-    <div className="text-2xl font-semibold text-gray-900">{value}</div>
-    {meta && <div className="text-xs text-gray-500">{meta}</div>}
-    {action}
-  </Card>
-);
+  icon?: LucideIcon;
+  trend?: { value: number; positive: boolean };
+}) => {
+  const Icon = icon;
+  return (
+    <Card className="relative overflow-hidden transition-all hover:shadow-md">
+      <div className="p-6">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <p className="text-sm font-medium text-muted-foreground">{label}</p>
+            <div className="mt-2 flex items-baseline gap-2">
+              {typeof value === 'string' || typeof value === 'number' ? (
+                <>
+                  <h3 className="text-3xl font-bold tracking-tight">{value}</h3>
+                  {trend && (
+                    <span
+                      className={cn(
+                        'text-xs font-medium',
+                        trend.positive ? 'text-green-600' : 'text-red-600'
+                      )}
+                    >
+                      {trend.positive ? '+' : ''}
+                      {trend.value}%
+                    </span>
+                  )}
+                </>
+              ) : (
+                <div className="w-full">{value}</div>
+              )}
+            </div>
+            {meta && (
+              <p className="mt-1 text-xs text-muted-foreground">{meta}</p>
+            )}
+          </div>
+          {Icon && (
+            <div className="rounded-lg bg-primary/10 p-3">
+              <Icon className="h-5 w-5 text-primary" />
+            </div>
+          )}
+        </div>
+        {action && <div className="mt-4">{action}</div>}
+      </div>
+      <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-primary/20 to-primary" />
+    </Card>
+  );
+};
 
 const TableLoader = () => (
   <div className="flex items-center justify-center py-12 text-gray-600">

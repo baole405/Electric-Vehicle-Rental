@@ -1,17 +1,17 @@
 
-import { useVehicleHook } from "@/hooks/use-vehicle";
 import { Loader2, AlertTriangle } from "lucide-react";
-import VehicleCardList from "./components/Vehicle-Card";
 import HeaderMain from "@/components/header/header-main";
+import { useBrandHook } from "@/hooks/use-brand";
+import BrandCardList from "./components/brand-Card";
 
-export default function ListVehiclesPage() {
-  const { useVehicleList } = useVehicleHook();
-  const { data, isLoading, isError } = useVehicleList();
+export default function ListBrandPage() {
+  const { useBrandList } = useBrandHook();
+  const { data, isLoading, isError } = useBrandList();
 
   return (
     <div className="flex flex-col min-h-screen bg-blue-50">
       {/* Header */}
-      <HeaderMain title="Danh sách các loại xe điện" />
+      <HeaderMain title="Danh sách xe điện" />
 
       {/* Nội dung */}
       <div className="flex-1 container mx-auto py-6 px-4">
@@ -26,7 +26,7 @@ export default function ListVehiclesPage() {
             Không thể tải danh sách xe. Vui lòng thử lại sau.
           </div>
         ) : (
-          <VehicleCardList vehicles={data?.data?.data || []} />
+          <BrandCardList brands={data?.data?.data || []} />
         )}
       </div>
     </div>
