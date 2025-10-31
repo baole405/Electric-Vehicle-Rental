@@ -40,11 +40,20 @@ export const useBooking = () => {
     },
   });
 
+  const cancelBooking = useMutation({
+    mutationFn: (id: string) => BookingApi.cancelBooking(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["bookingList"] });
+      void queryClient.invalidateQueries({ queryKey: ["bookingById"] });
+    },
+  });
+
   return {
     useBookingList,
     useBookingById,
     createBooking,
     updateBooking,
     deleteBooking,
+    cancelBooking,
   };
 };

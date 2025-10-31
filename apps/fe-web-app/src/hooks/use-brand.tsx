@@ -11,6 +11,13 @@ export const useBrandHook = () => {
       queryFn: () => BrandApi.getBrands(),
     });
 
+  const useBrandsByStation = (stationId: string) =>
+    useQuery({
+      queryKey: ["brands-by-station", stationId],
+      queryFn: () => BrandApi.getBrandsByStation(stationId),
+      enabled: !!stationId, // Only run if stationId is provided
+    });
+
   const createBrand = useMutation({
     mutationFn: (payload: Partial<TBrand>) => BrandApi.createBrand(payload),
     onSuccess: () => {
@@ -35,6 +42,7 @@ export const useBrandHook = () => {
 
   return {
     useBrandList,
+    useBrandsByStation,
     createBrand,
     updateBrand,
     deleteBrand,

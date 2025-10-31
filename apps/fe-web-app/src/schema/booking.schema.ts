@@ -1,27 +1,109 @@
 import { z } from "zod";
-import { BookingStatusSchema } from "./common/booking-status.schema";
-import { VehicleSchema } from "./vehicle.schema";
-import { UserSchema } from "./user.schema";
-import { StationSchema } from "./station.schema";
 
+// Booking Schema theo API mới
 export const BookingSchema = z.object({
-  _id: z.string().min(1),
-  renter: UserSchema,       // ref tới User
-  pickupStation: StationSchema,
-  vehicle: VehicleSchema,                    // ref tới Vehicle, có thể null
-  pickupTimeExpected: z.string(),    // Thời gian nhận xe dự kiến
-  status: BookingStatusSchema,                   // Enum trạng thái booking
-  createdAt: z.string().datetime({ offset: true }),                  // Thời gian tạo
-  updatedAt: z.string().datetime({ offset: true }),                  // Thời gian cập nhật
+  _id: z.string(),
+  bookingCode: z.string(), // "BK20251031001"
+  renterName: z.string(),
+  phoneNumber: z.string(),
+  email: z.string().email(),
+
+  brand: z.object({
+    _id: z.string().optional(),
+    name: z.string(),
+    code: z.string(),
+    baseDailyRate: z.number().optional(),
+    depositAmount: z.number().optional(),
+    imageUrl: z.string().optional(),
+    specs: z.any().optional(),
+  }),
+
+  pickupStation: z.object({
+    _id: z.string().optional(),
+    name: z.string(),
+    code: z.string(),
+    address: z.string().optional(),
+    coordinates: z.any().optional(),
+  }).optional(),
+
+  station: z.object({
+    _id: z.string().optional(),
+    name: z.string(),
+    code: z.string(),
+  }).optional(),
+
+  vehicle: z.any().nullable().optional(),
+
+  // Thời gian
+  pickupDate: z.string(), // ISO date string or YYYY-MM-DD
+  pickupTime: z.string(), // HH:mm
+  returnDate: z.string(),
+  returnTime: z.string(),
+  pickupDateTime: z.string().optional(),
+  returnDateTime: z.string().optional(),
+  rentalDays: z.number(),
+
+  // Pricing
+  basePrice: z.number(),
+  additionalFees: z.number(),
+  totalRentalFee: z.number(),
+  depositAmount: z.number(),
+  totalPayable: z.number(),
+
+  pricing: z.object({
+    basePrice: z.number(),
+    additionalFees: z.number(),
+    totalRentalFee: z.number(),
+    depositAmount: z.number(),
+    totalPayable: z.number(),
+  }).optional(),
+
+  // Payment & extras
+  paymentMethod: z.string(),
+  pickupLocation: z.string().optional(),
+  promoCode: z.string().optional(),
+  notes: z.string().optional(),
+
+  // Agreements
+  agreedToPaymentTerms: z.boolean(),
+  agreedToDataSharing: z.boolean(),
+
+  // Status
+  status: z.enum(["pending_payment", "confirmed", "cancelled", "completed", "expired"]),
+
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
 });
 
+// Create Booking Schema
 export const CreateBookingSchema = z.object({
-  renter: z.string().min(1, "renter (userId) is required"),          // ref tới User
-  pickupStation: z.string().min(1, "pickupStation (stationId) is required"), // ref tới Station
-  vehicle: z.string().nullable().optional(),                         // ref tới Vehicle, có thể null
-  pickupTimeExpected: z.string().datetime({ offset: true }),         // Thời gian nhận xe dự kiến
-  status: BookingStatusSchema.default("pending"),                    // Enum trạng thái booking
+  renterName: z.string().min(1, "Tên người thuê là bắt buộc"),
+  phoneNumber: z.string()
+    .regex(/^0[0-9]{9}$/, "Số điện thoại phải có 10 số và bắt đầu bằng 0"),
+  email: z.string().email("Email không hợp lệ"),
+
+  brandId: z.string().min(1, "Vui lòng chọn dòng xe"),
+  stationId: z.string().min(1, "Vui lòng chọn trạm"),
+
+  pickupDate: z.string().min(1, "Ngày nhận xe là bắt buộc"),
+  pickupTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, "Giờ nhận xe không hợp lệ"),
+  returnDate: z.string().min(1, "Ngày trả xe là bắt buộc"),
+  returnTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, "Giờ trả xe không hợp lệ"),
+
+  paymentMethod: z.enum(["online", "cash", "bank_transfer", "credit_card", "e_wallet"]),
+
+  agreedToPaymentTerms: z.boolean().refine((val) => val === true, {
+    message: "Bạn phải đồng ý với điều khoản thanh toán",
+  }),
+  agreedToDataSharing: z.boolean().refine((val) => val === true, {
+    message: "Bạn phải đồng ý chia sẻ dữ liệu cá nhân",
+  }),
+
+  // Optional fields
+  pickupLocation: z.string().optional(),
+  promoCode: z.string().optional(),
+  notes: z.string().optional(),
 });
 
-export type TCreateBooking = z.infer<typeof CreateBookingSchema>;
 export type TBooking = z.infer<typeof BookingSchema>;
+export type TCreateBooking = z.infer<typeof CreateBookingSchema>;

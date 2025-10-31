@@ -39,11 +39,17 @@ export const useUserHook = () => {
     },
   });
 
+  const changePassword = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: { currentPassword: string; newPassword: string } }) =>
+      UserApi.changePassword(id, payload),
+  });
+
   return {
     useUserList,
     useUserById,
     createUser,
     updateUser,
     deleteUser,
+    changePassword,
   };
 };
