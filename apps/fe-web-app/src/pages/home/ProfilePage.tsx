@@ -52,21 +52,19 @@ const ProfilePage = () => {
   const targetUserId = currentUser?._id ?? "";
   const myBookings = bookings.filter((booking) => booking.renter?._id === targetUserId);
   const myRentals = rentals.filter((rental) => rental.renter?._id === targetUserId);
-  const myPayments = payments.filter(
-    (payment) => payment.rental?.renter?._id === targetUserId,
-  );
+  const myPayments = payments.filter((payment) => payment.rental?.renter?._id === targetUserId);
 
   if (!currentUser) {
     return (
-      <div className="flex min-h-screen flex-col bg-gray-50">
+      <div className="flex min-h-screen flex-col bg-white">
         <HeaderMain title="Profile" />
         <div className="flex flex-1 items-center justify-center px-4">
-          <Card className="max-w-md space-y-4 p-6 text-center">
+          <Card className="max-w-md space-y-4 p-6 text-center border border-gray-100 shadow-sm rounded-xl">
             <h2 className="text-lg font-semibold text-gray-900">Join EVrent</h2>
             <p className="text-sm text-gray-600">
               Create an account and upload your documents to view booking history and manage rentals.
             </p>
-            <Button className="w-full" onClick={() => navigate(ROUTES.REGISTER)}>
+            <Button className="w-full bg-[#00CC66] hover:bg-[#00b85c] text-white" onClick={() => navigate(ROUTES.REGISTER)}>
               Register now
             </Button>
           </Card>
@@ -78,11 +76,13 @@ const ProfilePage = () => {
   const user = userFromQuery ?? currentUser;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-10">
+    <div className="min-h-screen bg-white pb-10">
       <HeaderMain title="Profile" />
       <div className="mx-auto grid max-w-6xl gap-6 px-4 pt-6 lg:grid-cols-[1fr,2fr]">
+        {/* Left column */}
         <div className="space-y-4">
-          <Card className="space-y-4 p-6">
+          {/* Profile card */}
+          <Card className="space-y-4 p-6 border border-gray-100 shadow-sm rounded-xl">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">{user.fullName}</h2>
               <p className="text-sm text-gray-600">{user.email}</p>
@@ -104,12 +104,13 @@ const ProfilePage = () => {
                 <dd className="font-medium">{user.status}</dd>
               </div>
             </dl>
-            <Button variant="outline" className="w-full" onClick={() => refreshUser()}>
+            <Button variant="outline" className="w-full hover:border-[#00CC66] hover:text-[#00CC66]" onClick={() => refreshUser()}>
               Refresh profile
             </Button>
           </Card>
 
-          <Card className="space-y-4 p-6">
+          {/* Document card */}
+          <Card className="space-y-4 p-6 border border-gray-100 shadow-sm rounded-xl">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Document verification</h3>
@@ -134,8 +135,7 @@ const ProfilePage = () => {
               </p>
             </div>
             <Button
-              className="w-full"
-              variant={canBook ? "outline" : "default"}
+              className={`w-full ${canBook ? "bg-white border border-gray-300 text-gray-800 hover:border-[#00CC66] hover:text-[#00CC66]" : "bg-[#00CC66] text-white hover:bg-[#00b85c]"}`}
               onClick={() => navigate(ROUTES.REGISTER)}
             >
               {canBook ? "Update documents" : "Submit documents"}
@@ -143,7 +143,8 @@ const ProfilePage = () => {
           </Card>
         </div>
 
-        <Card className="p-6">
+        {/* Right column */}
+        <Card className="p-6 border border-gray-100 shadow-sm rounded-xl">
           <Tabs defaultValue="bookings">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="bookings">Bookings</TabsTrigger>
@@ -186,7 +187,7 @@ const ProfilePage = () => {
               />
             </TabsContent>
 
-            <TabsContent value="payments" className="mt-6 space-y-3">
+                        <TabsContent value="payments" className="mt-6 space-y-3">
               <HistoryState
                 isLoading={paymentQuery.isLoading}
                 isError={paymentQuery.isError}
@@ -209,6 +210,7 @@ const ProfilePage = () => {
   );
 };
 
+// Reusable history display component
 const HistoryState = ({
   isLoading,
   isError,
@@ -247,7 +249,7 @@ const HistoryState = ({
   return (
     <div className="space-y-3">
       {items.map((item) => (
-        <Card key={item.id} className="p-4">
+        <Card key={item.id} className="p-4 border border-gray-100 shadow-sm rounded-md">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <p className="text-sm font-semibold text-gray-900">{item.title}</p>
@@ -268,3 +270,4 @@ const HistoryState = ({
 };
 
 export default ProfilePage;
+

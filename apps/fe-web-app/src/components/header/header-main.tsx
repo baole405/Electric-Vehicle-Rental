@@ -32,10 +32,9 @@ export default function HeaderMain(_: HeaderMainProps) {
   const effectiveRole = role ?? currentUser?.role;
   const isStaff = effectiveRole === "admin" || effectiveRole === "staff";
   const previousUserIdRef = useRef<string | null>(null);
+
   const navLinks = useMemo(() => {
-    if (!isStaff) {
-      return NAV_LINKS;
-    }
+    if (!isStaff) return NAV_LINKS;
     const workspaceLink = { to: ROUTES.DASHBOARD, label: "Workspace" };
     const combined = [...NAV_LINKS];
     combined.splice(1, 0, workspaceLink);
@@ -76,14 +75,15 @@ export default function HeaderMain(_: HeaderMainProps) {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-      <div className="container mx-auto flex h-14 items-center gap-4 px-4">
-        <Link to={ROUTES.ROOT} className="flex items-center gap-2 transition hover:opacity-80">
-          <div className="flex h-6 w-6 items-center justify-center rounded-sm bg-red-500 text-[10px] font-extrabold text-white shadow">
-            EV
-          </div>
-          <span className="text-lg font-bold text-gray-800">EVrent</span>
-        </Link>
+    <header className="sticky top-0 z-40 w-full border-b bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/60 shadow-sm">
+      <div className="container mx-auto flex h-16 items-center gap-4 px-4">
+        <Link to={ROUTES.ROOT} className="flex items-center transition hover:opacity-80">
+  <img
+    src="/logo.jpg"
+    alt="EVrent"
+    className="h-10 w-10 rounded-md object-cover shadow-md"
+  />
+</Link>
 
         <nav className="ml-6 hidden items-center gap-6 md:flex">
           {navLinks.map((item) => (
@@ -91,8 +91,8 @@ export default function HeaderMain(_: HeaderMainProps) {
               key={item.to}
               to={item.to}
               className={cn(
-                "text-sm text-gray-700 transition-colors hover:text-black",
-                pathname.startsWith(item.to) && "font-semibold text-black",
+                "text-sm font-medium text-gray-600 transition-colors hover:text-[#00CC66]",
+                pathname.startsWith(item.to) && "text-[#00CC66]",
               )}
             >
               {item.label}
@@ -105,7 +105,10 @@ export default function HeaderMain(_: HeaderMainProps) {
         <div className="hidden items-center gap-2 lg:flex">
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-            <Input placeholder="Search vehicles, stations." className="w-72 pl-8" />
+            <Input
+              placeholder="Search vehicles, stations..."
+              className="w-72 rounded-md border border-gray-300 bg-white pl-8 text-sm text-gray-700 placeholder-gray-400 shadow-sm focus:border-[#00CC66] focus:ring-[#00CC66]"
+            />
           </div>
         </div>
 
@@ -113,7 +116,7 @@ export default function HeaderMain(_: HeaderMainProps) {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="ml-2 flex items-center gap-2 transition hover:opacity-90">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-500 text-sm font-bold text-white">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#00CC66] text-sm font-bold text-white shadow-md">
                   {currentUser.fullName.charAt(0).toUpperCase()}
                 </div>
                 <span className="hidden text-sm font-medium text-gray-700 md:inline">
@@ -122,11 +125,11 @@ export default function HeaderMain(_: HeaderMainProps) {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="min-w-40">
-              {isStaff ? (
+              {isStaff && (
                 <DropdownMenuItem onClick={() => navigate(ROUTES.DASHBOARD)}>
                   Workspace
                 </DropdownMenuItem>
-              ) : null}
+              )}
               <DropdownMenuItem onClick={() => navigate(ROUTES.PROFILE)}>Profile</DropdownMenuItem>
               <DropdownMenuItem onClick={handleLogout} className="text-red-600">
                 Logout
@@ -135,10 +138,19 @@ export default function HeaderMain(_: HeaderMainProps) {
           </DropdownMenu>
         ) : (
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => navigate(ROUTES.LOGIN)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-gray-300 text-gray-700 hover:border-[#00CC66] hover:text-[#00CC66]"
+              onClick={() => navigate(ROUTES.LOGIN)}
+            >
               Sign in
             </Button>
-            <Button size="sm" onClick={() => navigate(ROUTES.REGISTER)}>
+            <Button
+              size="sm"
+              className="bg-[#00CC66] text-white hover:bg-[#00b85c]"
+              onClick={() => navigate(ROUTES.REGISTER)}
+            >
               Register
             </Button>
           </div>
@@ -146,7 +158,7 @@ export default function HeaderMain(_: HeaderMainProps) {
 
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="md:hidden">
+            <Button variant="ghost" size="icon" className="md:hidden text-gray-600 hover:text-[#00CC66]">
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
@@ -154,7 +166,10 @@ export default function HeaderMain(_: HeaderMainProps) {
             <div className="mt-6 space-y-4">
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-                <Input placeholder="Search." className="pl-8" />
+                <Input
+                  placeholder="Search..."
+                  className="pl-8 rounded-md border border-gray-300 text-sm text-gray-700 placeholder-gray-400 focus:border-[#00CC66] focus:ring-[#00CC66]"
+                />
               </div>
               <div className="flex flex-col gap-3">
                 {navLinks.map((item) => (
@@ -162,8 +177,8 @@ export default function HeaderMain(_: HeaderMainProps) {
                     key={item.to}
                     to={item.to}
                     className={cn(
-                      "text-base text-gray-700 hover:text-black",
-                      pathname.startsWith(item.to) && "font-medium text-black",
+                      "text-base text-gray-600 hover:text-[#00CC66] transition",
+                      pathname.startsWith(item.to) && "font-medium text-[#00CC66]",
                     )}
                   >
                     {item.label}
@@ -172,17 +187,17 @@ export default function HeaderMain(_: HeaderMainProps) {
                 <div className="border-t pt-4">
                   {currentUser ? (
                     <>
-                      {isStaff ? (
+                      {isStaff && (
                         <button
                           onClick={() => navigate(ROUTES.DASHBOARD)}
-                          className="block w-full py-1.5 text-left text-gray-700 hover:text-black"
+                          className="block w-full py-1.5 text-left text-gray-600 hover:text-[#00CC66]"
                         >
                           Workspace
                         </button>
-                      ) : null}
+                      )}
                       <button
                         onClick={() => navigate(ROUTES.PROFILE)}
-                        className="block w-full py-1.5 text-left text-gray-700 hover:text-black"
+                        className="block w-full py-1.5 text-left text-gray-600 hover:text-[#00CC66]"
                       >
                         Profile
                       </button>
@@ -195,10 +210,19 @@ export default function HeaderMain(_: HeaderMainProps) {
                     </>
                   ) : (
                     <div className="flex flex-col gap-2">
-                      <Button variant="outline" size="sm" onClick={() => navigate(ROUTES.LOGIN)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-gray-300 text-gray-700 hover:border-[#00CC66] hover:text-[#00CC66]"
+                        onClick={() => navigate(ROUTES.LOGIN)}
+                      >
                         Sign in
                       </Button>
-                      <Button size="sm" onClick={() => navigate(ROUTES.REGISTER)}>
+                                            <Button
+                        size="sm"
+                        className="bg-[#00CC66] text-white hover:bg-[#00b85c]"
+                        onClick={() => navigate(ROUTES.REGISTER)}
+                      >
                         Register
                       </Button>
                     </div>
@@ -212,4 +236,5 @@ export default function HeaderMain(_: HeaderMainProps) {
     </header>
   );
 }
+
 

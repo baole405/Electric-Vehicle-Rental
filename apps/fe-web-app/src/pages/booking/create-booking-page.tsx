@@ -145,13 +145,13 @@ const CreateBookingPage = () => {
   const vehicle = vehicleQuery.data?.data?.data;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-12">
+    <div className="min-h-screen bg-white pb-12">
       <HeaderMain title="Book vehicle" />
       <div className="mx-auto grid max-w-6xl gap-8 px-4 pt-8 lg:grid-cols-[2fr,1fr]">
-        <Card className="space-y-6 p-6">
+        <Card className="space-y-6 p-6 border border-gray-100 shadow-lg rounded-xl">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Booking request</h1>
-            <p className="mt-1 text-sm text-gray-600">
+            <h1 className="text-2xl font-semibold text-[#000000]">Booking request</h1>
+            <p className="mt-1 text-sm text-[#00CC66]">
               Complete the details below. Booking is confirmed after staff review.
             </p>
           </div>
@@ -197,15 +197,16 @@ const CreateBookingPage = () => {
                 value={form.pickupTimeExpected}
                 min={new Date().toISOString().slice(0, 16)}
                 onChange={(event) => handleChange("pickupTimeExpected", event.target.value)}
+                className="focus:border-[#00CC66] focus:ring-[#00CC66]"
               />
             </div>
           </div>
 
-          <div className="rounded-lg border border-dashed border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+          <div className="rounded-lg border border-dashed border-[#00CC66]/30 bg-[#00CC66]/5 p-4 text-sm text-[#000000]/80">
             <p>
               Document status:{" "}
-              <span className="font-semibold">{documentStatus.replace("_", " ")}</span>. Booking is
-              enabled when status is <strong>verified</strong>.
+              <span className="font-semibold text-[#00CC66]">{documentStatus.replace("_", " ")}</span>. Booking is
+              enabled when status is <strong className="text-[#00CC66]">verified</strong>.
             </p>
           </div>
 
@@ -220,7 +221,7 @@ const CreateBookingPage = () => {
           <Button
             onClick={handleSubmit}
             disabled={createBooking.isPending || !isBookingAllowed}
-            className="w-full"
+            className="w-full bg-[#00CC66] hover:bg-[#00b85c] text-white font-medium transition-colors"
           >
             {createBooking.isPending ? (
               <>
@@ -232,7 +233,7 @@ const CreateBookingPage = () => {
           </Button>
         </Card>
 
-        <Card className="flex flex-col gap-5 p-6">
+        <Card className="flex flex-col gap-5 p-6 border border-[#00CC66]/20 shadow-lg rounded-xl">
           {vehicleQuery.isLoading ? (
             <div className="flex items-center justify-center py-10 text-gray-600">
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -241,15 +242,15 @@ const CreateBookingPage = () => {
           ) : vehicle ? (
             <>
               <div className="flex items-center gap-3">
-                <div className="h-16 w-16 rounded-lg bg-gray-100" />
+                <div className="h-16 w-16 rounded-lg bg-[#00CC66]/10" />
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">{vehicle.model}</h2>
-                  <p className="text-sm text-gray-500">{vehicle.plateNo}</p>
+                  <h2 className="text-lg font-semibold text-[#000000]">{vehicle.model}</h2>
+                  <p className="text-sm text-[#00CC66]">{vehicle.plateNo}</p>
                 </div>
               </div>
-              <div className="space-y-2 text-sm text-gray-700">
+              <div className="space-y-2 text-sm text-[#000000]/80">
                 <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
+                  <MapPin className="h-4 w-4 text-[#00CC66]" />
                   <span>
                     Station:{" "}
                     {form.pickupStationId
@@ -259,7 +260,7 @@ const CreateBookingPage = () => {
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <CalendarClock className="h-4 w-4" />
+                  <CalendarClock className="h-4 w-4 text-[#00CC66]" />
                   <span>
                     Pickup:{" "}
                     {form.pickupTimeExpected
@@ -268,14 +269,14 @@ const CreateBookingPage = () => {
                   </span>
                 </div>
               </div>
-              <div className="space-y-2 rounded-lg border bg-gray-50 p-4 text-sm">
+              <div className="space-y-2 rounded-lg border border-[#00CC66]/20 bg-[#00CC66]/5 p-4 text-sm">
                 <div className="flex justify-between">
-                  <span>Daily rate</span>
-                  <span className="font-medium text-gray-900">
+                  <span className="text-[#000000]/80">Daily rate</span>
+                  <span className="font-medium text-[#000000]">
                     {vehicle.dailyRate ? `${vehicle.dailyRate.toLocaleString()} VND` : "TBD"}
                   </span>
                 </div>
-                <div className="flex justify-between text-gray-600">
+                <div className="flex justify-between text-[#00CC66]">
                   <span>Deposit estimate</span>
                   <span>{vehicle.deposit ? `${vehicle.deposit.toLocaleString()} VND` : "Contact staff"}</span>
                 </div>

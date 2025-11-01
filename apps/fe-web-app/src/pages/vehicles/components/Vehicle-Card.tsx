@@ -12,16 +12,15 @@ const VehicleCardList: React.FC<VehicleCardListProps> = ({ vehicles = [] }) => {
   const navigate = useNavigate();
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 p-6 bg-blue-50">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-6 py-10 bg-white">
       {vehicles.map((vehicle) => {
         const statusColors: Record<TVehicle["status"], string> = {
-          available: "bg-green-100 text-green-700",
-          rented: "bg-red-100 text-red-700",
+          available: "bg-[#E6F9F0] text-[#00CC66]",
+          rented: "bg-red-100 text-red-600",
           maintenance: "bg-yellow-100 text-yellow-700",
-          unavailable: "bg-gray-100 text-gray-700",
+          unavailable: "bg-gray-100 text-gray-600",
         };
 
-        // 👉 Khi click card thì navigate đến trang chi tiết
         const handleClick = () => {
           navigate(`/vehicles/${vehicle._id}`);
         };
@@ -30,58 +29,63 @@ const VehicleCardList: React.FC<VehicleCardListProps> = ({ vehicles = [] }) => {
           <Card
             key={vehicle._id}
             onClick={handleClick}
-            className="p-4 flex flex-col justify-between bg-white shadow-md rounded-2xl hover:shadow-xl transition cursor-pointer"
+            className="p-4 flex flex-col justify-between bg-white shadow-sm rounded-2xl border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer"
           >
             <CardContent className="p-0">
               {/* Ảnh xe */}
-              <div className="h-40 bg-gray-100 rounded-xl mb-3 flex items-center justify-center overflow-hidden">
-                <Car className="text-gray-400 w-10 h-10" />
+              <div className="h-40 bg-gray-50 rounded-xl mb-4 flex items-center justify-center overflow-hidden">
+                <Car className="text-gray-300 w-10 h-10" />
               </div>
 
               {/* Badge trạng thái */}
-              <div className="flex justify-between items-center mb-2">
+              <div className="flex justify-between items-center mb-3">
                 <span
-                  className={`text-xs font-medium px-2 py-1 rounded-md ${statusColors[vehicle.status]}`}
+                  className={`text-xs font-semibold px-2 py-1 rounded-md ${statusColors[vehicle.status]}`}
                 >
                   {vehicle.status === "rented"
                     ? "Đang thuê"
                     : vehicle.status === "maintenance"
-                      ? "Bảo trì"
-                      : "Sẵn sàng"}
+                    ? "Bảo trì"
+                    : vehicle.status === "unavailable"
+                    ? "Không khả dụng"
+                    : "Sẵn sàng"}
                 </span>
-                <span className="text-xs text-gray-500">{vehicle.plateNo}</span>
+                <span className="text-xs text-gray-500 font-mono">{vehicle.plateNo}</span>
               </div>
 
               {/* Thông tin xe */}
-              <div className="space-y-1">
-                <h3 className="font-semibold text-base">{vehicle.model}</h3>
-                <p className="text-sm text-gray-700 flex items-center gap-1">
-                  <Battery size={14} /> {vehicle.batteryPercent}%
+              <div className="space-y-1 text-sm text-gray-700">
+                <h3 className="text-base font-bold text-[#000000]">{vehicle.model}</h3>
+                <p className="flex items-center gap-1">
+                  <Battery size={14} className="text-[#00CC66]" />
+                  {vehicle.batteryPercent}%
                 </p>
-                <p className="text-sm text-gray-700 flex items-center gap-1">
-                  <MapPin size={14} /> {vehicle.stationId}
+                <p className="flex items-center gap-1">
+                  <MapPin size={14} className="text-[#00CC66]" />
+                  {vehicle.stationId}
                 </p>
-                <p className="text-sm text-gray-700">
-                  Quãng đường: {vehicle.odometer.toLocaleString()} km
-                </p>
-                <p className="text-sm text-gray-700 font-mono">VIN: {vehicle.vin}</p>
+                <p>Quãng đường: {vehicle.odometer.toLocaleString()} km</p>
+                <p className="font-mono text-xs text-gray-500">VIN: {vehicle.vin}</p>
               </div>
             </CardContent>
 
             {/* Footer */}
-            <CardFooter className="p-0 mt-3">
+            <CardFooter className="p-0 mt-4">
               {vehicle.status === "available" ? (
                 <Button
-                  className="w-full bg-green-500 hover:bg-green-600 text-white"
+                  className="w-full bg-[#00CC66] hover:bg-[#00b85c] text-white font-medium text-sm"
                   onClick={(e) => {
-                    e.stopPropagation(); // tránh trigger click card
+                    e.stopPropagation();
                     navigate(`/booking/${vehicle._id}`);
                   }}
                 >
                   Đặt ngay
                 </Button>
               ) : (
-                <Button disabled className="w-full opacity-70">
+                <Button
+                  disabled
+                  className="w-full bg-gray-200 text-gray-500 font-medium text-sm cursor-not-allowed"
+                >
                   Không khả dụng
                 </Button>
               )}
