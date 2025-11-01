@@ -9,8 +9,8 @@ export default function ListVehiclesPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      {/* Header */}
-      <HeaderMain />
+  {/* Header */}
+  <HeaderMain title="Danh sách các loại xe điện" />
 
       {/* Nội dung */}
       <div className="flex-1 container mx-auto px-4 py-10">

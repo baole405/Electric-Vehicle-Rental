@@ -46,15 +46,22 @@ const DashboardLayout = ({
   );
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <aside className="hidden w-64 flex-col border-r bg-white p-6 md:flex">
-        <div className="mb-8 flex items-center gap-2 text-lg font-semibold text-gray-900">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-sm font-bold text-white">
-            EV
+    <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-slate-50 to-slate-100">
+      {/* Sidebar */}
+      <aside className="hidden w-64 flex-col border-r bg-white shadow-sm md:flex">
+        <div className="border-b p-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-base font-bold text-white shadow-md">
+              EV
+            </div>
+            <div>
+              <div className="text-lg font-bold text-gray-900">EVrent Ops</div>
+              <div className="text-xs text-muted-foreground">Staff Dashboard</div>
+            </div>
           </div>
-          EVrent Ops
         </div>
-        <nav className="flex flex-1 flex-col gap-1 text-sm">
+
+        <nav className="flex flex-1 flex-col gap-1 p-4 text-sm">
           {visibleItems.map((item) => {
             const isActive = item.key === activeKey;
             return (
@@ -63,12 +70,20 @@ const DashboardLayout = ({
                 type="button"
                 onClick={() => onSelect(item.key)}
                 className={cn(
-                  'flex items-center gap-2 rounded-lg px-3 py-2 text-left font-medium transition hover:bg-primary/10',
-                  isActive ? 'bg-primary/10 text-primary' : 'text-gray-700'
+                  'group flex items-center gap-3 rounded-lg px-4 py-3 text-left font-medium transition-all',
+                  isActive
+                    ? 'bg-primary text-white shadow-md shadow-primary/20'
+                    : 'text-gray-700 hover:bg-gray-100 active:scale-95'
                 )}
               >
                 {item.icon ? (
-                  <span className="text-base" aria-hidden>
+                  <span
+                    className={cn(
+                      'text-base transition-transform group-hover:scale-110',
+                      isActive ? 'text-white' : 'text-gray-500'
+                    )}
+                    aria-hidden
+                  >
                     {item.icon}
                   </span>
                 ) : null}
@@ -77,39 +92,59 @@ const DashboardLayout = ({
             );
           })}
         </nav>
-        <div className="mt-6 rounded-lg border border-dashed border-gray-200 bg-gray-50 p-4 text-xs text-gray-600">
-          Signed in as <strong>{displayName}</strong>
-          <div className="mt-1 capitalize text-gray-500">{effectiveRole}</div>
+
+        <div className="border-t bg-muted/30 p-4">
+          <div className="rounded-lg bg-white p-4 shadow-sm">
+            <div className="text-xs text-muted-foreground">Signed in as</div>
+            <div className="mt-1 font-semibold text-gray-900">{displayName}</div>
+            <div className="mt-1 inline-flex items-center rounded-full bg-primary/10 px-2 py-1 text-xs font-medium capitalize text-primary">
+              {effectiveRole}
+            </div>
+          </div>
         </div>
       </aside>
 
+      {/* Main Content */}
       <main className="flex flex-1 flex-col">
-        <header className="flex items-center justify-between border-b bg-white px-4 py-4 shadow-sm md:px-8">
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900 md:text-2xl">
-              {title}
-            </h1>
-            {subtitle ? (
-              <p className="text-sm text-gray-500">{subtitle}</p>
-            ) : null}
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate(ROUTES.HOME)}
-            >
-              <Menu className="mr-2 h-4 w-4" aria-hidden />
-              Home
-            </Button>
-            <Button variant="destructive" size="sm" onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" aria-hidden />
-              Logout
-            </Button>
+        {/* Header */}
+        <header className="border-b bg-white shadow-sm">
+          <div className="flex items-center justify-between px-4 py-5 md:px-8">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 md:text-3xl">
+                {title}
+              </h1>
+              {subtitle ? (
+                <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>
+              ) : null}
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(ROUTES.HOME)}
+                className="transition-all hover:shadow-md"
+              >
+                <Menu className="mr-2 h-4 w-4" aria-hidden />
+                Home
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleLogout}
+                className="transition-all hover:shadow-md"
+              >
+                <LogOut className="mr-2 h-4 w-4" aria-hidden />
+                Logout
+              </Button>
+            </div>
           </div>
         </header>
-        <div className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 md:px-8 md:py-10">
-          {children}
+
+        {/* Content Area */}
+        <div className="flex-1 overflow-auto">
+          <div className="mx-auto w-full max-w-7xl px-4 py-6 md:px-8 md:py-10">
+            {children}
+          </div>
         </div>
       </main>
     </div>
