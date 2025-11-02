@@ -6,12 +6,12 @@ const parseParams = (params: Record<string, unknown>) =>
     .filter(([_, value]) => value !== null && value !== undefined && value !== "")
     .map(([key, value]) => {
       if (Array.isArray(value)) {
-        return value.map((v) => `${key}=${encodeURIComponent(v)}`).join("&");
+        return value.map((v) => `${key}=${encodeURIComponent(String(v))}`).join("&");
       }
       if (typeof value === "object" && value !== null) {
         return "";
       }
-      return `${key}=${encodeURIComponent(value)}`;
+      return `${key}=${encodeURIComponent(String(value))}`;
     })
     .filter(Boolean)
     .join("&");
@@ -41,16 +41,20 @@ apiRequest.interceptors.request.use((options) => {
 
   if (method === "put" || method === "post" || method === "patch") {
     if (data instanceof FormData) {
-      options.headers!["Content-Type"] = "multipart/form-data";
+      if (options.headers) {
+        options.headers["Content-Type"] = "multipart/form-data";
+      }
     } else {
-      options.headers!["Content-Type"] = "application/json;charset=UTF-8";
+      if (options.headers) {
+        options.headers["Content-Type"] = "application/json;charset=UTF-8";
+      }
     }
   }
 
   // Auto attach token if available
   const token = getStoredToken();
-  if (token) {
-    options.headers!["Authorization"] = `Bearer ${token}`;
+  if (token && options.headers) {
+    options.headers["Authorization"] = `Bearer ${token}`;
   }
 
   return options;

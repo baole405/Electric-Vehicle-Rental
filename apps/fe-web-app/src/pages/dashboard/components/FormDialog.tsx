@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { useForm, type UseFormReturn } from 'react-hook-form';
+import { useForm, type UseFormReturn, type FieldValues } from 'react-hook-form';
 import {
   Dialog,
   DialogContent,
@@ -11,7 +11,7 @@ import {
 } from '@/components/shadcn/ui/dialog';
 import { Button } from '@/components/shadcn/ui/button';
 
-type FormDialogProps<TFormValues> = {
+type FormDialogProps<TFormValues extends FieldValues> = {
   title: string;
   description?: string;
   trigger?: ReactNode;
@@ -22,10 +22,11 @@ type FormDialogProps<TFormValues> = {
   submitLabel?: string;
   cancelLabel?: string;
   onSubmit: (values: TFormValues) => Promise<void>;
-  children: (form: UseFormReturn<TFormValues>) => ReactNode;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  children: (form: UseFormReturn<TFormValues, any, TFormValues>) => ReactNode;
 };
 
-export function FormDialog<TFormValues>({
+export function FormDialog<TFormValues extends FieldValues>({
   title,
   description,
   trigger,
@@ -42,8 +43,10 @@ export function FormDialog<TFormValues>({
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const open = isControlled ? controlledOpen ?? false : uncontrolledOpen;
 
-  const form = useForm<TFormValues>({
-    defaultValues: initialValues,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const form = useForm<TFormValues, any, TFormValues>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    defaultValues: initialValues as any,
   });
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -54,11 +57,12 @@ export function FormDialog<TFormValues>({
   };
 
   useEffect(() => {
-    form.reset(initialValues);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    form.reset(initialValues as any);
   }, [form, initialValues, open]);
 
   const handleSubmit = form.handleSubmit(async (values) => {
-    await onSubmit(values);
+    await onSubmit(values as TFormValues);
     handleOpenChange(false);
   });
 
