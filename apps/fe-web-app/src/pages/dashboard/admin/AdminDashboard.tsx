@@ -50,8 +50,8 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import AdminBrandManagement from '@/pages/dashboard/admin/AdminBrandManagement';
-import StaffBrandView from '@/pages/dashboard/StaffBrandView';
+import AdminBrandManagement from './AdminBrandManagement';
+import { StaffBrandView } from '@/pages/dashboard/staff';
 
 // API Request Types (server expects string IDs, not full objects)
 type CreateRentalRequest = {
@@ -196,7 +196,7 @@ const SECTION_CONFIG: SectionConfig[] = [
   { key: 'vehicles', label: 'Vehicles', icon: Car, roles: ['admin'] },
   {
     key: 'bookings',
-    label: 'Orders',
+    label: 'Bookings',
     icon: ClipboardList,
     roles: ['admin', 'staff'],
   },

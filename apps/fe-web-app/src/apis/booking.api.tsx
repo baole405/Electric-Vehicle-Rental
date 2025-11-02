@@ -1,7 +1,12 @@
 import { apiRequest } from "@/lib/http";
 import { API_SUFFIX } from "./util.api";
 import type { BaseResponse } from "@/schema/common/response.type";
-import type { TCreateBooking, TBooking } from "@/schema/booking.schema";
+import type {
+  TCreateBooking,
+  TBooking,
+  TAssignVehicle,
+  TUpdateBookingStatus
+} from "@/schema/booking.schema";
 
 /**
  * POST /api/bookings - Tạo booking mới (Đăng ký thuê xe)
@@ -57,6 +62,33 @@ const updateBooking = async (id: string, payload: Partial<TBooking>) =>
 const deleteBooking = async (id: string) =>
   await apiRequest.delete(API_SUFFIX.BOOKING_API + `/${id}`);
 
+/**
+ * POST /api/bookings/:id/assign-vehicle - Gán xe cho booking
+ */
+const assignVehicle = async (bookingId: string, data: TAssignVehicle) =>
+  await apiRequest.post<BaseResponse<TBooking>>(
+    `${API_SUFFIX.BOOKING_API}/${bookingId}/assign-vehicle`,
+    data
+  );
+
+/**
+ * PATCH /api/bookings/:id/status - Cập nhật trạng thái booking
+ */
+const updateBookingStatus = async (bookingId: string, data: TUpdateBookingStatus) =>
+  await apiRequest.patch<BaseResponse<TBooking>>(
+    `${API_SUFFIX.BOOKING_API}/${bookingId}/status`,
+    data
+  );
+
+/**
+ * POST /api/bookings/:id/confirm - Xác nhận booking (Staff approve)
+ */
+const confirmBooking = async (bookingId: string) =>
+  await apiRequest.post<BaseResponse<TBooking>>(
+    `${API_SUFFIX.BOOKING_API}/${bookingId}/confirm`,
+    {}
+  );
+
 export const BookingApi = {
   createBooking,
   getBookingList,
@@ -64,4 +96,7 @@ export const BookingApi = {
   cancelBooking,
   updateBooking,
   deleteBooking,
+  assignVehicle,
+  updateBookingStatus,
+  confirmBooking,
 };

@@ -50,7 +50,7 @@ const ProfilePage = () => {
   const payments = (paymentQuery.data?.data?.data ?? []) as TPayment[];
 
   const targetUserId = currentUser?._id ?? "";
-  const myBookings = bookings.filter((booking) => booking.renter?._id === targetUserId);
+  const myBookings = bookings.filter((booking) => booking.renterName && booking.email === currentUser?.email);
   const myRentals = rentals.filter((rental) => rental.renter?._id === targetUserId);
   const myPayments = payments.filter(
     (payment) => payment.rental?.renter?._id === targetUserId,
@@ -158,11 +158,11 @@ const ProfilePage = () => {
                 emptyText="You have not created any booking requests yet."
                 items={myBookings.map((booking) => ({
                   id: booking._id,
-                  title: booking.vehicle?.model ?? "Vehicle booking",
+                  title: booking.brand?.name ?? "Vehicle booking",
                   status: booking.status,
                   meta: [
-                    `Pickup: ${fmt(booking.pickupTimeExpected)}`,
-                    `Station: ${booking.pickupStation?.name ?? "Unknown"}`,
+                    `Pickup: ${booking.pickupDate} ${booking.pickupTime}`,
+                    `Station: ${booking.pickupStation?.name ?? booking.station?.name ?? "Unknown"}`,
                   ],
                 }))}
               />

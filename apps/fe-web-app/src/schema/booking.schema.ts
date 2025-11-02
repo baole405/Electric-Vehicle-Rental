@@ -34,6 +34,18 @@ export const BookingSchema = z.object({
 
   vehicle: z.any().nullable().optional(),
 
+  // Assigned vehicle & workflow fields
+  assignedVehicle: z.object({
+    _id: z.string(),
+    plateNo: z.string().optional(),
+    vin: z.string().optional(),
+    model: z.string().optional(),
+  }).nullable().optional(),
+  heldExpiresAt: z.string().optional(), // ISO datetime - thời hạn giữ chỗ
+  confirmedExpiresAt: z.string().optional(), // ISO datetime - thời hạn xác nhận
+  autoUpgradePolicy: z.enum(["allowed", "not_allowed"]).optional(), // Cho phép upgrade xe tự động
+  cancellationReason: z.string().optional(), // Lý do hủy
+
   // Thời gian
   pickupDate: z.string(), // ISO date string or YYYY-MM-DD
   pickupTime: z.string(), // HH:mm
@@ -69,7 +81,16 @@ export const BookingSchema = z.object({
   agreedToDataSharing: z.boolean(),
 
   // Status
-  status: z.enum(["pending_payment", "confirmed", "cancelled", "completed", "expired"]),
+  status: z.enum([
+    "pending_payment",
+    "held",
+    "confirmed",
+    "paid",
+    "checked_out",
+    "completed",
+    "cancelled",
+    "expired"
+  ]),
 
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
@@ -105,5 +126,27 @@ export const CreateBookingSchema = z.object({
   notes: z.string().optional(),
 });
 
+// Assign Vehicle Schema
+export const AssignVehicleSchema = z.object({
+  vehicleId: z.string().min(1, "Vui lòng chọn xe"),
+});
+
+// Update Booking Status Schema
+export const UpdateBookingStatusSchema = z.object({
+  status: z.enum([
+    "pending_payment",
+    "held",
+    "confirmed",
+    "paid",
+    "checked_out",
+    "completed",
+    "cancelled",
+    "expired"
+  ]),
+  cancellationReason: z.string().optional(), // Required if status = cancelled
+});
+
 export type TBooking = z.infer<typeof BookingSchema>;
 export type TCreateBooking = z.infer<typeof CreateBookingSchema>;
+export type TAssignVehicle = z.infer<typeof AssignVehicleSchema>;
+export type TUpdateBookingStatus = z.infer<typeof UpdateBookingStatusSchema>;
