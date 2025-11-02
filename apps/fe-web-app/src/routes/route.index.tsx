@@ -1,5 +1,5 @@
 import BrandsByStationPage from "@/pages/home/BrandsByStationPage";
-import AdminDashboard from "@/pages/dashboard/AdminDashboard";
+import { AdminDashboard } from "@/pages/dashboard/admin";
 import About from "@/pages/static/about";
 import { ROUTES } from "@/routes/route.constants";
 import { Route, Routes } from "react-router-dom";
@@ -31,6 +31,8 @@ export function AppRoutes() {
           </ProtectedRoute>
         }
       />
+
+
       <Route path={ROUTES.VEHICLE} element={<ListVehiclesPage />} />
       {/* <Route path={ROUTES.VEHICLE} element={<ListBrandPage />} /> */}
       <Route path={ROUTES.BOOKING} element={<CreateBookingPage />} />

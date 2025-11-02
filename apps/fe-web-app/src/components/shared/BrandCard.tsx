@@ -126,7 +126,7 @@ export default function BrandCard({ brand, stationId, pickupDate, pickupTime, re
             {/* Car Type */}
             <div className="flex items-center gap-2 text-gray-700">
               <Car className="w-4 h-4 text-gray-400" />
-              <span className="text-sm">{carTypeMap[brand.specs.carType] || brand.specs.carType}</span>
+              <span className="text-sm">{brand.specs?.carType ? (carTypeMap[brand.specs.carType] || brand.specs.carType) : 'N/A'}</span>
             </div>
 
             {/* Seats */}

@@ -288,6 +288,7 @@ const RegisterPage = () => {
             type="password"
             placeholder="At least 8 characters"
             {...register('password')}
+            className="focus:border-[#00CC66] focus:ring-[#00CC66]"
           />
           {errors.password && (
             <p className="text-sm text-red-500">{errors.password.message}</p>
@@ -311,7 +312,11 @@ const RegisterPage = () => {
 
       {formError && <p className="text-sm text-red-500">{formError}</p>}
 
-      <Button type="submit" className="w-full" disabled={isSubmitting}>
+      <Button 
+        type="submit" 
+        className="w-full bg-[#00CC66] hover:bg-[#00b85c] text-white font-medium" 
+        disabled={isSubmitting}
+      >
         {isSubmitting ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -433,6 +438,7 @@ const RegisterPage = () => {
           type="button"
           onClick={handleSubmitDocuments}
           disabled={submitDocument.isPending || isCurrentDocVerified}
+          className="bg-[#00CC66] hover:bg-[#00b85c] text-white font-medium"
         >
           {submitDocument.isPending ? (
             <>
@@ -498,22 +504,22 @@ const RegisterPage = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-gray-50">
+    <div className="relative min-h-screen bg-white">
       <div className="absolute left-4 top-4 z-10">
         <Button
           variant="ghost"
           size="sm"
           onClick={handleBack}
-          className="gap-2"
+          className="gap-2 text-gray-600 hover:text-[#00CC66]"
         >
           <ChevronLeft className="h-4 w-4" />
           Home
         </Button>
       </div>
-      <div className="mx-auto flex max-w-3xl flex-col gap-6 px-4 py-16">
-        <Card>
+      <div className="flex min-h-screen items-center justify-center px-4 py-12">
+        <Card className="w-full max-w-3xl border border-gray-100 shadow-lg rounded-xl">
           <CardHeader>
-            <CardTitle className="text-lg text-gray-900">
+            <CardTitle className="text-2xl font-bold text-[#000000] text-center">
               Get started with EVrent
             </CardTitle>
           </CardHeader>
@@ -540,7 +546,7 @@ const DocumentUploadField = ({
 }) => (
   <label
     htmlFor={id}
-    className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center text-sm transition hover:border-gray-400"
+            className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-[#00CC66]/20 bg-white p-6 text-center text-sm transition hover:border-[#00CC66]"
   >
     <Upload className="h-6 w-6 text-gray-500" />
     <span className="font-medium text-gray-900">{label}</span>

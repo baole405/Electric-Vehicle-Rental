@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { type ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuthContext } from "@/contexts/auth-context";
 import { ROUTES } from "@/routes/route.constants";
@@ -35,7 +35,7 @@ export const ProtectedRoute = ({ children, allowedRoles, redirectTo = ROUTES.LOG
     return <Navigate to={fallback} replace />;
   }
 
-  return <>{children}</>;
+  return children;
 };
 
 export default ProtectedRoute;

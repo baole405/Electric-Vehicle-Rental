@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookingApi } from "@/apis/booking.api";
-import type { TBooking, TCreateBooking } from "@/schema/booking.schema";
+import type {
+  TBooking,
+  TCreateBooking,
+  TAssignVehicle,
+  TUpdateBookingStatus
+} from "@/schema/booking.schema";
 
 export const useBooking = () => {
   const queryClient = useQueryClient();
@@ -48,6 +53,32 @@ export const useBooking = () => {
     },
   });
 
+  const assignVehicle = useMutation({
+    mutationFn: ({ bookingId, data }: { bookingId: string; data: TAssignVehicle }) =>
+      BookingApi.assignVehicle(bookingId, data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["bookingList"] });
+      void queryClient.invalidateQueries({ queryKey: ["bookingById"] });
+    },
+  });
+
+  const updateBookingStatus = useMutation({
+    mutationFn: ({ bookingId, data }: { bookingId: string; data: TUpdateBookingStatus }) =>
+      BookingApi.updateBookingStatus(bookingId, data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["bookingList"] });
+      void queryClient.invalidateQueries({ queryKey: ["bookingById"] });
+    },
+  });
+
+  const confirmBooking = useMutation({
+    mutationFn: (bookingId: string) => BookingApi.confirmBooking(bookingId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["bookingList"] });
+      void queryClient.invalidateQueries({ queryKey: ["bookingById"] });
+    },
+  });
+
   return {
     useBookingList,
     useBookingById,
@@ -55,5 +86,8 @@ export const useBooking = () => {
     updateBooking,
     deleteBooking,
     cancelBooking,
+    assignVehicle,
+    updateBookingStatus,
+    confirmBooking,
   };
 };
