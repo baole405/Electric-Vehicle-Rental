@@ -2,6 +2,7 @@ import HeaderMain from "@/components/header/header-main";
 import { useBrandHook } from "@/hooks/use-brand";
 import { useVehicleHook } from "@/hooks/use-vehicle";
 import { BatteryCharging } from "lucide-react";
+import { motion } from "framer-motion";
 import type { ReactNode } from "react";
 
 const HomeLayout = () => {
@@ -11,132 +12,132 @@ const HomeLayout = () => {
   const vehicleQuery = useVehicleList();
   const brandQuery = useBrandList();
 
-  const vehiclesData = vehicleQuery.data?.data?.data;
-  const brandsData = brandQuery.data?.data?.data;
-
-  const vehicles = Array.isArray(vehiclesData) ? vehiclesData : [];
-  const brands = Array.isArray(brandsData) ? brandsData : [];
+  const vehicles = Array.isArray(vehicleQuery.data?.data?.data)
+    ? vehicleQuery.data.data.data
+    : [];
+  const brands = Array.isArray(brandQuery.data?.data?.data)
+    ? brandQuery.data.data.data
+    : [];
 
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="flex min-h-screen flex-col bg-white font-sans">
       <HeaderMain />
       <main className="flex-1">
         <Container>
-          <section id="vehicles" className="scroll-mt-24 py-12">
+          <motion.section
+            id="vehicles"
+            className="scroll-mt-24 py-16"
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
             <SectionHeading
-              title="Danh sach xe san sang"
-              description="Thong tin co ban de ban co the ra quyet dinh nhanh."
+              title="Danh sách xe sẵn sàng"
+              description="Thông tin cơ bản để bạn có thể ra quyết định nhanh."
             />
             {vehicleQuery.isLoading ? (
-              <p className="mt-6 text-gray-500">Dang tai danh sach xe...</p>
+              <p className="mt-6 text-gray-500">Đang tải danh sách xe...</p>
             ) : vehicleQuery.isError ? (
               <p className="mt-6 text-red-600">
-                Khong the tai danh sach xe. Vui long thu lai.
+                Không thể tải danh sách xe. Vui lòng thử lại.
               </p>
             ) : vehicles.length === 0 ? (
-              <p className="mt-6 text-gray-500">Chua co xe nao.</p>
+              <p className="mt-6 text-gray-500">Chưa có xe nào.</p>
             ) : (
-              <ul className="mt-8 grid gap-4 md:grid-cols-2">
-                {vehicles.map((vehicle) => {
-                  const statusLabel =
-                    vehicle.status.charAt(0).toUpperCase() +
-                    vehicle.status.slice(1);
-
-                  return (
-                    <li
-                      key={vehicle._id}
-                      className="rounded-2xl border border-gray-200 bg-gray-50 px-6 py-5 shadow-sm"
-                    >
-                      <div className="text-lg font-semibold text-gray-900">
-                        {vehicle.model}
-                      </div>
-                      <dl className="mt-3 space-y-1 text-sm text-gray-600">
-                        <div>
-                          <dt className="font-medium text-gray-500">Bien so</dt>
-                          <dd>{vehicle.plateNo}</dd>
-                        </div>
-                        <div>
-                          <dt className="font-medium text-gray-500">VIN</dt>
-                          <dd>{vehicle.vin}</dd>
-                        </div>
-                        <div>
-                          <dt className="font-medium text-gray-500">
-                            Trang thai
-                          </dt>
-                          <dd>{statusLabel}</dd>
-                        </div>
-                        <div>
-                          <dt className="font-medium text-gray-500">
-                            Pin hien tai
-                          </dt>
-                          <dd>{vehicle.batteryPercent}%</dd>
-                        </div>
-                      </dl>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </section>
-
-          <section id="brands" className="scroll-mt-24 py-12">
-            <SectionHeading
-              title="Thuong hieu dong hanh"
-              description="Danh sach thuong hieu cung cap xe dien tren nen tang."
-            />
-            {brandQuery.isLoading ? (
-              <p className="mt-6 text-gray-500">
-                Dang tai danh sach thuong hieu...
-              </p>
-            ) : brandQuery.isError ? (
-              <p className="mt-6 text-red-600">
-                Khong the tai danh sach thuong hieu. Vui long thu lai.
-              </p>
-            ) : brands.length === 0 ? (
-              <p className="mt-6 text-gray-500">Chua co thuong hieu nao.</p>
-            ) : (
-              <ul className="mt-8 grid gap-4 md:grid-cols-2">
-                {brands.map((brand) => (
-                  <li
-                    key={brand._id}
-                    className="rounded-2xl border border-gray-200 bg-gray-50 px-6 py-5 shadow-sm"
+              <ul className="mt-10 grid gap-6 md:grid-cols-2">
+                {vehicles.map((vehicle) => (
+                  <motion.li
+                    key={vehicle._id}
+                    className="rounded-xl border border-[#00CC66] bg-white px-6 py-5 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-in-out"
+                    whileHover={{ scale: 1.02 }}
                   >
-                    <div className="text-lg font-semibold text-gray-900">
-                      {brand.name}
+                    <div className="text-xl font-semibold text-[#000000]">
+                      {vehicle.model}
                     </div>
-                    <dl className="mt-3 space-y-1 text-sm text-gray-600">
+                    <dl className="mt-3 space-y-2 text-sm text-gray-700">
                       <div>
-                        <dt className="font-medium text-gray-500">Ma</dt>
-                        <dd>{brand.code}</dd>
+                        <dt className="font-medium text-[#00CC66]">Biển số</dt>
+                        <dd>{vehicle.plateNo}</dd>
                       </div>
-                      {brand.description ? (
-                        <div>
-                          <dt className="font-medium text-gray-500">
-                            Mo ta
-                          </dt>
-                          <dd>{brand.description}</dd>
-                        </div>
-                      ) : null}
                       <div>
-                        <dt className="font-medium text-gray-500">
-                          Gia thue ngay co ban
-                        </dt>
+                        <dt className="font-medium text-[#00CC66]">VIN</dt>
+                        <dd>{vehicle.vin}</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-[#00CC66]">Trạng thái</dt>
                         <dd>
-                          {brand.baseDailyRate.toLocaleString("vi-VN")} d
+                          {vehicle.status.charAt(0).toUpperCase() +
+                            vehicle.status.slice(1)}
                         </dd>
                       </div>
                       <div>
-                        <dt className="font-medium text-gray-500">Tien coc</dt>
-                        <dd>
-                          {brand.depositAmount.toLocaleString("vi-VN")} d
-                        </dd>
+                        <dt className="font-medium text-[#00CC66]">Pin hiện tại</dt>
+                        <dd>{vehicle.batteryPercent}%</dd>
                       </div>
                     </dl>
-                  </li>
+                  </motion.li>
                 ))}
               </ul>
             )}
-          </section>
+          </motion.section>
+
+          <motion.section
+            id="brands"
+            className="scroll-mt-24 py-16"
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <SectionHeading
+              title="Thương hiệu đồng hành"
+              description="Danh sách thương hiệu cung cấp xe điện trên nền tảng."
+            />
+            {brandQuery.isLoading ? (
+              <p className="mt-6 text-gray-500">Đang tải danh sách thương hiệu...</p>
+            ) : brandQuery.isError ? (
+              <p className="mt-6 text-red-600">
+                Không thể tải danh sách thương hiệu. Vui lòng thử lại.
+              </p>
+            ) : brands.length === 0 ? (
+              <p className="mt-6 text-gray-500">Chưa có thương hiệu nào.</p>
+            ) : (
+              <ul className="mt-10 grid gap-6 md:grid-cols-2">
+                {brands.map((brand) => (
+                  <motion.li
+                    key={brand._id}
+                    className="rounded-xl border border-[#00CC66] bg-white px-6 py-5 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 ease-in-out"
+                    whileHover={{ scale: 1.02 }}
+                  >
+                    <div className="text-xl font-semibold text-[#000000]">
+                      {brand.name}
+                    </div>
+                    <dl className="mt-3 space-y-2 text-sm text-gray-700">
+                      <div>
+                        <dt className="font-medium text-[#00CC66]">Mã</dt>
+                        <dd>{brand.code}</dd>
+                      </div>
+                      {brand.description && (
+                        <div>
+                          <dt className="font-medium text-[#00CC66]">Mô tả</dt>
+                          <dd>{brand.description}</dd>
+                        </div>
+                      )}
+                      <div>
+                        <dt className="font-medium text-[#00CC66]">Giá thuê ngày</dt>
+                        <dd>{brand.baseDailyRate.toLocaleString("vi-VN")} đ</dd>
+                      </div>
+                      <div>
+                        <dt className="font-medium text-[#00CC66]">Tiền cọc</dt>
+                        <dd>{brand.depositAmount.toLocaleString("vi-VN")} đ</dd>
+                      </div>
+                    </dl>
+                  </motion.li>
+                ))}
+              </ul>
+            )}
+          </motion.section>
         </Container>
       </main>
       <Footer />
@@ -145,9 +146,7 @@ const HomeLayout = () => {
 };
 
 const Container = ({ children }: { children: ReactNode }) => (
-  <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
-    {children}
-  </div>
+  <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">{children}</div>
 );
 
 const SectionHeading = ({
@@ -158,31 +157,25 @@ const SectionHeading = ({
   description?: string;
 }) => (
   <div className="max-w-2xl">
-    <h2 className="text-3xl font-semibold text-gray-900">{title}</h2>
-    {description ? (
-      <p className="mt-2 text-sm text-gray-500">{description}</p>
-    ) : null}
+    <h2 className="text-3xl font-bold text-[#000000]">{title}</h2>
+    {description && (
+      <p className="mt-2 text-base text-gray-600">{description}</p>
+    )}
   </div>
 );
 
 const Footer = () => (
-  <footer className="border-t bg-white py-8 text-sm text-gray-600">
+  <footer className="border-t bg-[#f9f9f9] py-10 text-sm text-gray-600">
     <Container>
       <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-        <div className="flex items-center gap-2 text-gray-500">
+        <div className="flex items-center gap-2 text-[#00CC66]">
           <BatteryCharging className="h-4 w-4" />
-          <span>Copyright {new Date().getFullYear()} EVrent. All rights reserved.</span>
+          <span>© {new Date().getFullYear()} EVrent. All rights reserved.</span>
         </div>
         <div className="flex items-center gap-4">
-          <a className="hover:text-primary" href="#privacy">
-            Privacy
-          </a>
-          <a className="hover:text-primary" href="#terms">
-            Terms
-          </a>
-          <a className="hover:text-primary" href="#contact">
-            Contact
-          </a>
+          <a className="hover:text-[#00CC66] transition" href="#privacy">Privacy</a>
+          <a className="hover:text-[#00CC66] transition" href="#terms">Terms</a>
+          <a className="hover:text-[#00CC66] transition" href="#contact">Contact</a>
         </div>
       </div>
     </Container>
