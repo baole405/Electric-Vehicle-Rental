@@ -1,9 +1,11 @@
-import { type TBrandWithAvailability } from "@/schema/brand.schema";
-import { Car, Users, Gauge, Package } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { type TBrand } from '@/schema/brand.schema';
+import { Car, Gauge, Package, Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface BrandCardProps {
-  brand: TBrandWithAvailability;
+  brand: TBrand;
+  availableCount?: number;
+  isAvailable?: boolean;
   stationId: string;
   pickupDate?: string;
   pickupTime?: string;
@@ -12,39 +14,58 @@ interface BrandCardProps {
 }
 
 const carTypeMap: Record<string, string> = {
-  minicar: "Minicar",
-  sedan: "Sedan",
-  suv: "SUV",
-  hatchback: "Hatchback",
-  coupe: "Coupe",
-  wagon: "Wagon",
+  minicar: 'Minicar',
+  sedan: 'Sedan',
+  suv: 'SUV',
+  hatchback: 'Hatchback',
+  coupe: 'Coupe',
+  wagon: 'Wagon',
 };
 
-export default function BrandCard({ brand, stationId, pickupDate, pickupTime, returnDate, returnTime }: BrandCardProps) {
+export default function BrandCard({
+  brand,
+  availableCount,
+  isAvailable,
+  stationId,
+  pickupDate,
+  pickupTime,
+  returnDate,
+  returnTime,
+}: BrandCardProps) {
   const navigate = useNavigate();
 
+  // Use new format props if provided, otherwise fallback to brand.availability
+  const hasVehicles =
+    availableCount !== undefined
+      ? isAvailable && availableCount > 0
+      : brand.availability?.status === 'available';
+
+  const vehicleCount =
+    availableCount !== undefined
+      ? availableCount
+      : brand.availability?.available || 0;
+
   const getStatusBadge = () => {
-    if (brand.availability?.status === "available") {
+    if (hasVehicles) {
       return (
         <span className="absolute top-4 left-4 px-3 py-1.5 bg-green-500 text-white text-xs font-semibold rounded-md shadow-lg z-10">
           Miễn phí sạc
         </span>
       );
-    } else if (brand.availability?.status === "out_of_stock") {
-      return (
-        <span className="absolute top-4 left-4 px-3 py-1.5 bg-red-500 text-white text-xs font-semibold rounded-md shadow-lg z-10">
-          Hết xe
-        </span>
-      );
     }
-    return null;
+
+    return (
+      <span className="absolute top-4 left-4 px-3 py-1.5 bg-red-500 text-white text-xs font-semibold rounded-md shadow-lg z-10">
+        Hết xe
+      </span>
+    );
   };
 
   const handleCardClick = () => {
-    console.log("🖱️ Card clicked! Brand ID:", brand._id);
-    console.log("📍 Navigating to:", `/brands/${brand._id}`);
-    console.log("📦 Brand data:", brand);
-    console.log("🏢 Station ID:", stationId);
+    console.log('🖱️ Card clicked! Brand ID:', brand._id);
+    console.log('📍 Navigating to:', `/brands/${brand._id}`);
+    console.log('📦 Brand data:', brand);
+    console.log('🏢 Station ID:', stationId);
 
     // Navigate to brand detail page
     navigate(`/brands/${brand._id}`, {
@@ -94,7 +115,7 @@ export default function BrandCard({ brand, stationId, pickupDate, pickupTime, re
           <div className="text-sm text-gray-500 mb-1">Chi từ</div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-bold text-green-600">
-              {brand.baseDailyRate.toLocaleString("vi-VN")}
+              {brand.baseDailyRate.toLocaleString('vi-VN')}
             </span>
             <span className="text-gray-600 text-sm">VNĐ/Ngày</span>
           </div>
@@ -109,7 +130,11 @@ export default function BrandCard({ brand, stationId, pickupDate, pickupTime, re
             {/* Car Type */}
             <div className="flex items-center gap-2 text-gray-700">
               <Car className="w-4 h-4 text-gray-400" />
-              <span className="text-sm">{brand.specs?.carType ? (carTypeMap[brand.specs.carType] || brand.specs.carType) : 'N/A'}</span>
+              <span className="text-sm">
+                {brand.specs?.carType
+                  ? carTypeMap[brand.specs.carType] || brand.specs.carType
+                  : 'N/A'}
+              </span>
             </div>
 
             {/* Seats */}
@@ -127,7 +152,9 @@ export default function BrandCard({ brand, stationId, pickupDate, pickupTime, re
             {/* Trunk Capacity */}
             <div className="flex items-center gap-2 text-gray-700">
               <Package className="w-4 h-4 text-gray-400" />
-              <span className="text-sm">Dung tích cốp {brand.specs.trunkCapacity}L</span>
+              <span className="text-sm">
+                Dung tích cốp {brand.specs.trunkCapacity}L
+              </span>
             </div>
           </div>
         )}
@@ -135,13 +162,18 @@ export default function BrandCard({ brand, stationId, pickupDate, pickupTime, re
         {/* Action Button */}
         <button
           onClick={handleCardClick}
-          disabled={brand.availability?.status !== "available"}
-          className={`w-full py-3 rounded-lg font-semibold text-sm transition-all duration-200 ${brand.availability?.status === "available"
-            ? "bg-green-600 text-white hover:bg-green-700 active:scale-[0.98] shadow-md hover:shadow-lg"
-            : "bg-gray-200 text-gray-400 cursor-not-allowed"
-            }`}
+          disabled={!hasVehicles}
+          className={`w-full py-3 rounded-lg font-semibold text-sm transition-all duration-200 ${
+            hasVehicles
+              ? 'bg-green-600 text-white hover:bg-green-700 active:scale-[0.98] shadow-md hover:shadow-lg'
+              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+          }`}
         >
-          {brand.availability?.status === "available" ? "Chọn xe" : "Hết xe"}
+          {hasVehicles
+            ? vehicleCount > 0
+              ? `Chọn xe (${vehicleCount} xe)`
+              : 'Chọn xe'
+            : 'Hết xe'}
         </button>
       </div>
     </div>

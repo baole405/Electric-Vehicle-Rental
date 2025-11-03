@@ -111,13 +111,17 @@ export const BrandSchema = z.object({
   manufacturer: ManufacturerSchema.optional(),
   features: z.array(z.string()).optional().default([]),
   isActive: z.boolean().optional().default(true),
+  availability: BrandAvailabilitySchema.optional(), // Backend returns this in by-station API
   createdAt: z.string().datetime({ offset: true }),
   updatedAt: z.string().datetime({ offset: true }),
 });
 
 // Brand with availability (for by-station endpoint)
-export const BrandWithAvailabilitySchema = BrandSchema.extend({
-  availability: BrandAvailabilitySchema.optional(),
+// Backend returns: { brand: TBrand, availableVehicleCount: number, isAvailable: boolean }
+export const BrandWithAvailabilitySchema = z.object({
+  brand: BrandSchema,
+  availableVehicleCount: z.number().min(0),
+  isAvailable: z.boolean(),
 });
 
 export type TBrand = z.infer<typeof BrandSchema>;
