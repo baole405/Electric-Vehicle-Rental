@@ -10,6 +10,14 @@ export const useVehicleHook = () => {
       queryKey: ["vehicleList"],
       queryFn: () => VehicleApi.getVehicleList(),
     });
+
+  const useVehiclesByBrandAndStation = (brandCode: string, stationCode: string, options?: { enabled?: boolean }) =>
+    useQuery({
+      queryKey: ["vehiclesByBrandAndStation", brandCode, stationCode],
+      queryFn: () => VehicleApi.getVehiclesByBrandAndStation(brandCode, stationCode),
+      enabled: options?.enabled ?? Boolean(brandCode && stationCode),
+    });
+
   const useVehicleById = (id: string, options?: { enabled?: boolean }) =>
     useQuery({
       queryKey: ["vehicledetail", id],
@@ -42,6 +50,7 @@ export const useVehicleHook = () => {
 
   return {
     useVehicleList,
+    useVehiclesByBrandAndStation,
     useVehicleById,
     createVehicle,
     updateVehicle,

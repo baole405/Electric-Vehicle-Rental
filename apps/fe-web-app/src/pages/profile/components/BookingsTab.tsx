@@ -41,6 +41,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { TBooking } from "@/schema/booking.schema";
+import BookingDetailDialog from "@/components/shared/BookingDetailDialog";
 
 export default function BookingsTab() {
   const navigate = useNavigate();
@@ -426,6 +427,13 @@ export default function BookingsTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Booking Detail Dialog */}
+      <BookingDetailDialog
+        booking={selectedBooking}
+        open={showDetailDialog}
+        onOpenChange={setShowDetailDialog}
+      />
     </div>
   );
 }

@@ -200,17 +200,16 @@ export const StaffBookingManagement = () => {
         renterName: values.renterName,
         phoneNumber: values.phoneNumber,
         email: values.email,
-        brandId: values.brandId,
-        stationId: values.stationId,
-        pickupDate: values.pickupDate,
-        pickupTime: values.pickupTime,
-        returnDate: values.returnDate,
-        returnTime: values.returnTime,
+        brand: values.brandId,
+        pickupStation: values.stationId,
+        vehicle: values.brandId, // Use brandId as vehicle identifier
+        pickupTimeExpected: `${values.pickupDate}T${values.pickupTime}:00.000Z`,
+        rentalDays: 1, // Calculate based on dates
         paymentMethod: values.paymentMethod as TCreateBooking['paymentMethod'],
         agreedToPaymentTerms: true,
         agreedToDataSharing: true,
-        pickupLocation: values.pickupLocation,
-        promoCode: values.promoCode,
+        status: "pending",
+        surchargeAmount: 0,
         notes: values.notes,
       });
       setBookingFeedback('✅ Booking created successfully.');
