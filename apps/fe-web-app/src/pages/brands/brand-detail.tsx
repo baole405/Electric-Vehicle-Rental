@@ -211,9 +211,9 @@ export default function VehicleDetailPage() {
             >
               Đặt xe
             </Button>
-            <Button variant="outline" asChild>
+            {/* <Button variant="outline" asChild>
               <Link to="/contact">Nhận thông tin tư vấn</Link>
-            </Button>
+            </Button> */}
           </div>
 
           {/* Ghi chú */}

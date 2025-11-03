@@ -1,11 +1,12 @@
-import { useState, useEffect, useMemo } from "react";
-import { Loader2, AlertTriangle, Calendar, Clock } from "lucide-react";
-import HeaderMain from "@/components/header/header-main";
-import { useBrandHook } from "@/hooks/use-brand";
-import { useStationHook } from "@/hooks/use-station";
-import type { TStation } from "@/schema/station.schema";
-import BrandCard from "@/components/shared/BrandCard";
-import { Button } from "@/components/shadcn/ui/button";
+import HeaderMain from '@/components/header/header-main';
+import { Button } from '@/components/shadcn/ui/button';
+import BrandCard from '@/components/shared/BrandCard';
+import { useBrandHook } from '@/hooks/use-brand';
+import { useStationHook } from '@/hooks/use-station';
+import type { TBrand } from '@/schema/brand.schema';
+import type { TStation } from '@/schema/station.schema';
+import { AlertTriangle, Calendar, Clock, Loader2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
 export default function BrandsByStationPage() {
   const { useBrandsByStation } = useBrandHook();
@@ -13,24 +14,27 @@ export default function BrandsByStationPage() {
 
   // Fetch stations
   const { data: stationsData, isLoading: stationsLoading } = useStationList();
-  const stations = useMemo(() => stationsData?.data?.data || [], [stationsData]);
+  const stations = useMemo(
+    () => stationsData?.data?.data || [],
+    [stationsData]
+  );
 
   // Get today's date in YYYY-MM-DD format
   const today = new Date().toISOString().split('T')[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 
   // State for selected station and dates
-  const [selectedStationId, setSelectedStationId] = useState<string>("");
+  const [selectedStationId, setSelectedStationId] = useState<string>('');
   const [pickupDate, setPickupDate] = useState<string>(today);
-  const [pickupTime, setPickupTime] = useState<string>("10:00");
+  const [pickupTime, setPickupTime] = useState<string>('10:00');
   const [returnDate, setReturnDate] = useState<string>(tomorrow);
-  const [returnTime, setReturnTime] = useState<string>("10:00");
-  const [dateError, setDateError] = useState<string>("");
+  const [returnTime, setReturnTime] = useState<string>('10:00');
+  const [dateError, setDateError] = useState<string>('');
 
   // Validate dates
   useEffect(() => {
     if (!pickupDate || !returnDate) {
-      setDateError("");
+      setDateError('');
       return;
     }
 
@@ -40,31 +44,33 @@ export default function BrandsByStationPage() {
 
     // Check if pickup date is in the past
     if (pickup < todayDate) {
-      setDateError("Ngày nhận xe không được là ngày trong quá khứ");
+      setDateError('Ngày nhận xe không được là ngày trong quá khứ');
       return;
     }
 
     // Check if return date is in the past
     if (returnD < todayDate) {
-      setDateError("Ngày trả xe không được là ngày trong quá khứ");
+      setDateError('Ngày trả xe không được là ngày trong quá khứ');
       return;
     }
 
     // Check if return date is before pickup date
     if (returnD < pickup) {
-      setDateError("Ngày trả xe phải lớn hơn hoặc bằng ngày nhận xe");
+      setDateError('Ngày trả xe phải lớn hơn hoặc bằng ngày nhận xe');
       return;
     }
 
-    setDateError("");
+    setDateError('');
   }, [pickupDate, returnDate, today]);
 
   // Set default station (station-hcm-01 or first station)
   useEffect(() => {
     if (stations.length > 0 && !selectedStationId) {
       const defaultStation =
-        stations.find((s: TStation) => s.code === "station-hcm-01") || stations[0];
-      setSelectedStationId(defaultStation.code);
+        stations.find((s: TStation) => s.code === 'station-hcm-01') ||
+        stations[0];
+      // ✅ FIX: Use station._id (ObjectId) instead of station.code
+      setSelectedStationId(defaultStation._id);
     }
   }, [stations, selectedStationId]);
 
@@ -76,12 +82,21 @@ export default function BrandsByStationPage() {
   } = useBrandsByStation(selectedStationId);
 
   // Debug logs
-  console.log("🔍 Selected Station ID:", selectedStationId);
-  console.log("📦 Brands Data Full:", brandsData);
-  console.log("📊 Brands Data.data:", brandsData?.data);
-  console.log("🚗 Final Brands Array:", brandsData?.data?.data);
+  console.log('🔍 Selected Station ID:', selectedStationId);
+  console.log('📦 Brands Data Full:', brandsData);
+  console.log('📊 Brands Data.data:', brandsData?.data);
+  console.log('🚗 Final Brands Array:', brandsData?.data?.data);
 
   const brands = brandsData?.data?.data || [];
+  console.log('✅ Brands length:', brands.length);
+  console.log('🎯 First brand item:', brands[0]);
+
+  // Check structure - is it TBrand directly or {brand, availableVehicleCount, isAvailable}?
+  const isNestedStructure = brands[0]?.brand !== undefined;
+  console.log(
+    '🏗️ Is nested structure (has .brand property)?',
+    isNestedStructure
+  );
 
   const isLoading = stationsLoading || brandsLoading;
 
@@ -90,7 +105,13 @@ export default function BrandsByStationPage() {
       alert(dateError);
       return;
     }
-    console.log("🔍 Search:", { selectedStationId, pickupDate, pickupTime, returnDate, returnTime });
+    console.log('🔍 Search:', {
+      selectedStationId,
+      pickupDate,
+      pickupTime,
+      returnDate,
+      returnTime,
+    });
     // TODO: Implement search logic with validated dates
   };
 
@@ -120,7 +141,7 @@ export default function BrandsByStationPage() {
                   className="w-full h-12 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
                 >
                   {stations.map((station: TStation) => (
-                    <option key={station._id} value={station.code}>
+                    <option key={station._id} value={station._id}>
                       {station.name}
                     </option>
                   ))}
@@ -230,7 +251,9 @@ export default function BrandsByStationPage() {
           </div>
         ) : brands.length === 0 ? (
           <div className="flex flex-col justify-center items-center h-64 bg-white rounded-2xl shadow-lg">
-            <span role="img" aria-label="car" className="text-6xl mb-4">🚗</span>
+            <span role="img" aria-label="car" className="text-6xl mb-4">
+              🚗
+            </span>
             <p className="text-xl font-semibold text-gray-700 mb-2">
               Không có xe tại trạm này
             </p>
@@ -240,17 +263,55 @@ export default function BrandsByStationPage() {
           <>
             {/* Brand Cards Grid - 3 columns */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {brands.map((brand) => (
-                <BrandCard
-                  key={brand._id}
-                  brand={brand}
-                  stationId={selectedStationId}
-                  pickupDate={pickupDate}
-                  pickupTime={pickupTime}
-                  returnDate={returnDate}
-                  returnTime={returnTime}
-                />
-              ))}
+              {(() => {
+                // Check if data is nested structure or direct TBrand[]
+                const isNestedStructure = brands[0]?.brand !== undefined;
+
+                if (isNestedStructure) {
+                  // New API format: {brand, availableVehicleCount, isAvailable}
+                  const filteredBrands = brands.filter(
+                    (item) => item?.brand?._id
+                  );
+                  console.log(
+                    '🔍 Filtered brands (nested) count:',
+                    filteredBrands.length
+                  );
+                  return filteredBrands.map((item) => (
+                    <BrandCard
+                      key={item.brand._id}
+                      brand={item.brand}
+                      availableCount={item.availableVehicleCount}
+                      isAvailable={item.isAvailable}
+                      stationId={selectedStationId}
+                      pickupDate={pickupDate}
+                      pickupTime={pickupTime}
+                      returnDate={returnDate}
+                      returnTime={returnTime}
+                    />
+                  ));
+                } else {
+                  // Old API format: TBrand[] directly - cast to unknown first
+                  const directBrands = brands as unknown as TBrand[];
+                  const filteredBrands = directBrands.filter(
+                    (brand) => brand?._id
+                  );
+                  console.log(
+                    '🔍 Filtered brands (direct) count:',
+                    filteredBrands.length
+                  );
+                  return filteredBrands.map((brand) => (
+                    <BrandCard
+                      key={brand._id}
+                      brand={brand}
+                      stationId={selectedStationId}
+                      pickupDate={pickupDate}
+                      pickupTime={pickupTime}
+                      returnDate={returnDate}
+                      returnTime={returnTime}
+                    />
+                  ));
+                }
+              })()}
             </div>
           </>
         )}

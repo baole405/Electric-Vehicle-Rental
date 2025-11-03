@@ -1,14 +1,21 @@
-import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import type { TBrandWithAvailability } from "@/schema/brand.schema";
-import { ChevronLeft, CheckCircle2, Car, Battery, MapPin, Settings } from "lucide-react";
-import { Button } from "@/components/shadcn/ui/button";
-import { useStationHook } from "@/hooks/use-station";
-import { useVehicleHook } from "@/hooks/use-vehicle";
-import type { TVehicle } from "@/schema/vehicle.schema";
+import { Button } from '@/components/shadcn/ui/button';
+import { useStationHook } from '@/hooks/use-station';
+import { useVehicleHook } from '@/hooks/use-vehicle';
+import type { TBrand } from '@/schema/brand.schema';
+import type { TVehicle } from '@/schema/vehicle.schema';
+import {
+  Battery,
+  Car,
+  CheckCircle2,
+  ChevronLeft,
+  MapPin,
+  Settings,
+} from 'lucide-react';
+import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 interface LocationState {
-  brand: TBrandWithAvailability;
+  brand: TBrand; // Changed from TBrandWithAvailability
   stationId: string;
   pickupDate?: string;
   pickupTime?: string;
@@ -24,29 +31,36 @@ export default function BrandDetailPage() {
   const { useVehicleList } = useVehicleHook();
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [selectedStationCode, setSelectedStationCode] = useState(state?.stationId || "");
+  const [selectedStationCode, setSelectedStationCode] = useState(
+    state?.stationId || ''
+  );
 
   // Fetch stations and vehicles
   const { data: stationsData } = useStationList();
   const stations = stationsData?.data?.data || [];
 
   // Get all vehicles and filter by brand and station
-  const { data: allVehiclesData, isLoading: vehiclesLoading } = useVehicleList();
+  const { data: allVehiclesData, isLoading: vehiclesLoading } =
+    useVehicleList();
   const allVehicles = Array.isArray(allVehiclesData?.data?.data)
     ? allVehiclesData.data.data
     : Array.isArray(allVehiclesData?.data)
-      ? allVehiclesData.data
-      : [];
+    ? allVehiclesData.data
+    : [];
 
   // Filter vehicles by brand and selected station
   const vehicles = allVehicles.filter((vehicle) => {
     // Check if vehicle belongs to the current brand
-    const matchesBrand = !state?.brand.code ||
-      (vehicle.brand && typeof vehicle.brand === 'object' && vehicle.brand.code === state.brand.code) ||
-      (vehicle.model === state.brand.name);
+    const matchesBrand =
+      !state?.brand.code ||
+      (vehicle.brand &&
+        typeof vehicle.brand === 'object' &&
+        vehicle.brand.code === state.brand.code) ||
+      vehicle.model === state.brand.name;
 
     // Check if vehicle is at selected station
-    const matchesStation = !selectedStationCode || vehicle.stationId === selectedStationCode;
+    const matchesStation =
+      !selectedStationCode || vehicle.stationId === selectedStationCode;
 
     return matchesBrand && matchesStation;
   });
@@ -56,27 +70,34 @@ export default function BrandDetailPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-500 mb-4">Không tìm thấy thông tin xe</p>
-          <Button onClick={() => navigate("/")}>Quay lại trang chủ</Button>
+          <Button onClick={() => navigate('/')}>Quay lại trang chủ</Button>
         </div>
       </div>
     );
   }
 
-  const { brand, stationId, pickupDate, pickupTime, returnDate, returnTime } = state;
+  const { brand, stationId, pickupDate, pickupTime, returnDate, returnTime } =
+    state;
 
   // Use images array if available, fallback to imageUrl
-  const images = brand.images && brand.images.length > 0
-    ? brand.images
-    : brand.imageUrl
+  const images =
+    brand.images && brand.images.length > 0
+      ? brand.images
+      : brand.imageUrl
       ? [brand.imageUrl]
       : [];
 
   const handleVehicleBooking = (vehicle: TVehicle) => {
-    navigate("/booking", {
+    // Find the selected station object to get its _id
+    const selectedStation = stations.find(
+      (s) => s.code === selectedStationCode
+    );
+
+    navigate('/booking', {
       state: {
         brand,
         vehicle, // Pass specific vehicle instead of just brand
-        stationId: selectedStationCode,
+        stationId: selectedStation?._id || selectedStationCode, // Use ObjectId instead of code
         pickupDate,
         pickupTime,
         returnDate,
@@ -87,41 +108,90 @@ export default function BrandDetailPage() {
 
   const handleConsultation = () => {
     // TODO: Implement consultation request
-    alert("Tính năng tư vấn đang được phát triển");
+    alert('Tính năng tư vấn đang được phát triển');
   };
 
   const formatPrice = (price?: number) => {
-    if (!price) return "Liên hệ";
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
+    if (!price) return 'Liên hệ';
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
     }).format(price);
   };
 
   const specs = [
-    { label: "Số chỗ ngồi", value: brand.specs?.seats ? `${brand.specs.seats} chỗ` : undefined, icon: "👥" },
-    { label: "Quãng đường", value: brand.specs?.range ? `${brand.specs.range}km (NEDC)` : undefined, icon: "🔋" },
-    { label: "Công suất", value: brand.specs?.horsePower ? `${brand.specs.horsePower} HP` : undefined, icon: "⚡" },
-    { label: "Hộp số", value: brand.specs?.transmission === "single-speed" ? "Số tự động" : brand.specs?.transmission, icon: "⚙️" },
-    { label: "Loại xe", value: brand.specs?.carType === "minicar" ? "Minicar" : brand.specs?.carType, icon: "🚗" },
-    { label: "Dung tích cốp", value: brand.specs?.trunkCapacity ? `${brand.specs.trunkCapacity}L` : undefined, icon: "🧳" },
-    { label: "Túi khí", value: brand.specs?.airbags ? `${brand.specs.airbags} túi khí` : undefined, icon: "�️" },
-    { label: "Giới hạn di chuyển", value: brand.specs?.dailyKmLimit ? `${brand.specs.dailyKmLimit} km/ngày` : undefined, icon: "🛣️" },
+    {
+      label: 'Số chỗ ngồi',
+      value: brand.specs?.seats ? `${brand.specs.seats} chỗ` : undefined,
+      icon: '👥',
+    },
+    {
+      label: 'Quãng đường',
+      value: brand.specs?.range ? `${brand.specs.range}km (NEDC)` : undefined,
+      icon: '🔋',
+    },
+    {
+      label: 'Công suất',
+      value: brand.specs?.horsePower
+        ? `${brand.specs.horsePower} HP`
+        : undefined,
+      icon: '⚡',
+    },
+    {
+      label: 'Hộp số',
+      value:
+        brand.specs?.transmission === 'single-speed'
+          ? 'Số tự động'
+          : brand.specs?.transmission,
+      icon: '⚙️',
+    },
+    {
+      label: 'Loại xe',
+      value:
+        brand.specs?.carType === 'minicar' ? 'Minicar' : brand.specs?.carType,
+      icon: '🚗',
+    },
+    {
+      label: 'Dung tích cốp',
+      value: brand.specs?.trunkCapacity
+        ? `${brand.specs.trunkCapacity}L`
+        : undefined,
+      icon: '🧳',
+    },
+    {
+      label: 'Túi khí',
+      value: brand.specs?.airbags
+        ? `${brand.specs.airbags} túi khí`
+        : undefined,
+      icon: '�️',
+    },
+    {
+      label: 'Giới hạn di chuyển',
+      value: brand.specs?.dailyKmLimit
+        ? `${brand.specs.dailyKmLimit} km/ngày`
+        : undefined,
+      icon: '🛣️',
+    },
   ].filter((spec) => spec.value !== undefined);
 
-  const isAvailable = brand.availability?.status === "available";
+  const isAvailable = brand.availability?.status === 'available';
 
   // Vehicle status mapping
-  const getVehicleStatusBadge = (status: TVehicle["status"]) => {
+  const getVehicleStatusBadge = (status: TVehicle['status']) => {
     const statusConfig = {
-      available: { text: "Sẵn sàng", class: "bg-green-100 text-green-700" },
-      rented: { text: "Đang thuê", class: "bg-red-100 text-red-700" },
-      maintenance: { text: "Bảo trì", class: "bg-yellow-100 text-yellow-700" },
-      unavailable: { text: "Không khả dụng", class: "bg-gray-100 text-gray-700" },
+      available: { text: 'Sẵn sàng', class: 'bg-green-100 text-green-700' },
+      rented: { text: 'Đang thuê', class: 'bg-red-100 text-red-700' },
+      maintenance: { text: 'Bảo trì', class: 'bg-yellow-100 text-yellow-700' },
+      unavailable: {
+        text: 'Không khả dụng',
+        class: 'bg-gray-100 text-gray-700',
+      },
     };
     const config = statusConfig[status] || statusConfig.unavailable;
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${config.class}`}>
+      <span
+        className={`px-2 py-1 text-xs font-medium rounded-full ${config.class}`}
+      >
         {config.text}
       </span>
     );
@@ -129,14 +199,14 @@ export default function BrandDetailPage() {
 
   // Vehicle Card Component
   const VehicleCard = ({ vehicle }: { vehicle: TVehicle }) => {
-    const isVehicleAvailable = vehicle.status === "available";
+    const isVehicleAvailable = vehicle.status === 'available';
 
     return (
       <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 hover:shadow-md transition-shadow">
         <div className="flex items-start justify-between mb-3">
           <div>
             <h3 className="font-semibold text-gray-900 mb-1">
-              {vehicle.plateNo || "Chưa có biển số"}
+              {vehicle.plateNo || 'Chưa có biển số'}
             </h3>
             <p className="text-sm text-gray-600">{vehicle.model}</p>
           </div>
@@ -147,9 +217,16 @@ export default function BrandDetailPage() {
           <div className="flex items-center gap-2">
             <Battery className="w-4 h-4 text-gray-400" />
             <span className="text-gray-600">
-              Pin: <span className={`font-medium ${vehicle.batteryPercent >= 70 ? 'text-green-600' :
-                vehicle.batteryPercent >= 30 ? 'text-yellow-600' : 'text-red-600'
-                }`}>
+              Pin:{' '}
+              <span
+                className={`font-medium ${
+                  vehicle.batteryPercent >= 70
+                    ? 'text-green-600'
+                    : vehicle.batteryPercent >= 30
+                    ? 'text-yellow-600'
+                    : 'text-red-600'
+                }`}
+              >
                 {vehicle.batteryPercent || 0}%
               </span>
             </span>
@@ -158,7 +235,10 @@ export default function BrandDetailPage() {
           <div className="flex items-center gap-2">
             <Settings className="w-4 h-4 text-gray-400" />
             <span className="text-gray-600">
-              ODO: {vehicle.odometer ? `${vehicle.odometer.toLocaleString()}km` : 'N/A'}
+              ODO:{' '}
+              {vehicle.odometer
+                ? `${vehicle.odometer.toLocaleString()}km`
+                : 'N/A'}
             </span>
           </div>
 
@@ -181,12 +261,13 @@ export default function BrandDetailPage() {
         <Button
           onClick={() => handleVehicleBooking(vehicle)}
           disabled={!isVehicleAvailable}
-          className={`w-full h-10 text-sm font-semibold transition-colors ${isVehicleAvailable
-            ? "bg-green-600 hover:bg-green-700 text-white"
-            : "bg-gray-300 text-gray-500 cursor-not-allowed"
-            }`}
+          className={`w-full h-10 text-sm font-semibold transition-colors ${
+            isVehicleAvailable
+              ? 'bg-green-600 hover:bg-green-700 text-white'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          }`}
         >
-          {isVehicleAvailable ? "Chọn xe này" : "Không khả dụng"}
+          {isVehicleAvailable ? 'Chọn xe này' : 'Không khả dụng'}
         </Button>
       </div>
     );
@@ -245,10 +326,11 @@ export default function BrandDetailPage() {
                   <button
                     key={index}
                     onClick={() => setActiveImageIndex(index)}
-                    className={`relative aspect-[4/3] rounded-lg overflow-hidden border-2 transition-all ${activeImageIndex === index
-                      ? "border-green-500 shadow-md"
-                      : "border-gray-200 hover:border-gray-300"
-                      }`}
+                    className={`relative aspect-[4/3] rounded-lg overflow-hidden border-2 transition-all ${
+                      activeImageIndex === index
+                        ? 'border-green-500 shadow-md'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
                   >
                     <img
                       src={image}
@@ -281,27 +363,35 @@ export default function BrandDetailPage() {
                   <span className="text-gray-500 text-lg">/ngày</span>
                 </div>
                 <p className="text-gray-600 text-sm">
-                  Đặt cọc: <span className="font-semibold text-gray-900">{formatPrice(brand.depositAmount)}</span>
+                  Đặt cọc:{' '}
+                  <span className="font-semibold text-gray-900">
+                    {formatPrice(brand.depositAmount)}
+                  </span>
                 </p>
               </div>
 
               {/* Specifications - Integrated into main card */}
               <div className="border-b border-gray-200 pb-4">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Thông số kỹ thuật</h2>
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Thông số kỹ thuật
+                </h2>
                 <div className="grid grid-cols-2 gap-4">
                   {specs.map((spec, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-2"
-                    >
+                    <div key={index} className="flex items-center gap-2">
                       <div className="flex items-center justify-center w-5 h-5 bg-gray-100 rounded-full flex-shrink-0">
-                        <span className="text-xs text-gray-600" role="img" aria-label={spec.label}>
+                        <span
+                          className="text-xs text-gray-600"
+                          role="img"
+                          aria-label={spec.label}
+                        >
                           {spec.icon}
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-gray-500">{spec.label}</p>
-                        <p className="font-medium text-gray-900 text-sm truncate">{spec.value}</p>
+                        <p className="font-medium text-gray-900 text-sm truncate">
+                          {spec.value}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -309,7 +399,7 @@ export default function BrandDetailPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="space-y-3">
+              {/* <div className="space-y-3">
                 <Button
                   onClick={handleConsultation}
                   variant="outline"
@@ -317,7 +407,7 @@ export default function BrandDetailPage() {
                 >
                   Nhận thông tin tư vấn
                 </Button>
-              </div>
+              </div> */}
             </div>
 
             {/* Availability Info - Hidden for now */}
@@ -357,7 +447,10 @@ export default function BrandDetailPage() {
 
             {/* Station Selector */}
             <div className="flex items-center gap-3">
-              <label htmlFor="station-select" className="text-sm font-medium text-gray-700 whitespace-nowrap">
+              <label
+                htmlFor="station-select"
+                className="text-sm font-medium text-gray-700 whitespace-nowrap"
+              >
                 Chọn trạm:
               </label>
               <select
@@ -380,7 +473,9 @@ export default function BrandDetailPage() {
           {vehiclesLoading ? (
             <div className="flex justify-center items-center h-32">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-              <span className="ml-3 text-gray-600">Đang tải danh sách xe...</span>
+              <span className="ml-3 text-gray-600">
+                Đang tải danh sách xe...
+              </span>
             </div>
           ) : !selectedStationCode ? (
             <div className="text-center py-12 text-gray-500">

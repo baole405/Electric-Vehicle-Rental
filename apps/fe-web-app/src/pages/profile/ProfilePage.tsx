@@ -21,6 +21,7 @@ import BookingsTab from "./components/BookingsTab";
 import PaymentsTab from "./components/PaymentsTab";
 import DocumentsTab from "./components/DocumentsTab";
 import SettingsTab from "./components/SettingsTab";
+import HeaderMain from "@/components/header/header-main";
 
 export default function ProfilePage() {
   const { currentUser, clearAuth } = useAuthContext();
@@ -79,6 +80,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <HeaderMain />
       {/* Header Section */}
       <div className="bg-gradient-to-r from-green-600 to-green-700 text-white">
         <div className="container mx-auto px-4 py-8">
@@ -110,7 +112,8 @@ export default function ProfilePage() {
                   </p>
                 )}
                 <p className="text-sm">
-                  {getRoleLabel()} • Tham gia {new Date(currentUser.createdAt).toLocaleDateString("vi-VN")}
+                  {getRoleLabel()} • Tham gia{' '}
+                  {new Date(currentUser.createdAt).toLocaleDateString('vi-VN')}
                 </p>
               </div>
             </div>
@@ -119,7 +122,7 @@ export default function ProfilePage() {
             <div className="flex gap-2">
               <Button
                 variant="secondary"
-                onClick={() => setActiveTab("settings")}
+                onClick={() => setActiveTab('settings')}
                 className="bg-white text-green-700 hover:bg-green-50"
               >
                 <Settings className="w-4 h-4 mr-2" />
@@ -137,28 +140,42 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
-
       {/* Tabs Section */}
       <div className="container mx-auto px-4 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-5 mb-8 bg-white shadow-sm h-auto p-1">
-            <TabsTrigger value="overview" className="flex items-center gap-2 py-3">
+            <TabsTrigger
+              value="overview"
+              className="flex items-center gap-2 py-3"
+            >
               <User className="w-4 h-4" />
               <span className="hidden sm:inline">Tổng quan</span>
             </TabsTrigger>
-            <TabsTrigger value="bookings" className="flex items-center gap-2 py-3">
+            <TabsTrigger
+              value="bookings"
+              className="flex items-center gap-2 py-3"
+            >
               <Calendar className="w-4 h-4" />
               <span className="hidden sm:inline">Đặt xe</span>
             </TabsTrigger>
-            <TabsTrigger value="payments" className="flex items-center gap-2 py-3">
+            <TabsTrigger
+              value="payments"
+              className="flex items-center gap-2 py-3"
+            >
               <CreditCard className="w-4 h-4" />
               <span className="hidden sm:inline">Thanh toán</span>
             </TabsTrigger>
-            <TabsTrigger value="documents" className="flex items-center gap-2 py-3">
+            <TabsTrigger
+              value="documents"
+              className="flex items-center gap-2 py-3"
+            >
               <FileText className="w-4 h-4" />
               <span className="hidden sm:inline">Hồ sơ</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2 py-3">
+            <TabsTrigger
+              value="settings"
+              className="flex items-center gap-2 py-3"
+            >
               <Settings className="w-4 h-4" />
               <span className="hidden sm:inline">Cài đặt</span>
             </TabsTrigger>
