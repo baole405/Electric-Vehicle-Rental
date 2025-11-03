@@ -59,23 +59,6 @@ export default function BrandCard({ brand, stationId, pickupDate, pickupTime, re
     });
   };
 
-  const handleBooking = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click
-    if (brand.availability?.status !== "available") return;
-
-    // Navigate to booking page with brand data and rental dates
-    navigate("/booking", {
-      state: {
-        brand,
-        stationId,
-        pickupDate,
-        pickupTime,
-        returnDate,
-        returnTime,
-      },
-    });
-  };
-
   return (
     <div
       onClick={handleCardClick}
@@ -151,14 +134,14 @@ export default function BrandCard({ brand, stationId, pickupDate, pickupTime, re
 
         {/* Action Button */}
         <button
-          onClick={handleBooking}
+          onClick={handleCardClick}
           disabled={brand.availability?.status !== "available"}
           className={`w-full py-3 rounded-lg font-semibold text-sm transition-all duration-200 ${brand.availability?.status === "available"
             ? "bg-green-600 text-white hover:bg-green-700 active:scale-[0.98] shadow-md hover:shadow-lg"
             : "bg-gray-200 text-gray-400 cursor-not-allowed"
             }`}
         >
-          {brand.availability?.status === "available" ? "Đặt xe" : "Hết xe"}
+          {brand.availability?.status === "available" ? "Chọn xe" : "Hết xe"}
         </button>
       </div>
     </div>
