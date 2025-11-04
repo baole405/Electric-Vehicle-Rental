@@ -38,24 +38,21 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     }
   }, []);
 
-  const fetchUser = useCallback(
-    async (userId: string) => {
-      try {
-        setIsLoading(true);
-        const response = await UserApi.getUserById(userId);
-        setCurrentUser(response.data.data);
-        setRole(response.data.data.role);
-      } catch (error) {
-        console.error("Failed to fetch user profile", error);
-        setCurrentUser(null);
-        setRole(null);
-        persistAuth(null);
-      } finally {
-        setIsLoading(false);
-      }
-    },
-    [persistAuth],
-  );
+  const fetchCurrentUser = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await UserApi.getCurrentUser();
+      setCurrentUser(response.data.data);
+      setRole(response.data.data.role);
+    } catch (error) {
+      console.error("Failed to fetch current user profile", error);
+      setCurrentUser(null);
+      setRole(null);
+      persistAuth(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [persistAuth]);
 
   const hydrateFromStorage = useCallback(async () => {
     try {
@@ -69,8 +66,22 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       setToken(parsed.token ?? null);
       setRole(parsed.role ?? null);
 
-      if (parsed.userId) {
-        await fetchUser(parsed.userId);
+      if (parsed.token) {
+        await fetchCurrentUser();
+      } else if (parsed.userId) {
+        try {
+          setIsLoading(true);
+          const response = await UserApi.getUserById(parsed.userId);
+          setCurrentUser(response.data.data);
+          setRole(response.data.data.role);
+        } catch (error) {
+          console.error("Failed to fetch user profile from storage", error);
+          setCurrentUser(null);
+          setRole(null);
+          persistAuth(null);
+        } finally {
+          setIsLoading(false);
+        }
       } else {
         setIsLoading(false);
       }
@@ -79,7 +90,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       persistAuth(null);
       setIsLoading(false);
     }
-  }, [fetchUser, persistAuth]);
+  }, [fetchCurrentUser, persistAuth]);
 
   useEffect(() => {
     void hydrateFromStorage();
@@ -89,16 +100,20 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     (user: TUser, userToken?: string | null) => {
       setCurrentUser(user);
       setRole(user.role);
+      const effectiveToken = userToken !== undefined ? userToken : token;
       if (userToken !== undefined) {
         setToken(userToken ?? null);
       }
       const stored: StoredAuth = { userId: user._id, role: user.role };
-      if (userToken) {
-        stored.token = userToken;
+      if (effectiveToken) {
+        stored.token = effectiveToken;
       }
       persistAuth(stored);
+      if (effectiveToken) {
+        void fetchCurrentUser();
+      }
     },
-    [persistAuth],
+    [fetchCurrentUser, persistAuth, token],
   );
 
   const clearAuth = useCallback(() => {
@@ -110,13 +125,29 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
   const refreshUser = useCallback(
     async (userId?: string) => {
-      const id = userId ?? currentUser?._id;
-      if (!id) {
+      if (userId && userId !== currentUser?._id) {
+        try {
+          setIsLoading(true);
+          const response = await UserApi.getUserById(userId);
+          setCurrentUser(response.data.data);
+          setRole(response.data.data.role);
+        } catch (error) {
+          console.error("Failed to refresh user by id", error);
+        } finally {
+          setIsLoading(false);
+        }
         return;
       }
-      await fetchUser(id);
+
+      const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+      const parsed = stored ? (JSON.parse(stored) as StoredAuth) : null;
+      if (!(parsed?.token ?? token)) {
+        return;
+      }
+
+      await fetchCurrentUser();
     },
-    [currentUser?._id, fetchUser],
+    [currentUser?._id, fetchCurrentUser, token],
   );
 
   const value = useMemo<AuthContextValue>(
