@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useAuthContext } from "@/contexts/auth-context";
 import { useBooking } from "@/hooks/use-booking";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/shadcn/ui/card";
 import { Button } from "@/components/shadcn/ui/button";
@@ -42,11 +43,18 @@ import {
 import { useNavigate } from "react-router-dom";
 import type { TBooking } from "@/schema/booking.schema";
 import BookingDetailDialog from "@/components/shared/BookingDetailDialog";
+import type { AxiosError } from "axios";
 
 export default function BookingsTab() {
   const navigate = useNavigate();
+  const { currentUser } = useAuthContext();
   const { useBookingList, cancelBooking } = useBooking();
-  const bookingListQuery = useBookingList();
+  const renterId = currentUser?._id ?? "";
+  const isValidRenterId = renterId ? /^[a-fA-F0-9]{24}$/.test(renterId) : false;
+  const bookingListQuery = useBookingList(
+    isValidRenterId ? { renterId } : undefined,
+    { enabled: Boolean(renterId) && isValidRenterId }
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedBooking, setSelectedBooking] = useState<TBooking | null>(null);
@@ -57,6 +65,20 @@ export default function BookingsTab() {
     () => (bookingListQuery.data?.data?.data || []) as TBooking[],
     [bookingListQuery.data?.data?.data]
   );
+
+  const bookingErrorMessage = useMemo(() => {
+    if (renterId && !isValidRenterId) {
+      return "Không thể tải lịch sử booking vì mã người dùng không hợp lệ.";
+    }
+    if (!bookingListQuery.isError) {
+      return null;
+    }
+    const error = bookingListQuery.error as AxiosError<{ message?: string; error?: string }>;
+    if (error.response?.status === 400) {
+      return error.response.data?.message ?? "renterId không hợp lệ (phải là ObjectId 24 ký tự).";
+    }
+    return error.message || "Đã xảy ra lỗi khi tải danh sách booking.";
+  }, [bookingListQuery.error, bookingListQuery.isError, renterId, isValidRenterId]);
 
   // Filter bookings
   const filteredBookings = useMemo(() => {
@@ -116,6 +138,18 @@ export default function BookingsTab() {
           <CardDescription>Quản lý tất cả booking của bạn</CardDescription>
         </CardHeader>
         <CardContent>
+          {bookingErrorMessage && (
+            <div className="mb-4 flex flex-col gap-2 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              <span>{bookingErrorMessage}</span>
+              {bookingListQuery.isError && (
+                <div>
+                  <Button variant="outline" size="sm" onClick={() => bookingListQuery.refetch()}>
+                    Thử tải lại
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
           {/* Filters */}
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="flex-1 relative">

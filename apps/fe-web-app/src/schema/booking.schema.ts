@@ -117,6 +117,10 @@ export const CreateBookingSchema = z.object({
   agreedToDataSharing: z.boolean(),
 
   // Optional fields
+  renterId: z
+    .string()
+    .regex(/^[a-fA-F0-9]{24}$/, "renterId không hợp lệ (phải là ObjectId 24 ký tự).")
+    .optional(),
   renter: z.string().nullable().optional(), // BE sets this
   status: z.string().default("pending"),
   surchargeAmount: z.number().min(0).default(0),
@@ -183,7 +187,7 @@ export type TUpdateBookingStatus = z.infer<typeof UpdateBookingStatusSchema>;
 // Helper function to convert form data to backend API format
 export const convertFormToBookingAPI = (
   formData: TCreateBookingForm,
-  userId: string,
+  renterId?: string,
   vehicleId?: string
 ): TCreateBooking => {
   // Calculate pickup time expected from date + time
@@ -210,6 +214,9 @@ export const convertFormToBookingAPI = (
     console.warn("⚠️ No specific vehicle ID provided, using brand for booking");
   }
 
+  const sanitizedRenterId =
+    renterId && /^[a-fA-F0-9]{24}$/.test(renterId) ? renterId : undefined;
+
   return {
     // User info
     renterName: formData.renterName,
@@ -229,7 +236,9 @@ export const convertFormToBookingAPI = (
     agreedToDataSharing: formData.agreedToDataSharing,
 
     // Optional fields
-    renter: null, // BE will set this
+    ...(sanitizedRenterId
+      ? { renterId: sanitizedRenterId }
+      : { renter: null }),
     status: "pending",
     surchargeAmount,
     notes: formData.notes || undefined,
