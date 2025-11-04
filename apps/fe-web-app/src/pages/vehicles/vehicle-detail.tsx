@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/shadcn/ui/button";
 import { Badge } from "@/components/shadcn/ui/badge";
 import { Card } from "@/components/shadcn/ui/card";
@@ -19,6 +19,8 @@ import HeaderMain from "@/components/header/header-main";
 import type { TVehicle } from "@/schema/vehicle.schema";
 import { useVehicleHook } from "@/hooks/use-vehicle";
 import { ROUTES } from "@/routes/route.constants";
+import { useAuthContext } from "@/contexts/auth-context";
+import { toast } from "sonner";
 
 const modelAssets: Record<
   string,
@@ -80,9 +82,11 @@ function StatusPill({ status }: { status: TVehicle["status"] }) {
 export default function VehicleDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { useVehicleById } = useVehicleHook();
   const vehicleId = id ?? "";
   const { data, isLoading, isError } = useVehicleById(vehicleId, { enabled: Boolean(vehicleId) });
+  const { currentUser, isVerified } = useAuthContext();
 
   const [activeIdx, setActiveIdx] = useState(0);
   const vehicle = data?.data.data;
@@ -91,6 +95,21 @@ export default function VehicleDetailPage() {
     () => asset.gallery[Math.min(activeIdx, asset.gallery.length - 1)],
     [asset, activeIdx]
   );
+  const canBook = Boolean(vehicle && vehicle.status === "available" && isVerified);
+
+  const handleBookVehicle = () => {
+    if (!currentUser) {
+      toast.info("Vui lòng đăng nhập để đặt xe.");
+      navigate(ROUTES.LOGIN, { state: { from: location } });
+      return;
+    }
+    if (!isVerified) {
+      toast.warning("Tài khoản chưa được xác minh giấy tờ. Hoàn tất hồ sơ để đặt xe.");
+      navigate(`${ROUTES.PROFILE}?tab=documents`);
+      return;
+    }
+    navigate(ROUTES.BOOKING.replace(":id", vehicle?._id ?? ""));
+  };
 
   if (isLoading) {
     return (
@@ -196,30 +215,32 @@ export default function VehicleDetailPage() {
             </ul>
           </Card>
 
-          <div className="mt-6 flex gap-4">
-            <Button
-              disabled={vehicle.status !== "available"}
-              className="bg-[#00CC66] hover:bg-[#00b85c] text-white px-8 font-medium"
-                            onClick={() =>
-                navigate(ROUTES.BOOKING.replace(":id", vehicle._id ?? ""))
-              }
-            >
-              Đặt xe
-            </Button>
-            <Button
-              variant="outline"
-              className="border-gray-300 text-gray-700 hover:border-[#00CC66] hover:text-[#00CC66]"
-              asChild
-            >
-              <Link to="/contact">Nhận tư vấn</Link>
-            </Button>
+          <div className="mt-6 flex flex-col gap-3">
+            <div className="flex gap-4">
+              <Button
+                disabled={!canBook}
+                className="bg-[#00CC66] hover:bg-[#00b85c] text-white px-8 font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                onClick={handleBookVehicle}
+              >
+                D?t xe
+              </Button>
+              <Button
+                variant="outline"
+                className="border-gray-300 text-gray-700 hover:border-[#00CC66] hover:text-[#00CC66]"
+                asChild
+              >
+                <Link to="/contact">Nh?n tu v?n</Link>
+              </Button>
+            </div>
+            {!isVerified && (
+              <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-700">
+                T�i kho?n c?a b?n ch?a ???c x�c minh gi?y t?. Vui l�ng ho�n t?t h? so tr??c khi d?t xe.
+              </p>
+            )}
+            <p className="text-xs text-gray-500 leading-relaxed">
+              *S? li?u ph?m vi/xang s?c l� u?c lu?ng minh ho?. Xe th?t c� th? kh�c t�y c?u h�nh & di?u ki?n s? d?ng.
+            </p>
           </div>
-
-          {/* Ghi chú */}
-          <p className="mt-4 text-xs text-gray-500 leading-relaxed">
-            *Số liệu phạm vi/xăng sạc là ước lượng minh hoạ. Xe thật có thể khác tùy cấu hình
-            & điều kiện sử dụng.
-          </p>
         </div>
       </div>
     </div>
