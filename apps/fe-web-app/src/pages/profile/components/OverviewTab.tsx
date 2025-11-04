@@ -26,20 +26,21 @@ interface OverviewTabProps {
 }
 
 export default function OverviewTab({ onTabChange }: OverviewTabProps) {
-    const { currentUser } = useAuthContext();
+    const { currentUser, isVerified } = useAuthContext();
     const navigate = useNavigate();
 
     // Fetch bookings
     const { useBookingList } = useBooking();
     const renterId = currentUser?._id ?? "";
     const isValidRenterId = renterId ? /^[a-fA-F0-9]{24}$/.test(renterId) : false;
+    const shouldFetchBookings = Boolean(renterId) && isValidRenterId && isVerified;
     const bookingListQuery = useBookingList(
-        isValidRenterId ? { renterId } : undefined,
-        { enabled: Boolean(renterId) && isValidRenterId }
+        shouldFetchBookings ? { renterId } : undefined,
+        { enabled: shouldFetchBookings }
     );
     const bookings = useMemo(
-        () => (bookingListQuery.data?.data?.data || []) as TBooking[],
-        [bookingListQuery.data?.data?.data]
+        () => (shouldFetchBookings ? (bookingListQuery.data?.data?.data || []) : []) as TBooking[],
+        [bookingListQuery.data?.data?.data, shouldFetchBookings]
     );
 
     // Fetch documents
@@ -83,6 +84,9 @@ export default function OverviewTab({ onTabChange }: OverviewTabProps) {
             .sort((a, b) => new Date(b.createdAt || "").getTime() - new Date(a.createdAt || "").getTime())
             .slice(0, 3);
     }, [bookings]);
+    const verificationNotice = !isVerified
+        ? "Ho so cua ban chua duoc xac minh. Vui long hoan tat giay to de su dung day du cac tinh nang."
+        : null;
 
     const getStatusBadge = (status: string) => {
         const variants: Record<string, { label: string; className: string; icon: typeof Clock }> = {
@@ -105,6 +109,28 @@ export default function OverviewTab({ onTabChange }: OverviewTabProps) {
 
     return (
         <div className="space-y-6">
+            {verificationNotice && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <span>{verificationNotice}</span>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => navigate("/profile?tab=documents")}
+                        >
+                            Hoan thien ho so
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-amber-700 hover:text-amber-800"
+                            onClick={() => navigate("/profile?tab=overview")}
+                        >
+                            Xem trang thai ho so
+                        </Button>
+                    </div>
+                </div>
+            )}
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card>
@@ -187,6 +213,14 @@ export default function OverviewTab({ onTabChange }: OverviewTabProps) {
                     <CardContent>
                         {bookingListQuery.isLoading ? (
                             <p className="text-center text-gray-500 py-8">Đang tải...</p>
+                        ) : !isVerified ? (
+                            <div className="text-center py-8">
+                                <Car className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                                <p className="text-gray-500">Ho so cua ban chua duoc xac minh. Vui long hoan tat giay to de xem lich su booking.</p>
+                                <Button className="mt-4" onClick={() => navigate("/profile?tab=documents")}>
+                                    Hoan thien ho so
+                                </Button>
+                            </div>
                         ) : recentBookings.length === 0 ? (
                             <div className="text-center py-8">
                                 <Car className="w-12 h-12 text-gray-300 mx-auto mb-3" />

@@ -32,9 +32,10 @@ const ProfilePage = () => {
   const { usePaymentList } = usePaymentHook();
 
   const isValidUserId = userId ? /^[a-fA-F0-9]{24}$/.test(userId) : false;
+  const canFetchBookings = Boolean(userId) && isValidUserId && isVerified;
   const bookingQuery = useBookingList(
-    isValidUserId ? { renterId: userId } : undefined,
-    { enabled: Boolean(userId) && isValidUserId }
+    canFetchBookings ? { renterId: userId } : undefined,
+    { enabled: canFetchBookings }
   );
   const rentalQuery = useRentalList();
   const paymentQuery = usePaymentList();
@@ -49,7 +50,7 @@ const ProfilePage = () => {
   const documentStatusText = documentStatus.replace("_", " ");
   const canBook = documentStatus === "verified";
 
-  const bookings = (bookingQuery.data?.data?.data ?? []) as TBooking[];
+  const bookings = (canFetchBookings ? (bookingQuery.data?.data?.data ?? []) : []) as TBooking[];
   const rentals = (rentalQuery.data?.data?.data ?? []) as TRental[];
   const payments = (paymentQuery.data?.data?.data ?? []) as TPayment[];
 
@@ -57,6 +58,9 @@ const ProfilePage = () => {
   const myBookings = bookings.filter((booking) => booking.renterName && booking.email === currentUser?.email);
   const myRentals = rentals.filter((rental) => rental.renter?._id === targetUserId);
   const myPayments = payments.filter((payment) => payment.rental?.renter?._id === targetUserId);
+  const bookingHistoryEmptyText = isVerified
+    ? "You have not created any booking requests yet."
+    : "Complete document verification to view your booking history.";
 
   if (!currentUser) {
     return (
@@ -160,7 +164,7 @@ const ProfilePage = () => {
               <HistoryState
                 isLoading={bookingQuery.isLoading}
                 isError={bookingQuery.isError}
-                emptyText="You have not created any booking requests yet."
+                emptyText={bookingHistoryEmptyText}
                 items={myBookings.map((booking) => ({
                   id: booking._id,
                   title: booking.brand?.name ?? "Vehicle booking",

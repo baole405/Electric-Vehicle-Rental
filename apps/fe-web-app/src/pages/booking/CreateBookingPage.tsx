@@ -62,11 +62,22 @@ export default function CreateBookingPage() {
   });
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [blockingMessage, setBlockingMessage] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [bookingCode, setBookingCode] = useState('');
   const [isEditingTime, setIsEditingTime] = useState(false);
   const [showPaymentTerms, setShowPaymentTerms] = useState(false);
   const [showDataPolicy, setShowDataPolicy] = useState(false);
+
+  useEffect(() => {
+    if (currentUser && currentUser.status !== 'verified') {
+      setBlockingMessage(
+        'Tài khoản của bạn chưa được xác minh giấy tờ. Vui lòng hoàn tất hồ sơ và chờ phê duyệt trước khi đặt xe.'
+      );
+    } else {
+      setBlockingMessage(null);
+    }
+  }, [currentUser]);
 
   // Initialize form with brand and station
   useEffect(() => {
@@ -231,11 +242,20 @@ export default function CreateBookingPage() {
       setFieldErrors({ auth: 'Vui lòng đăng nhập để tiếp tục' });
       return;
     }
+    if (currentUser.status !== 'verified') {
+      setBlockingMessage(
+        'Tài khoản của bạn chưa được xác minh giấy tờ. Vui lòng tải lên và hoàn tất hồ sơ để tiếp tục đặt xe.'
+      );
+      return;
+    }
     if (!/^[a-fA-F0-9]{24}$/.test(currentUser._id)) {
       console.error('✖ Invalid renterId format for current user:', currentUser._id);
       setFieldErrors({
         auth: 'Tài khoản hiện tại không hợp lệ để tạo booking. Vui lòng đăng xuất và thử lại hoặc liên hệ hỗ trợ.',
       });
+      setBlockingMessage(
+        'Không thể xác định tài khoản của bạn. Vui lòng đăng xuất và đăng nhập lại trước khi đặt xe.'
+      );
       return;
     }
 
@@ -313,6 +333,13 @@ export default function CreateBookingPage() {
           Array.isArray(err.response.data.errors)
         ) {
           errorMessages = err.response.data.errors;
+        } else if (err?.response?.status === 403) {
+          const message =
+            err.response?.data?.message ??
+            'Tài khoản chưa được xác minh giấy tờ. Vui lòng hoàn tất hồ sơ trước khi đặt xe.';
+          setBlockingMessage(message);
+          console.warn('Booking blocked due to verification status:', message);
+          return;
         } else if (err?.response?.data?.message) {
           errorMessages = [err.response.data.message];
         } else if (err?.response?.data?.error) {
@@ -481,6 +508,31 @@ export default function CreateBookingPage() {
             <X className="w-6 h-6 text-gray-600" />
           </button>
         </div>
+
+        {blockingMessage && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6 text-amber-800">
+            <p className="font-semibold">{blockingMessage}</p>
+            {currentUser && currentUser.status !== 'verified' && (
+              <div className="mt-3 flex flex-wrap gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate('/profile?tab=document')}
+                >
+                  Hoàn thiện hồ sơ ngay
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="text-amber-700 hover:text-amber-800"
+                  onClick={() => navigate('/profile?tab=overview')}
+                >
+                  Xem trạng thái hồ sơ
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

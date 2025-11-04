@@ -47,13 +47,14 @@ import type { AxiosError } from "axios";
 
 export default function BookingsTab() {
   const navigate = useNavigate();
-  const { currentUser } = useAuthContext();
+  const { currentUser, isVerified } = useAuthContext();
   const { useBookingList, cancelBooking } = useBooking();
   const renterId = currentUser?._id ?? "";
   const isValidRenterId = renterId ? /^[a-fA-F0-9]{24}$/.test(renterId) : false;
+  const shouldFetchBookings = Boolean(renterId) && isValidRenterId && isVerified;
   const bookingListQuery = useBookingList(
-    isValidRenterId ? { renterId } : undefined,
-    { enabled: Boolean(renterId) && isValidRenterId }
+    shouldFetchBookings ? { renterId } : undefined,
+    { enabled: shouldFetchBookings }
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -62,8 +63,9 @@ export default function BookingsTab() {
   const [showDetailDialog, setShowDetailDialog] = useState(false);
 
   const bookings = useMemo(
-    () => (bookingListQuery.data?.data?.data || []) as TBooking[],
-    [bookingListQuery.data?.data?.data]
+    () =>
+      shouldFetchBookings ? ((bookingListQuery.data?.data?.data || []) as TBooking[]) : [],
+    [bookingListQuery.data?.data?.data, shouldFetchBookings]
   );
 
   const bookingErrorMessage = useMemo(() => {
@@ -74,11 +76,23 @@ export default function BookingsTab() {
       return null;
     }
     const error = bookingListQuery.error as AxiosError<{ message?: string; error?: string }>;
+    if (error.response?.status === 403) {
+      return (
+        error.response.data?.message ??
+        "Hồ sơ của bạn chưa được xác minh. Hoàn tất giấy tờ để xem lịch sử booking."
+      );
+    }
     if (error.response?.status === 400) {
       return error.response.data?.message ?? "renterId không hợp lệ (phải là ObjectId 24 ký tự).";
     }
     return error.message || "Đã xảy ra lỗi khi tải danh sách booking.";
   }, [bookingListQuery.error, bookingListQuery.isError, renterId, isValidRenterId]);
+  const isForbiddenError =
+    bookingListQuery.isError &&
+    (bookingListQuery.error as AxiosError | undefined)?.response?.status === 403;
+  const verificationNotice = !isVerified
+    ? "Hồ sơ của bạn chưa được xác minh. Vui lòng tải lên giấy tờ và chờ phê duyệt để xem và quản lý lịch sử đặt xe."
+    : null;
 
   // Filter bookings
   const filteredBookings = useMemo(() => {
@@ -137,145 +151,180 @@ export default function BookingsTab() {
           <CardTitle>Danh sách booking</CardTitle>
           <CardDescription>Quản lý tất cả booking của bạn</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent>\r\n          {verificationNotice && (
+            <div className="mb-4 flex flex-col gap-2 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              <span>{verificationNotice}</span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/profile?tab=documents")}
+                >
+                  Hoan thien ho so
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-amber-700 hover:text-amber-800"
+                  onClick={() => navigate("/profile?tab=overview")}
+                >
+                  Xem trang thai ho so
+                </Button>
+              </div>
+            </div>
+          )}
+
           {bookingErrorMessage && (
             <div className="mb-4 flex flex-col gap-2 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
               <span>{bookingErrorMessage}</span>
-              {bookingListQuery.isError && (
+              {bookingListQuery.isError && !isForbiddenError && (
                 <div>
                   <Button variant="outline" size="sm" onClick={() => bookingListQuery.refetch()}>
-                    Thử tải lại
+                    Thu tai lai
                   </Button>
                 </div>
               )}
             </div>
           )}
-          {/* Filters */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Tìm theo mã booking, xe, tên..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-[200px]">
-                <SelectValue placeholder="Lọc theo trạng thái" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tất cả</SelectItem>
-                <SelectItem value="pending_payment">Chờ thanh toán</SelectItem>
-                <SelectItem value="confirmed">Đã xác nhận</SelectItem>
-                <SelectItem value="completed">Hoàn thành</SelectItem>
-                <SelectItem value="cancelled">Đã hủy</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
 
-          {/* Bookings Table */}
-          {bookingListQuery.isLoading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full mx-auto"></div>
-              <p className="text-gray-500 mt-4">Đang tải...</p>
-            </div>
-          ) : filteredBookings.length === 0 ? (
-            <div className="text-center py-12">
-              <Car className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 mb-2">
-                {searchQuery || statusFilter !== "all" ? "Không tìm thấy booking nào" : "Chưa có booking"}
-              </p>
-              <Button onClick={() => navigate("/")}>Đặt xe ngay</Button>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Mã booking</TableHead>
-                    <TableHead>Xe</TableHead>
-                    <TableHead>Trạm</TableHead>
-                    <TableHead>Thời gian</TableHead>
-                    <TableHead>Số ngày</TableHead>
-                    <TableHead>Tổng tiền</TableHead>
-                    <TableHead>Trạng thái</TableHead>
-                    <TableHead className="text-right">Hành động</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredBookings.map((booking: TBooking) => (
-                    <TableRow key={booking._id}>
-                      <TableCell className="font-medium">{booking.bookingCode}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Car className="w-4 h-4 text-gray-400" />
-                          {booking.brand?.name || "N/A"}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-gray-400" />
-                          {booking.station?.name || booking.pickupStation?.name || "N/A"}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {booking.pickupDate}
-                          </div>
-                          <div className="text-gray-500">→ {booking.returnDate}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{booking.rentalDays} ngày</TableCell>
-                      <TableCell className="font-semibold">
-                        {booking.totalPayable?.toLocaleString("vi-VN")}đ
-                      </TableCell>
-                      <TableCell>{getStatusBadge(booking.status)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedBooking(booking);
-                              setShowDetailDialog(true);
-                            }}
-                          >
-                            <Eye className="w-4 h-4 mr-1" />
-                            Chi tiết
-                          </Button>
-                          {booking.status === "pending_payment" && (
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedBooking(booking);
-                                setShowCancelDialog(true);
-                              }}
-                            >
-                              <XCircle className="w-4 h-4 mr-1" />
-                              Hủy
-                            </Button>
-                          )}
-                          {(booking.status === "completed" || booking.status === "confirmed") && (
-                            <Button variant="outline" size="sm">
-                              <Download className="w-4 h-4 mr-1" />
-                              Hóa đơn
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+          {isVerified && !isForbiddenError ? (
+            <>
+              <div className="flex flex-col md:flex-row gap-4 mb-6">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    placeholder="Tim theo ma booking, xe, ten..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full md:w-[200px]">
+                    <SelectValue placeholder="Loc theo trang thai" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tat ca</SelectItem>
+                    <SelectItem value="pending_payment">Cho thanh toan</SelectItem>
+                    <SelectItem value="confirmed">Da xac nhan</SelectItem>
+                    <SelectItem value="completed">Hoan thanh</SelectItem>
+                    <SelectItem value="cancelled">Da huy</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {bookingListQuery.isLoading ? (
+                <div className="text-center py-12">
+                  <div className="animate-spin w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full mx-auto"></div>
+                  <p className="text-gray-500 mt-4">Dang tai...</p>
+                </div>
+              ) : filteredBookings.length === 0 ? (
+                <div className="text-center py-12">
+                  <Car className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 mb-2">
+                    {searchQuery || statusFilter !== "all" ? "Khong tim thay booking nao" : "Chua co booking"}
+                  </p>
+                  <Button onClick={() => navigate("/")}>Dat xe ngay</Button>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Ma booking</TableHead>
+                        <TableHead>Xe</TableHead>
+                        <TableHead>Tram</TableHead>
+                        <TableHead>Thoi gian</TableHead>
+                        <TableHead>So ngay</TableHead>
+                        <TableHead>Tong tien</TableHead>
+                        <TableHead>Trang thai</TableHead>
+                        <TableHead className="text-right">Hanh dong</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredBookings.map((booking: TBooking) => (
+                        <TableRow key={booking._id}>
+                          <TableCell className="font-medium">{booking.bookingCode}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Car className="w-4 h-4 text-gray-400" />
+                              {booking.brand?.name || "N/A"}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <MapPin className="w-4 h-4 text-gray-400" />
+                              {booking.station?.name || booking.pickupStation?.name || "N/A"}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              <div className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {booking.pickupDate}
+                              </div>
+                              <div className="text-gray-500">-&gt; {booking.returnDate}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{booking.rentalDays} ngay</TableCell>
+                          <TableCell className="font-semibold">
+                            {booking.totalPayable?.toLocaleString("vi-VN")}d
+                          </TableCell>
+                          <TableCell>{getStatusBadge(booking.status)}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedBooking(booking);
+                                  setShowDetailDialog(true);
+                                }}
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                Chi tiet
+                              </Button>
+                              {(booking.status === "completed" || booking.status === "confirmed") && (
+                                <Button variant="outline" size="sm">
+                                  <Download className="w-4 h-4 mr-1" />
+                                  Hoa don
+                                </Button>
+                              )}
+                              {booking.status === "pending_payment" && (
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedBooking(booking);
+                                    setShowCancelDialog(true);
+                                  }}
+                                >
+                                  <XCircle className="w-4 h-4 mr-1" />
+                                  Huy
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </>
+          ) : null}
+
+          {isVerified && isForbiddenError && !bookingErrorMessage && (
+            <div className="text-center py-12 text-sm text-gray-500">
+              Khong the tai lich su booking vao luc nay. Vui long thu lai sau.
             </div>
           )}
-        </CardContent>
-      </Card>
+
+          {!isVerified && !verificationNotice && (
+            <div className="text-center py-12 text-sm text-gray-500">
+              Sau khi ho so duoc xac minh, lich su dat xe cua ban se hien thi tai day.
+            </div>
+          )}        </CardContent>\r\n      </Card>
 
       {/* Cancel Dialog */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>

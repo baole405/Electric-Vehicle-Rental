@@ -7,6 +7,8 @@ const getUsers = async () =>
   await apiRequest.get<BaseResponse<TUser[]>>(API_SUFFIX.USER_API);
 const getUserById = async (id: string) =>
   await apiRequest.get<BaseResponse<TUser>>(API_SUFFIX.USER_API + `/${id}`);
+const getCurrentUser = async () =>
+  await apiRequest.get<BaseResponse<TUser>>(API_SUFFIX.USER_API + `/me`);
 
 const createUser = async (payload: TCreateUserPayload & { role?: TUser["role"]; status?: TUser["status"] }) =>
   await apiRequest.post<BaseResponse<TUser>>(API_SUFFIX.USER_API, payload);
@@ -22,6 +24,7 @@ const changePassword = async (id: string, payload: { currentPassword: string; ne
 export const UserApi = {
   getUsers,
   getUserById,
+  getCurrentUser,
   createUser,
   updateUser,
   deleteUser,
