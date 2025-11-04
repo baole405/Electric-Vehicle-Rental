@@ -128,7 +128,7 @@ export default function BrandsByStationPage() {
             {/* Station Selector */}
             <div className="lg:col-span-3">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tỉnh/Thành phố
+                Tên trạm
               </label>
               {stationsLoading ? (
                 <div className="flex items-center justify-center h-12 border rounded-lg">

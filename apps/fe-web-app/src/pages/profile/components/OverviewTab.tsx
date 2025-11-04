@@ -31,7 +31,12 @@ export default function OverviewTab({ onTabChange }: OverviewTabProps) {
 
     // Fetch bookings
     const { useBookingList } = useBooking();
-    const bookingListQuery = useBookingList();
+    const renterId = currentUser?._id ?? "";
+    const isValidRenterId = renterId ? /^[a-fA-F0-9]{24}$/.test(renterId) : false;
+    const bookingListQuery = useBookingList(
+        isValidRenterId ? { renterId } : undefined,
+        { enabled: Boolean(renterId) && isValidRenterId }
+    );
     const bookings = useMemo(
         () => (bookingListQuery.data?.data?.data || []) as TBooking[],
         [bookingListQuery.data?.data?.data]

@@ -23,6 +23,9 @@ const getBookingList = async (params?: {
   email?: string;
   phoneNumber?: string;
   bookingCode?: string;
+  renterId?: string;
+  renter?: string;
+  userId?: string;
 }) => {
   const queryString = params
     ? `?${new URLSearchParams(params as Record<string, string>).toString()}`

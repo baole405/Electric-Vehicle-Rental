@@ -231,6 +231,13 @@ export default function CreateBookingPage() {
       setFieldErrors({ auth: 'Vui lòng đăng nhập để tiếp tục' });
       return;
     }
+    if (!/^[a-fA-F0-9]{24}$/.test(currentUser._id)) {
+      console.error('✖ Invalid renterId format for current user:', currentUser._id);
+      setFieldErrors({
+        auth: 'Tài khoản hiện tại không hợp lệ để tạo booking. Vui lòng đăng xuất và thử lại hoặc liên hệ hỗ trợ.',
+      });
+      return;
+    }
 
     console.log('🔍 Debug info:');
     console.log('  - currentUser._id:', currentUser._id);
@@ -248,7 +255,7 @@ export default function CreateBookingPage() {
     try {
       apiData = convertFormToBookingAPI(
         cleanedData,
-        '', // userId not needed anymore - BE will set renter
+        currentUser._id,
         state?.vehicle?._id || cleanedData.vehicleId
       );
       console.log('🔄 Converted API data:', apiData);

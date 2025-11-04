@@ -7,13 +7,24 @@ import type {
   TUpdateBookingStatus
 } from "@/schema/booking.schema";
 
+type BookingListParams = {
+  status?: string;
+  email?: string;
+  phoneNumber?: string;
+  bookingCode?: string;
+  renterId?: string;
+  renter?: string;
+  userId?: string;
+};
+
 export const useBooking = () => {
   const queryClient = useQueryClient();
 
-  const useBookingList = () =>
+  const useBookingList = (params?: BookingListParams, options?: { enabled?: boolean }) =>
     useQuery({
-      queryKey: ["bookingList"],
-      queryFn: () => BookingApi.getBookingList(),
+      queryKey: ["bookingList", params],
+      queryFn: () => BookingApi.getBookingList(params),
+      enabled: options?.enabled ?? true,
     });
 
   const useBookingById = (id: string) =>

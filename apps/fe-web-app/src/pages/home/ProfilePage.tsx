@@ -31,7 +31,11 @@ const ProfilePage = () => {
   const { useRentalList } = useRentalHook();
   const { usePaymentList } = usePaymentHook();
 
-  const bookingQuery = useBookingList();
+  const isValidUserId = userId ? /^[a-fA-F0-9]{24}$/.test(userId) : false;
+  const bookingQuery = useBookingList(
+    isValidUserId ? { renterId: userId } : undefined,
+    { enabled: Boolean(userId) && isValidUserId }
+  );
   const rentalQuery = useRentalList();
   const paymentQuery = usePaymentList();
 
