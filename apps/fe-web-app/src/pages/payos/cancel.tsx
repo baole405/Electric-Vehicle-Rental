@@ -1,3 +1,5 @@
+'use client';
+
 import { XCircle } from 'lucide-react';
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
