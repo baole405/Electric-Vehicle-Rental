@@ -1,9 +1,38 @@
 import { z } from "zod";
+import { BookingStatusSchema } from "./common/booking-status.schema";
 
-// Booking Schema theo API mới
+const StatusActorSchema = z
+  .object({
+    _id: z.string(),
+    fullName: z.string().optional(),
+    email: z.string().optional(),
+    role: z.string().optional(),
+  })
+  .partial()
+  .optional();
+
+const StatusHistoryEntrySchema = z.object({
+  status: BookingStatusSchema,
+  note: z.string().nullable().optional(),
+  actor: StatusActorSchema,
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+});
+
+const PricingBreakdownSchema = z
+  .object({
+    basePrice: z.number().optional(),
+    depositAmount: z.number().optional(),
+    surchargeAmount: z.number().optional(),
+    additionalFees: z.number().optional(),
+    totalRentalFee: z.number().optional(),
+    totalPayable: z.number().optional(),
+  })
+  .partial();
+
 export const BookingSchema = z.object({
   _id: z.string(),
-  bookingCode: z.string(), // "BK20251031001"
+  bookingCode: z.string(),
   renterName: z.string(),
   phoneNumber: z.string(),
   email: z.string().email(),
@@ -18,130 +47,136 @@ export const BookingSchema = z.object({
     specs: z.any().optional(),
   }),
 
-  pickupStation: z.object({
-    _id: z.string().optional(),
-    name: z.string(),
-    code: z.string(),
-    address: z.string().optional(),
-    coordinates: z.any().optional(),
-  }).optional(),
+  pickupStation: z
+    .object({
+      _id: z.string().optional(),
+      name: z.string(),
+      code: z.string(),
+      address: z.string().optional(),
+      coordinates: z.any().optional(),
+    })
+    .optional(),
 
-  station: z.object({
-    _id: z.string().optional(),
-    name: z.string(),
-    code: z.string(),
-  }).optional(),
+  station: z
+    .object({
+      _id: z.string().optional(),
+      name: z.string(),
+      code: z.string(),
+    })
+    .optional(),
 
   vehicle: z.any().nullable().optional(),
 
-  // Assigned vehicle & workflow fields
-  assignedVehicle: z.object({
-    _id: z.string(),
-    plateNo: z.string().optional(),
-    vin: z.string().optional(),
-    model: z.string().optional(),
-  }).nullable().optional(),
-  heldExpiresAt: z.string().optional(), // ISO datetime - thời hạn giữ chỗ
-  confirmedExpiresAt: z.string().optional(), // ISO datetime - thời hạn xác nhận
-  autoUpgradePolicy: z.enum(["allowed", "not_allowed"]).optional(), // Cho phép upgrade xe tự động
-  cancellationReason: z.string().optional(), // Lý do hủy
+  assignedVehicle: z
+    .object({
+      _id: z.string(),
+      plateNo: z.string().optional(),
+      vin: z.string().optional(),
+      model: z.string().optional(),
+    })
+    .nullable()
+    .optional(),
 
-  // Thời gian
-  pickupDate: z.string(), // ISO date string or YYYY-MM-DD
-  pickupTime: z.string(), // HH:mm
+  heldExpiresAt: z.string().nullable().optional(),
+  confirmedExpiresAt: z.string().nullable().optional(),
+  reservationExpiresAt: z.string().nullable().optional(),
+  paymentDueAt: z.string().nullable().optional(),
+  autoUpgradePolicy: z.enum(["allowed", "not_allowed"]).optional(),
+  cancellationReason: z.string().optional(),
+
+  pickupDate: z.string(),
+  pickupTime: z.string(),
   returnDate: z.string(),
   returnTime: z.string(),
   pickupDateTime: z.string().optional(),
   returnDateTime: z.string().optional(),
-  rentalDays: z.number(),
+  rentalDays: z.number().optional(),
 
-  // Pricing
-  basePrice: z.number(),
-  additionalFees: z.number(),
-  totalRentalFee: z.number(),
-  depositAmount: z.number(),
-  totalPayable: z.number(),
+  basePrice: z.number().optional(),
+  additionalFees: z.number().optional(),
+  totalRentalFee: z.number().optional(),
+  depositAmount: z.number().optional(),
+  totalPayable: z.number().optional(),
 
-  pricing: z.object({
-    basePrice: z.number(),
-    additionalFees: z.number(),
-    totalRentalFee: z.number(),
-    depositAmount: z.number(),
-    totalPayable: z.number(),
-  }).optional(),
+  pricing: PricingBreakdownSchema.optional(),
 
-  // Payment & extras
+  statusHistory: z.array(StatusHistoryEntrySchema).optional(),
+
   paymentMethod: z.string(),
   pickupLocation: z.string().optional(),
   promoCode: z.string().optional(),
   notes: z.string().optional(),
 
-  // Agreements
-  agreedToPaymentTerms: z.boolean(),
-  agreedToDataSharing: z.boolean(),
+  payment: z.any().nullable().optional(),
+  rental: z.any().nullable().optional(),
 
-  // Status
-  status: z.enum([
-    "pending_payment",
-    "held",
-    "confirmed",
-    "paid",
-    "checked_out",
-    "completed",
-    "cancelled",
-    "expired"
-  ]),
+  agreedToPaymentTerms: z.boolean().optional(),
+  agreedToDataSharing: z.boolean().optional(),
+
+  status: BookingStatusSchema,
 
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
 });
 
-// Create Booking Schema - Updated to match Backend API
 export const CreateBookingSchema = z.object({
-  // User info
   renterName: z.string().min(1, "Tên người thuê là bắt buộc"),
-  phoneNumber: z.string()
+  phoneNumber: z
+    .string()
     .regex(/^0[0-9]{9}$/, "Số điện thoại phải có 10 số và bắt đầu bằng 0"),
   email: z.string().email("Email không hợp lệ"),
 
-  // Booking details
   brand: z.string().min(1, "Vui lòng chọn dòng xe"),
   pickupStation: z.string().min(1, "Vui lòng chọn trạm"),
   vehicle: z.string().min(1, "Vui lòng chọn xe cụ thể"),
   pickupTimeExpected: z.string().min(1, "Thời gian nhận xe là bắt buộc"),
   rentalDays: z.number().int().min(1, "Số ngày thuê tối thiểu là 1"),
 
-  // Payment & preferences
-  paymentMethod: z.enum(["online", "cash", "bank_transfer", "credit_card", "e_wallet"]),
+  paymentMethod: z.enum([
+    "online",
+    "cash",
+    "bank_transfer",
+    "credit_card",
+    "e_wallet",
+    "ONLINE",
+    "CASH",
+    "BANK_TRANSFER",
+    "CREDIT_CARD",
+    "E_WALLET",
+  ]),
   agreedToPaymentTerms: z.boolean(),
   agreedToDataSharing: z.boolean(),
 
-  // Optional fields
   renterId: z
     .string()
     .regex(/^[a-fA-F0-9]{24}$/, "renterId không hợp lệ (phải là ObjectId 24 ký tự).")
     .optional(),
-  renter: z.string().nullable().optional(), // BE sets this
-  status: z.string().default("pending"),
-  surchargeAmount: z.number().min(0).default(0),
+  renter: z.string().nullable().optional(),
+  surchargeAmount: z.number().min(0).optional(),
+  pickupLocation: z.string().optional(),
+  promoCode: z.string().optional(),
   notes: z.string().optional(),
 });
 
-// Legacy Create Booking Schema - Keep for frontend forms
 export const CreateBookingFormSchema = z.object({
   renterName: z.string().min(1, "Tên người thuê là bắt buộc"),
-  phoneNumber: z.string()
+  phoneNumber: z
+    .string()
     .regex(/^0[0-9]{9}$/, "Số điện thoại phải có 10 số và bắt đầu bằng 0"),
   email: z.string().email("Email không hợp lệ"),
 
   brandId: z.string().min(1, "Vui lòng chọn dòng xe"),
   stationId: z.string().min(1, "Vui lòng chọn trạm"),
-  vehicleId: z.string().optional(), // Optional - for when specific vehicle is selected
+  vehicleId: z.string().optional(),
 
   pickupDate: z.string().min(1, "Ngày nhận xe là bắt buộc"),
-  pickupTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, "Giờ nhận xe không hợp lệ"),
+  pickupTime: z
+    .string()
+    .regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, "Giờ nhận xe không hợp lệ"),
   returnDate: z.string().min(1, "Ngày trả xe là bắt buộc"),
-  returnTime: z.string().regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, "Giờ trả xe không hợp lệ"),
+  returnTime: z
+    .string()
+    .regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, "Giờ trả xe không hợp lệ"),
 
   paymentMethod: z.enum(["online", "cash", "bank_transfer", "credit_card", "e_wallet"]),
 
@@ -152,95 +187,93 @@ export const CreateBookingFormSchema = z.object({
     message: "Bạn phải đồng ý chia sẻ dữ liệu cá nhân",
   }),
 
-  // Optional fields
   pickupLocation: z.string().optional(),
   promoCode: z.string().optional(),
   notes: z.string().optional(),
 });
 
-// Assign Vehicle Schema
 export const AssignVehicleSchema = z.object({
   vehicleId: z.string().min(1, "Vui lòng chọn xe"),
 });
 
-// Update Booking Status Schema
 export const UpdateBookingStatusSchema = z.object({
-  status: z.enum([
-    "pending_payment",
-    "held",
-    "confirmed",
-    "paid",
-    "checked_out",
-    "completed",
-    "cancelled",
-    "expired"
-  ]),
-  cancellationReason: z.string().optional(), // Required if status = cancelled
+  status: BookingStatusSchema,
+  cancellationReason: z.string().optional(),
 });
 
 export type TBooking = z.infer<typeof BookingSchema>;
-export type TCreateBooking = z.infer<typeof CreateBookingSchema>; // Backend API format
-export type TCreateBookingForm = z.infer<typeof CreateBookingFormSchema>; // Frontend form format
+export type TCreateBooking = z.infer<typeof CreateBookingSchema>;
+export type TCreateBookingForm = z.infer<typeof CreateBookingFormSchema>;
 export type TAssignVehicle = z.infer<typeof AssignVehicleSchema>;
 export type TUpdateBookingStatus = z.infer<typeof UpdateBookingStatusSchema>;
 
-// Helper function to convert form data to backend API format
 export const convertFormToBookingAPI = (
   formData: TCreateBookingForm,
   renterId?: string,
   vehicleId?: string
 ): TCreateBooking => {
-  // Calculate pickup time expected from date + time
   const pickupDateTime = new Date(`${formData.pickupDate}T${formData.pickupTime}:00`);
   const returnDateTime = new Date(`${formData.returnDate}T${formData.returnTime}:00`);
 
-  // Calculate rental days
   const diffMs = returnDateTime.getTime() - pickupDateTime.getTime();
   const rentalDays = Math.max(Math.ceil(diffMs / (1000 * 60 * 60 * 24)), 1);
 
-  // Calculate surcharge (weekend fees)
   let surchargeAmount = 0;
-  const current = new Date(pickupDateTime);
-  while (current < returnDateTime) {
-    const dayOfWeek = current.getDay();
+  const cursor = new Date(pickupDateTime);
+  while (cursor < returnDateTime) {
+    const dayOfWeek = cursor.getDay();
     if (dayOfWeek === 0 || dayOfWeek === 6) {
-      surchargeAmount += 100000; // 100k VND per weekend day
+      surchargeAmount += 100_000;
     }
-    current.setDate(current.getDate() + 1);
+    cursor.setDate(cursor.getDate() + 1);
   }
 
   const finalVehicleId = vehicleId || formData.vehicleId;
   if (!finalVehicleId) {
-    console.warn("⚠️ No specific vehicle ID provided, using brand for booking");
+    console.warn("Missing vehicleId; backend will fallback to brand assignment");
   }
+
+  const sanitizePaymentMethod = (method: string) => {
+    switch (method) {
+      case "cash":
+      case "CASH":
+        return "CASH";
+      case "bank_transfer":
+      case "transfer":
+      case "BANK_TRANSFER":
+        return "BANK_TRANSFER";
+      case "credit_card":
+      case "card":
+      case "CREDIT_CARD":
+        return "CREDIT_CARD";
+      case "e_wallet":
+      case "wallet":
+      case "E_WALLET":
+        return "E_WALLET";
+      default:
+        return "ONLINE";
+    }
+  };
 
   const sanitizedRenterId =
     renterId && /^[a-fA-F0-9]{24}$/.test(renterId) ? renterId : undefined;
 
   return {
-    // User info
     renterName: formData.renterName,
     phoneNumber: formData.phoneNumber,
     email: formData.email,
-
-    // Booking details
     brand: formData.brandId,
     pickupStation: formData.stationId,
-    vehicle: finalVehicleId || formData.brandId, // Use brand as fallback
+    vehicle: finalVehicleId || formData.brandId,
     pickupTimeExpected: pickupDateTime.toISOString(),
     rentalDays,
-
-    // Payment & preferences
-    paymentMethod: formData.paymentMethod,
+    paymentMethod: sanitizePaymentMethod(formData.paymentMethod),
     agreedToPaymentTerms: formData.agreedToPaymentTerms,
     agreedToDataSharing: formData.agreedToDataSharing,
-
-    // Optional fields
-    ...(sanitizedRenterId
-      ? { renterId: sanitizedRenterId }
-      : { renter: null }),
-    status: "pending",
+    ...(sanitizedRenterId ? { renterId: sanitizedRenterId } : { renter: null }),
     surchargeAmount,
-    notes: formData.notes || undefined,
+    pickupLocation: formData.pickupLocation?.trim() || undefined,
+    promoCode: formData.promoCode?.trim() || undefined,
+    notes: formData.notes?.trim() || undefined,
   };
 };

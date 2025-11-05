@@ -3,8 +3,10 @@ import { API_SUFFIX } from "./util.api";
 import type { BaseResponse } from "@/schema/common/response.type";
 import type { TRental } from "@/schema/rental.schema";
 
-const getRentalList = async () =>
-  await apiRequest.get<BaseResponse<TRental[]>>(API_SUFFIX.RENTAL_API);
+const getRentalList = async (params?: { renterId?: string; status?: string }) =>
+  await apiRequest.get<BaseResponse<TRental[]>>(API_SUFFIX.RENTAL_API, {
+    params,
+  });
 
 const getRentalById = async (id: string) =>
   await apiRequest.get<BaseResponse<TRental>>(API_SUFFIX.RENTAL_API + `/${id}`);

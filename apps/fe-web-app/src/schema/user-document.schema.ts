@@ -1,7 +1,16 @@
 import { z } from "zod";
 import { UserSchema } from "./user.schema";
 
-export const UserDocumentStatusSchema = z.enum(["pending", "under_review", "verified", "rejected"]);
+export const UserDocumentStatusSchema = z.enum([
+  "pending",
+  "under_review",
+  "verified",
+  "rejected",
+  "PENDING",
+  "UNDER_REVIEW",
+  "APPROVED",
+  "REJECTED",
+]);
 
 export const UserDocumentSchema = z.object({
   _id: z.string().min(1),
@@ -14,12 +23,12 @@ export const UserDocumentSchema = z.object({
   verifiedBy: z
     .object({
       _id: z.string(),
-      fullName: z.string(),
+      fullName: z.string().optional(),
     })
     .nullable()
     .optional(),
-  submittedAt: z.string().datetime({ offset: true }),
-  updatedAt: z.string().datetime({ offset: true }),
+  submittedAt: z.string().optional(),
+  updatedAt: z.string().optional(),
 });
 
 export const CreateUserDocumentSchema = z.object({
@@ -29,7 +38,9 @@ export const CreateUserDocumentSchema = z.object({
   drivingLicenseNumber: z.string().min(6, "Driving license number is required"),
   frontImage: z.instanceof(File, { message: "Front side is required" }),
   backImage: z.instanceof(File, { message: "Back side is required" }),
-  drivingLicenseImage: z.instanceof(File, { message: "Driving license image is required" }),
+  drivingLicenseImage: z.instanceof(File, {
+    message: "Driving license image is required",
+  }),
 });
 
 export type TUserDocument = z.infer<typeof UserDocumentSchema>;

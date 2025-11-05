@@ -26,14 +26,10 @@ const getBookingList = async (params?: {
   renterId?: string;
   renter?: string;
   userId?: string;
-}) => {
-  const queryString = params
-    ? `?${new URLSearchParams(params as Record<string, string>).toString()}`
-    : "";
-  return await apiRequest.get<BaseResponse<TBooking[]>>(
-    API_SUFFIX.BOOKING_API + queryString
-  );
-};
+}) =>
+  await apiRequest.get<BaseResponse<TBooking[]>>(API_SUFFIX.BOOKING_API, {
+    params,
+  });
 
 /**
  * GET /api/bookings/:id - Chi tiết booking

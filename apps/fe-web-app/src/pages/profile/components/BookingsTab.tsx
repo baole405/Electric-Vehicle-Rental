@@ -1,521 +1,322 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useAuthContext } from "@/contexts/auth-context";
 import { useBooking } from "@/hooks/use-booking";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/shadcn/ui/card";
+import { usePaymentHook } from "@/hooks/use-payment";
+import { useRentalHook } from "@/hooks/use-rental";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/shadcn/ui/card";
 import { Button } from "@/components/shadcn/ui/button";
 import { Input } from "@/components/shadcn/ui/input";
-import { Badge } from "@/components/shadcn/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/shadcn/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/shadcn/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/shadcn/ui/dialog";
-import {
-  Search,
-  Calendar,
-  Car,
-  MapPin,
-  CheckCircle2,
-  Clock,
-  XCircle,
-  Eye,
-  Download,
-  AlertCircle,
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import type { TBooking } from "@/schema/booking.schema";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/shadcn/ui/select";
+import { BadgeStatus, mapStatusColor, statusText, fmt, money } from "@/lib/utils";
+import { AlertTriangle, ArrowRight, Calendar, Car, CreditCard, Loader2 } from "lucide-react";
 import BookingDetailDialog from "@/components/shared/BookingDetailDialog";
-import type { AxiosError } from "axios";
+import type { TBooking } from "@/schema/booking.schema";
+import type { TRental } from "@/schema/rental.schema";
+import type { TPayment } from "@/schema/payment.schema";
+
+const STATUS_FILTERS = [
+  { value: "ALL", label: "Tất cả" },
+  { value: "PENDING_APPROVAL", label: "Chờ duyệt" },
+  { value: "WAITING_PAYMENT", label: "Chờ thanh toán" },
+  { value: "PAID", label: "Đã thanh toán" },
+  { value: "SUCCESS", label: "Hoàn tất" },
+  { value: "CANCELLED", label: "Đã hủy" },
+];
+
+const WAITING_PAYMENT_SET = new Set([
+  "WAITING_PAYMENT",
+  "PENDING_PAYMENT",
+  "WAITING_CHECKOUT",
+]);
+
+const CANCELLABLE_SET = new Set([
+  "PENDING_APPROVAL",
+  "WAITING_PAYMENT",
+  "PENDING_PAYMENT",
+]);
 
 export default function BookingsTab() {
-  const navigate = useNavigate();
   const { currentUser, isVerified } = useAuthContext();
-  const { useBookingList, cancelBooking } = useBooking();
   const renterId = currentUser?._id ?? "";
-  const isValidRenterId = renterId ? /^[a-fA-F0-9]{24}$/.test(renterId) : false;
-  const shouldFetchBookings = Boolean(renterId) && isValidRenterId && isVerified;
-  const bookingListQuery = useBookingList(
-    shouldFetchBookings ? { renterId } : undefined,
-    { enabled: shouldFetchBookings }
-  );
+  const isValidRenterId = /^[a-fA-F0-9]{24}$/.test(renterId);
+
+  const { useBookingList, cancelBooking } = useBooking();
+  const { usePaymentList, triggerTestCheckout } = usePaymentHook();
+  const { useRentalList } = useRentalHook();
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedBooking, setSelectedBooking] = useState<TBooking | null>(null);
-  const [showCancelDialog, setShowCancelDialog] = useState(false);
-  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
+
+  const shouldFetch = isVerified && isValidRenterId;
+
+  const bookingsQuery = useBookingList(
+    shouldFetch ? { renterId } : undefined,
+    { enabled: shouldFetch },
+  );
+
+  const paymentsQuery = usePaymentList(
+    shouldFetch ? { renterId } : undefined,
+    { enabled: shouldFetch },
+  );
+
+  const rentalsQuery = useRentalList(
+    shouldFetch ? { renterId } : undefined,
+    { enabled: shouldFetch },
+  );
 
   const bookings = useMemo(
-    () =>
-      shouldFetchBookings ? ((bookingListQuery.data?.data?.data || []) as TBooking[]) : [],
-    [bookingListQuery.data?.data?.data, shouldFetchBookings]
+    () => (bookingsQuery.data?.data?.data ?? []) as TBooking[],
+    [bookingsQuery.data?.data?.data],
   );
 
-  const bookingErrorMessage = useMemo(() => {
-    if (renterId && !isValidRenterId) {
-      return "Không thể tải lịch sử booking vì mã người dùng không hợp lệ.";
+  const paymentsByBooking = useMemo(() => {
+    const map = new Map<string, TPayment>();
+    const list = paymentsQuery.data?.data?.data ?? [];
+    for (const item of list as TPayment[]) {
+      const bookingId = (item.bookingId as string) ?? (item.rental?.booking?._id as string);
+      if (bookingId) {
+        map.set(bookingId, item);
+      }
     }
-    if (!bookingListQuery.isError) {
-      return null;
-    }
-    const error = bookingListQuery.error as AxiosError<{ message?: string; error?: string }>;
-    if (error.response?.status === 403) {
-      return (
-        error.response.data?.message ??
-        "Hồ sơ của bạn chưa được xác minh. Hoàn tất giấy tờ để xem lịch sử booking."
-      );
-    }
-    if (error.response?.status === 400) {
-      return error.response.data?.message ?? "renterId không hợp lệ (phải là ObjectId 24 ký tự).";
-    }
-    return error.message || "Đã xảy ra lỗi khi tải danh sách booking.";
-  }, [bookingListQuery.error, bookingListQuery.isError, renterId, isValidRenterId]);
-  const isForbiddenError =
-    bookingListQuery.isError &&
-    (bookingListQuery.error as AxiosError | undefined)?.response?.status === 403;
-  const verificationNotice = !isVerified
-    ? "Hồ sơ của bạn chưa được xác minh. Vui lòng tải lên giấy tờ và chờ phê duyệt để xem và quản lý lịch sử đặt xe."
-    : null;
+    return map;
+  }, [paymentsQuery.data?.data?.data]);
 
-  // Filter bookings
+  const rentalsByBooking = useMemo(() => {
+    const map = new Map<string, TRental>();
+    const list = rentalsQuery.data?.data?.data ?? [];
+    for (const rental of list as TRental[]) {
+      const bookingId = (rental.booking as TBooking | undefined)?._id;
+      if (bookingId) {
+        map.set(bookingId, rental);
+      }
+    }
+    return map;
+  }, [rentalsQuery.data?.data?.data]);
+
   const filteredBookings = useMemo(() => {
-    return bookings.filter((booking: TBooking) => {
+    return bookings.filter((booking) => {
       const matchesSearch =
         booking.bookingCode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        booking.brand?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        booking.renterName?.toLowerCase().includes(searchQuery.toLowerCase());
+        booking.brand?.name?.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesStatus = statusFilter === "all" || booking.status === statusFilter;
+      const normalizedStatus = booking.status?.toUpperCase();
+      const matchesStatus =
+        statusFilter === "ALL" ||
+        normalizedStatus === statusFilter ||
+        (statusFilter === "WAITING_PAYMENT" && WAITING_PAYMENT_SET.has(normalizedStatus ?? ""));
 
       return matchesSearch && matchesStatus;
     });
   }, [bookings, searchQuery, statusFilter]);
 
-  const getStatusBadge = (status: string) => {
-    const config: Record<string, { label: string; className: string; icon: React.ElementType }> = {
-      pending_payment: { label: "Chờ thanh toán", className: "bg-yellow-500", icon: Clock },
-      confirmed: { label: "Đã xác nhận", className: "bg-green-500", icon: CheckCircle2 },
-      completed: { label: "Hoàn thành", className: "bg-blue-500", icon: CheckCircle2 },
-      cancelled: { label: "Đã hủy", className: "bg-red-500", icon: XCircle },
-      expired: { label: "Hết hạn", className: "bg-gray-500", icon: AlertCircle },
-    };
+  const isLoading =
+    bookingsQuery.isLoading || paymentsQuery.isLoading || rentalsQuery.isLoading;
 
-    const variant = config[status] || { label: status, className: "bg-gray-500", icon: AlertCircle };
-    const Icon = variant.icon;
+  const selectedBooking =
+    selectedBookingId &&
+    bookings.find((booking) => booking._id === selectedBookingId);
 
+  const relatedPayment = selectedBookingId
+    ? paymentsByBooking.get(selectedBookingId) ?? undefined
+    : undefined;
+  const relatedRental = selectedBookingId
+    ? rentalsByBooking.get(selectedBookingId) ?? undefined
+    : undefined;
+
+  if (!isVerified) {
     return (
-      <Badge className={`${variant.className} text-white`}>
-        <Icon className="w-3 h-3 mr-1" />
-        {variant.label}
-      </Badge>
+      <Card>
+        <CardHeader>
+          <CardTitle>Bookings</CardTitle>
+          <CardDescription>
+            Hồ sơ của bạn chưa được xác minh. Vui lòng hoàn tất xác minh giấy tờ để bắt đầu đặt xe.
+          </CardDescription>
+        </CardHeader>
+      </Card>
     );
-  };
+  }
 
-  const handleCancelBooking = async () => {
-    if (!selectedBooking) return;
-
-    cancelBooking.mutate(selectedBooking._id, {
-      onSuccess: () => {
-        setShowCancelDialog(false);
-        setSelectedBooking(null);
-        bookingListQuery.refetch();
-      },
-      onError: (error) => {
-        console.error("Cancel booking error:", error);
-        alert("Không thể hủy booking. Vui lòng thử lại!");
-      },
-    });
-  };
+  if (!isValidRenterId) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Bookings</CardTitle>
+          <CardDescription>Tài khoản chưa sẵn sàng để lấy dữ liệu booking.</CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Danh sách booking</CardTitle>
-          <CardDescription>Quản lý tất cả booking của bạn</CardDescription>
+          <CardTitle>Lịch sử đặt xe</CardTitle>
+          <CardDescription>Theo dõi trạng thái booking, thanh toán và giao nhận xe.</CardDescription>
         </CardHeader>
-        <CardContent>\r\n          {verificationNotice && (
-            <div className="mb-4 flex flex-col gap-2 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-              <span>{verificationNotice}</span>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => navigate("/profile?tab=documents")}
-                >
-                  Hoan thien ho so
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-amber-700 hover:text-amber-800"
-                  onClick={() => navigate("/profile?tab=overview")}
-                >
-                  Xem trang thai ho so
-                </Button>
-              </div>
+        <CardContent className="space-y-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex-1">
+              <Input
+                placeholder="Tìm theo mã booking hoặc dòng xe…"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+              />
             </div>
-          )}
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full md:w-56">
+                <SelectValue placeholder="Trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUS_FILTERS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          {bookingErrorMessage && (
-            <div className="mb-4 flex flex-col gap-2 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-              <span>{bookingErrorMessage}</span>
-              {bookingListQuery.isError && !isForbiddenError && (
-                <div>
-                  <Button variant="outline" size="sm" onClick={() => bookingListQuery.refetch()}>
-                    Thu tai lai
-                  </Button>
-                </div>
-              )}
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <Loader2 className="mb-2 h-6 w-6 animate-spin" />
+              Đang tải dữ liệu booking…
             </div>
-          )}
-
-          {isVerified && !isForbiddenError ? (
-            <>
-              <div className="flex flex-col md:flex-row gap-4 mb-6">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    placeholder="Tim theo ma booking, xe, ten..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full md:w-[200px]">
-                    <SelectValue placeholder="Loc theo trang thai" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tat ca</SelectItem>
-                    <SelectItem value="pending_payment">Cho thanh toan</SelectItem>
-                    <SelectItem value="confirmed">Da xac nhan</SelectItem>
-                    <SelectItem value="completed">Hoan thanh</SelectItem>
-                    <SelectItem value="cancelled">Da huy</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {bookingListQuery.isLoading ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin w-8 h-8 border-4 border-green-600 border-t-transparent rounded-full mx-auto"></div>
-                  <p className="text-gray-500 mt-4">Dang tai...</p>
-                </div>
-              ) : filteredBookings.length === 0 ? (
-                <div className="text-center py-12">
-                  <Car className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 mb-2">
-                    {searchQuery || statusFilter !== "all" ? "Khong tim thay booking nao" : "Chua co booking"}
-                  </p>
-                  <Button onClick={() => navigate("/")}>Dat xe ngay</Button>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Ma booking</TableHead>
-                        <TableHead>Xe</TableHead>
-                        <TableHead>Tram</TableHead>
-                        <TableHead>Thoi gian</TableHead>
-                        <TableHead>So ngay</TableHead>
-                        <TableHead>Tong tien</TableHead>
-                        <TableHead>Trang thai</TableHead>
-                        <TableHead className="text-right">Hanh dong</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredBookings.map((booking: TBooking) => (
-                        <TableRow key={booking._id}>
-                          <TableCell className="font-medium">{booking.bookingCode}</TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Car className="w-4 h-4 text-gray-400" />
-                              {booking.brand?.name || "N/A"}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <MapPin className="w-4 h-4 text-gray-400" />
-                              {booking.station?.name || booking.pickupStation?.name || "N/A"}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm">
-                              <div className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {booking.pickupDate}
-                              </div>
-                              <div className="text-gray-500">-&gt; {booking.returnDate}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell>{booking.rentalDays} ngay</TableCell>
-                          <TableCell className="font-semibold">
-                            {booking.totalPayable?.toLocaleString("vi-VN")}d
-                          </TableCell>
-                          <TableCell>{getStatusBadge(booking.status)}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedBooking(booking);
-                                  setShowDetailDialog(true);
-                                }}
-                              >
-                                <Eye className="w-4 h-4 mr-1" />
-                                Chi tiet
-                              </Button>
-                              {(booking.status === "completed" || booking.status === "confirmed") && (
-                                <Button variant="outline" size="sm">
-                                  <Download className="w-4 h-4 mr-1" />
-                                  Hoa don
-                                </Button>
-                              )}
-                              {booking.status === "pending_payment" && (
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedBooking(booking);
-                                    setShowCancelDialog(true);
-                                  }}
-                                >
-                                  <XCircle className="w-4 h-4 mr-1" />
-                                  Huy
-                                </Button>
-                              )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </>
-          ) : null}
-
-          {isVerified && isForbiddenError && !bookingErrorMessage && (
-            <div className="text-center py-12 text-sm text-gray-500">
-              Khong the tai lich su booking vao luc nay. Vui long thu lai sau.
+          ) : filteredBookings.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed py-16">
+              <AlertTriangle className="h-6 w-6 text-amber-500" />
+              <p className="text-sm text-muted-foreground">Chưa có booking nào phù hợp bộ lọc.</p>
             </div>
-          )}
+          ) : (
+            <div className="grid gap-4">
+              {filteredBookings.map((booking) => {
+                const bookingId = booking._id;
+                const normalizedStatus = booking.status?.toUpperCase();
+                const payment = paymentsByBooking.get(bookingId);
+                const rental = rentalsByBooking.get(bookingId);
+                const pricing = booking.pricing ?? {
+                  totalPayable: booking.totalPayable,
+                  depositAmount: booking.depositAmount,
+                };
 
-          {!isVerified && !verificationNotice && (
-            <div className="text-center py-12 text-sm text-gray-500">
-              Sau khi ho so duoc xac minh, lich su dat xe cua ban se hien thi tai day.
-            </div>
-          )}        </CardContent>\r\n      </Card>
+                const isWaitingPayment = WAITING_PAYMENT_SET.has(normalizedStatus ?? "");
+                const canCancel = CANCELLABLE_SET.has(normalizedStatus ?? "");
 
-      {/* Cancel Dialog */}
-      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Xác nhận hủy booking</DialogTitle>
-            <DialogDescription>
-              Bạn có chắc chắn muốn hủy booking <strong>{selectedBooking?.bookingCode}</strong>?
-              Hành động này không thể hoàn tác.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCancelDialog(false)}>
-              Không
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleCancelBooking}
-              disabled={cancelBooking.isPending}
-            >
-              {cancelBooking.isPending ? "Đang hủy..." : "Xác nhận hủy"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+                return (
+                  <div
+                    key={bookingId}
+                    className="rounded-xl border bg-white p-4 shadow-sm transition hover:shadow-md"
+                  >
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                      <div className="flex-1">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <BadgeStatus variant={mapStatusColor(booking.status)}>
+                            {statusText(booking.status)}
+                          </BadgeStatus>
+                          <span className="font-mono text-xs text-muted-foreground">
+                            #{booking.bookingCode ?? booking._id}
+                          </span>
+                        </div>
+                        <div className="mt-3 space-y-2 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Car className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">
+                              {booking.brand?.name} ({booking.brand?.code})
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Calendar className="h-4 w-4" />
+                            <span>
+                              {fmt(booking.pickupDateTime ?? booking.pickupDate)} →{" "}
+                              {fmt(booking.returnDateTime ?? booking.returnDate)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <CreditCard className="h-4 w-4" />
+                            <span>Tổng phải thanh toán: {money(pricing?.totalPayable)}</span>
+                          </div>
+                          {rental && (
+                            <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                              <ArrowRight className="h-3 w-3" />
+                              Rental: {statusText(rental.status)} • {fmt(rental.pickupTime)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
 
-      {/* Detail Dialog */}
-      <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-2xl">Chi tiết Booking</DialogTitle>
-            <DialogDescription>
-              Mã booking: <strong>{selectedBooking?.bookingCode}</strong>
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedBooking && (
-            <div className="space-y-6">
-              {/* Status & Vehicle Info */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">Trạng thái</p>
-                  {getStatusBadge(selectedBooking.status)}
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">Xe</p>
-                  <div className="flex items-center gap-2">
-                    <Car className="w-4 h-4 text-gray-400" />
-                    <p className="font-semibold">{selectedBooking.brand?.name || "N/A"}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Rental Period */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-semibold mb-3 flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
-                  Thời gian thuê
-                </h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-500">Ngày nhận xe</p>
-                    <p className="font-medium">
-                      {new Date(selectedBooking.pickupDate).toLocaleDateString("vi-VN")}
-                      {" - "}
-                      {selectedBooking.pickupTime}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Ngày trả xe</p>
-                    <p className="font-medium">
-                      {new Date(selectedBooking.returnDate).toLocaleDateString("vi-VN")}
-                      {" - "}
-                      {selectedBooking.returnTime}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Số ngày thuê</p>
-                    <p className="font-medium">{selectedBooking.rentalDays || 0} ngày</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Location */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-semibold mb-3 flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
-                  Địa điểm
-                </h3>
-                <p className="text-sm">
-                  {selectedBooking.station?.name || selectedBooking.pickupStation?.name || "N/A"}
-                </p>
-                {selectedBooking.pickupStation?.address && (
-                  <p className="text-sm text-gray-500 mt-1">{selectedBooking.pickupStation.address}</p>
-                )}
-              </div>
-
-              {/* Renter Info */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="font-semibold mb-3">Thông tin người thuê</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-gray-500">Họ tên</p>
-                    <p className="font-medium">{selectedBooking.renterName}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Số điện thoại</p>
-                    <p className="font-medium">{selectedBooking.phoneNumber}</p>
-                  </div>
-                  <div className="col-span-2">
-                    <p className="text-gray-500">Email</p>
-                    <p className="font-medium">{selectedBooking.email}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Pricing */}
-              <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                <h3 className="font-semibold mb-3">Chi phí</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Giá thuê ({selectedBooking.rentalDays || 0} ngày)</span>
-                    <span className="font-medium">
-                      {(selectedBooking.basePrice || 0).toLocaleString("vi-VN")}đ
-                    </span>
-                  </div>
-                  {selectedBooking.depositAmount && selectedBooking.depositAmount > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Tiền cọc</span>
-                      <span className="font-medium">
-                        {selectedBooking.depositAmount.toLocaleString("vi-VN")}đ
-                      </span>
-                    </div>
-                  )}
-                  {selectedBooking.additionalFees && selectedBooking.additionalFees > 0 && (
-                    <div className="flex justify-between text-orange-600">
-                      <span>Phí phụ thu</span>
-                      <span className="font-medium">
-                        {selectedBooking.additionalFees.toLocaleString("vi-VN")}đ
-                      </span>
-                    </div>
-                  )}
-                  <div className="border-t pt-2 mt-2 flex justify-between font-bold text-lg">
-                    <span>Tổng cộng</span>
-                    <span className="text-green-600">
-                      {(selectedBooking.totalPayable || 0).toLocaleString("vi-VN")}đ
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Payment Info */}
-              {selectedBooking.paymentMethod && (
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-semibold mb-3">Thanh toán</h3>
-                  <div className="text-sm space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Phương thức</span>
-                      <span className="font-medium">
-                        {selectedBooking.paymentMethod === "bank_transfer"
-                          ? "Chuyển khoản"
-                          : selectedBooking.paymentMethod}
-                      </span>
+                      <div className="flex flex-col items-stretch gap-2 md:w-40">
+                        <Button
+                          variant="outline"
+                          onClick={() => setSelectedBookingId(bookingId)}
+                        >
+                          Chi tiết
+                        </Button>
+                        {isWaitingPayment && (
+                          <Button
+                            className="bg-emerald-600 hover:bg-emerald-700"
+                            disabled={triggerTestCheckout.isPending}
+                            onClick={() =>
+                              triggerTestCheckout.mutate({
+                                bookingId,
+                                method: "BANK_TRANSFER",
+                              })
+                            }
+                          >
+                            {triggerTestCheckout.isPending ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Đang xử lý…
+                              </>
+                            ) : (
+                              "Thanh toán thử"
+                            )}
+                          </Button>
+                        )}
+                        {canCancel && (
+                          <Button
+                            variant="ghost"
+                            className="text-rose-600 hover:bg-rose-50"
+                            onClick={() => {
+                              if (confirm("Bạn chắc chắn muốn hủy booking này?")) {
+                                cancelBooking.mutate(bookingId);
+                              }
+                            }}
+                          >
+                            Hủy booking
+                          </Button>
+                        )}
+                        {payment && (
+                          <p className="text-xs text-muted-foreground text-center">
+                            Thanh toán: {statusText(payment.status)}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-
-              {/* Notes */}
-              {selectedBooking.notes && (
-                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                  <h3 className="font-semibold mb-2">Ghi chú</h3>
-                  <p className="text-sm text-gray-700">{selectedBooking.notes}</p>
-                </div>
-              )}
+                );
+              })}
             </div>
           )}
+        </CardContent>
+      </Card>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDetailDialog(false)}>
-              Đóng
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Booking Detail Dialog */}
       <BookingDetailDialog
-        booking={selectedBooking}
-        open={showDetailDialog}
-        onOpenChange={setShowDetailDialog}
+        booking={selectedBooking ?? null}
+        rental={relatedRental}
+        payment={relatedPayment}
+        open={Boolean(selectedBooking)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedBookingId(null);
+          }
+        }}
       />
     </div>
   );
