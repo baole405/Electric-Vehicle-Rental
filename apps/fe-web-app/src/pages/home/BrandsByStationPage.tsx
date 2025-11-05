@@ -1,11 +1,20 @@
 import HeaderMain from '@/components/header/header-main';
 import { Button } from '@/components/shadcn/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/shadcn/ui/dialog";
 import BrandCard from '@/components/shared/BrandCard';
+import MapStations from '@/components/shared/MapStations';
 import { useBrandHook } from '@/hooks/use-brand';
 import { useStationHook } from '@/hooks/use-station';
 import type { TBrand } from '@/schema/brand.schema';
 import type { TStation } from '@/schema/station.schema';
-import { AlertTriangle, Calendar, Clock, Loader2 } from 'lucide-react';
+import { AlertTriangle, Calendar, Clock, Loader2, Map } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 export default function BrandsByStationPage() {
@@ -30,6 +39,13 @@ export default function BrandsByStationPage() {
   const [returnDate, setReturnDate] = useState<string>(tomorrow);
   const [returnTime, setReturnTime] = useState<string>('10:00');
   const [dateError, setDateError] = useState<string>('');
+  const [mapOpen, setMapOpen] = useState(false);
+
+  // Handler for station selection from map
+  const handleStationSelect = (stationId: string) => {
+    setSelectedStationId(stationId);
+    setMapOpen(false);
+  };
 
   // Validate dates
   useEffect(() => {
@@ -125,10 +141,10 @@ export default function BrandsByStationPage() {
         {/* Filter Bar */}
         <div className="mb-6 bg-white rounded-2xl shadow-md p-6">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
-            {/* Station Selector */}
+            {/* Station Selector with Map Button */}
             <div className="lg:col-span-3">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tên trạm
+                Tỉnh/Thành phố
               </label>
               {stationsLoading ? (
                 <div className="flex items-center justify-center h-12 border rounded-lg">
@@ -139,6 +155,8 @@ export default function BrandsByStationPage() {
                   value={selectedStationId}
                   onChange={(e) => setSelectedStationId(e.target.value)}
                   className="w-full h-12 px-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                  aria-label="Chọn trạm thuê xe"
+                  title="Chọn trạm thuê xe"
                 >
                   {stations.map((station: TStation) => (
                     <option key={station._id} value={station._id}>
@@ -162,6 +180,8 @@ export default function BrandsByStationPage() {
                   onChange={(e) => setPickupDate(e.target.value)}
                   min={today}
                   className="w-full h-12 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                  title="Chọn ngày nhận xe"
+                  placeholder="Chọn ngày nhận xe"
                 />
               </div>
             </div>
@@ -178,6 +198,8 @@ export default function BrandsByStationPage() {
                   value={pickupTime}
                   onChange={(e) => setPickupTime(e.target.value)}
                   className="w-full h-12 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                  title="Chọn giờ nhận xe"
+                  placeholder="Chọn giờ nhận xe"
                 />
               </div>
             </div>
@@ -195,6 +217,8 @@ export default function BrandsByStationPage() {
                   onChange={(e) => setReturnDate(e.target.value)}
                   min={pickupDate || today}
                   className="w-full h-12 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                  title="Chọn ngày trả xe"
+                  placeholder="Chọn ngày trả xe"
                 />
               </div>
             </div>
@@ -211,6 +235,8 @@ export default function BrandsByStationPage() {
                   value={returnTime}
                   onChange={(e) => setReturnTime(e.target.value)}
                   className="w-full h-12 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                  title="Chọn giờ trả xe"
+                  placeholder="Chọn giờ trả xe"
                 />
               </div>
             </div>
