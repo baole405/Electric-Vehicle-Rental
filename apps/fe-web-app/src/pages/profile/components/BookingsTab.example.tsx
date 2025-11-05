@@ -1,3 +1,7 @@
+// ===== EXAMPLE: BookingsTab WITH PayOS Dialog Implementation =====
+// This is a backup of the PayOS embedded dialog implementation
+// User can restore this when ready to use PayOS popup in profile page
+
 import { Button } from '@/components/shadcn/ui/button';
 import {
   Card,
@@ -62,13 +66,14 @@ const CANCELLABLE_SET = new Set([
   'PENDING_PAYMENT',
 ]);
 
-export default function BookingsTab() {
+export default function BookingsTabWithPayOS() {
   const { currentUser, isVerified } = useAuthContext();
   const renterId = currentUser?._id ?? '';
   const isValidRenterId = /^[a-fA-F0-9]{24}$/.test(renterId);
 
   const { useBookingList, cancelBooking } = useBooking();
-  const { usePaymentList, createPayOSCheckout } = usePaymentHook();
+  const { usePaymentList, triggerTestCheckout, createPayOSCheckout } =
+    usePaymentHook();
   const { useRentalList } = useRentalHook();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -104,14 +109,14 @@ export default function BookingsTab() {
       ELEMENT_ID: '',
       CHECKOUT_URL: '',
       embedded: true,
-      onSuccess: () => {
-        /* placeholder */
+      onSuccess: (event) => {
+        console.log('Default onSuccess', event);
       },
-      onCancel: () => {
-        /* placeholder */
+      onCancel: (event) => {
+        console.log('Default onCancel', event);
       },
-      onExit: () => {
-        /* placeholder */
+      onExit: (event) => {
+        console.log('Default onExit', event);
       },
     }
   );
@@ -342,65 +347,98 @@ export default function BookingsTab() {
                           Chi tiết
                         </Button>
                         {isWaitingPayment && (
-                          <Button
-                            className="bg-blue-600 hover:bg-blue-700"
-                            disabled={createPayOSCheckout.isPending}
-                            onClick={async () => {
-                              try {
-                                const response =
-                                  await createPayOSCheckout.mutateAsync({
-                                    bookingId,
-                                  });
-                                const checkoutUrl =
-                                  response.data?.data?.checkoutData
-                                    ?.checkoutUrl;
-                                if (checkoutUrl) {
-                                  // Open PayOS embedded dialog
-                                  setPayosConfig({
-                                    RETURN_URL:
-                                      window.location.origin +
-                                      '/profile?tab=bookings',
-                                    ELEMENT_ID: 'payos-checkout',
-                                    CHECKOUT_URL: checkoutUrl,
-                                    embedded: true,
-                                    onSuccess: (event) => {
-                                      console.log('PayOS Success:', event);
-                                      toast.success('Thanh toán thành công!');
-                                      // Refetch booking to get updated status
-                                      bookingsQuery.refetch();
-                                      exit();
-                                    },
-                                    onCancel: (event) => {
-                                      console.log('PayOS Cancel:', event);
-                                      toast.warning('Bạn đã hủy thanh toán');
-                                      exit();
-                                    },
-                                    onExit: (event) => {
-                                      console.log('PayOS Exit:', event);
-                                      setPayosConfig(null);
-                                    },
-                                  });
-                                  // Open the dialog
-                                  setTimeout(() => open(), 100);
+                          <>
+                            <Button
+                              className="bg-blue-600 hover:bg-blue-700"
+                              disabled={createPayOSCheckout.isPending}
+                              onClick={async () => {
+                                try {
+                                  const response =
+                                    await createPayOSCheckout.mutateAsync({
+                                      bookingId,
+                                    });
+                                  const checkoutUrl =
+                                    response.data?.data?.checkoutData
+                                      ?.checkoutUrl;
+                                  if (checkoutUrl) {
+                                    // Open PayOS embedded dialog
+                                    setPayosConfig({
+                                      RETURN_URL:
+                                        window.location.origin +
+                                        '/profile?tab=bookings',
+                                      ELEMENT_ID: 'payos-checkout',
+                                      CHECKOUT_URL: checkoutUrl,
+                                      embedded: true,
+                                      onSuccess: (event: {
+                                        id: string;
+                                        code: string;
+                                        orderCode: string;
+                                        status: string;
+                                      }) => {
+                                        console.log('PayOS Success:', event);
+                                        toast.success('Thanh toán thành công!');
+                                        // Refetch booking to get updated status
+                                        bookingsQuery.refetch();
+                                        exit();
+                                      },
+                                      onCancel: (event: {
+                                        id: string;
+                                        cancel: boolean;
+                                        orderCode: string;
+                                        status: string;
+                                      }) => {
+                                        console.log('PayOS Cancel:', event);
+                                        toast.warning('Bạn đã hủy thanh toán');
+                                        exit();
+                                      },
+                                      onExit: (event: { id: string }) => {
+                                        console.log('PayOS Exit:', event);
+                                        setPayosConfig(null);
+                                      },
+                                    });
+                                    // Open the dialog
+                                    setTimeout(() => open(), 100);
+                                  }
+                                } catch (error) {
+                                  console.error('PayOS checkout error:', error);
+                                  toast.error('Không thể tạo link thanh toán');
                                 }
-                              } catch (error) {
-                                console.error('PayOS checkout error:', error);
-                                toast.error('Không thể tạo link thanh toán');
+                              }}
+                            >
+                              {createPayOSCheckout.isPending ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Đang tạo link...
+                                </>
+                              ) : (
+                                <>
+                                  <CreditCard className="mr-2 h-4 w-4" />
+                                  Thanh toán ngay
+                                </>
+                              )}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs"
+                              disabled={triggerTestCheckout.isPending}
+                              onClick={() =>
+                                triggerTestCheckout.mutate({
+                                  bookingId,
+                                  method: 'bank_transfer',
+                                })
                               }
-                            }}
-                          >
-                            {createPayOSCheckout.isPending ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Đang tạo link...
-                              </>
-                            ) : (
-                              <>
-                                <CreditCard className="mr-2 h-4 w-4" />
-                                Thanh toán ngay
-                              </>
-                            )}
-                          </Button>
+                            >
+                              {triggerTestCheckout.isPending ? (
+                                <>
+                                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                  Đang xử lý…
+                                </>
+                              ) : (
+                                'Test checkout'
+                              )}
+                            </Button>
+                          </>
                         )}
                         {canCancel && (
                           <Button

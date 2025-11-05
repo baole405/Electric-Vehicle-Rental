@@ -71,10 +71,10 @@ const assignVehicle = async (bookingId: string, data: TAssignVehicle) =>
   );
 
 /**
- * PATCH /api/bookings/:id/status - Cập nhật trạng thái booking
+ * PUT /api/bookings/:id/status - Cập nhật trạng thái booking
  */
 const updateBookingStatus = async (bookingId: string, data: TUpdateBookingStatus) =>
-  await apiRequest.patch<BaseResponse<TBooking>>(
+  await apiRequest.put<BaseResponse<TBooking>>(
     `${API_SUFFIX.BOOKING_API}/${bookingId}/status`,
     data
   );
