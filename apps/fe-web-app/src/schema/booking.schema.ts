@@ -133,16 +133,10 @@ export const CreateBookingSchema = z.object({
   rentalDays: z.number().int().min(1, "Số ngày thuê tối thiểu là 1"),
 
   paymentMethod: z.enum([
-    "online",
     "cash",
     "bank_transfer",
     "credit_card",
     "e_wallet",
-    "ONLINE",
-    "CASH",
-    "BANK_TRANSFER",
-    "CREDIT_CARD",
-    "E_WALLET",
   ]),
   agreedToPaymentTerms: z.boolean(),
   agreedToDataSharing: z.boolean(),
@@ -178,7 +172,7 @@ export const CreateBookingFormSchema = z.object({
     .string()
     .regex(/^([0-1][0-9]|2[0-3]):[0-5][0-9]$/, "Giờ trả xe không hợp lệ"),
 
-  paymentMethod: z.enum(["online", "cash", "bank_transfer", "credit_card", "e_wallet"]),
+  paymentMethod: z.enum(["cash", "bank_transfer", "credit_card", "e_wallet"]),
 
   agreedToPaymentTerms: z.boolean().refine((val) => val === true, {
     message: "Bạn phải đồng ý với điều khoản thanh toán",
@@ -233,25 +227,29 @@ export const convertFormToBookingAPI = (
     console.warn("Missing vehicleId; backend will fallback to brand assignment");
   }
 
-  const sanitizePaymentMethod = (method: string) => {
-    switch (method) {
+  const sanitizePaymentMethod = (method: string): "cash" | "bank_transfer" | "credit_card" | "e_wallet" => {
+    const normalized = method.toLowerCase();
+    switch (normalized) {
       case "cash":
-      case "CASH":
-        return "CASH";
+        return "cash";
       case "bank_transfer":
       case "transfer":
-      case "BANK_TRANSFER":
-        return "BANK_TRANSFER";
+      case "banktransfer":
+      case "bank transfer":
+        return "bank_transfer";
       case "credit_card":
       case "card":
-      case "CREDIT_CARD":
-        return "CREDIT_CARD";
+      case "creditcard":
+        return "credit_card";
       case "e_wallet":
       case "wallet":
-      case "E_WALLET":
-        return "E_WALLET";
+      case "ewallet":
+        return "e_wallet";
       default:
-        return "ONLINE";
+        // ✅ Throw error instead of fallback (per BE guidance)
+        throw new Error(
+          `Invalid payment method: "${method}". Must be one of: cash, bank_transfer, credit_card, e_wallet`
+        );
     }
   };
 
