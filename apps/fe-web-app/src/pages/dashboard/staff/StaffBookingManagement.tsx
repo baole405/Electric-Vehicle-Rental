@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import type { FormEvent, ChangeEvent } from "react";
 import {
   Search,
   Eye,
@@ -8,6 +9,11 @@ import {
   User,
   Car,
   DollarSign,
+  CheckCircle2,
+  Wallet,
+  ClipboardCheck,
+  Key,
+  RefreshCcw,
 } from "lucide-react";
 import { Button } from "@/components/shadcn/ui/button";
 import { Input } from "@/components/shadcn/ui/input";
@@ -23,6 +29,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/shadcn/ui/dialog";
@@ -43,13 +50,21 @@ import {
 } from "@/components/shadcn/ui/table";
 import { useBooking } from "@/hooks/use-booking";
 import { useVehicleHook } from "@/hooks/use-vehicle";
+import { usePaymentHook } from "@/hooks/use-payment";
+import { useRentalHook } from "@/hooks/use-rental";
+import { useHandoverHook } from "@/hooks/use-handover";
 import type { TBooking } from "@/schema/booking.schema";
 import type { TVehicle } from "@/schema/vehicle.schema";
+import type { TRental } from "@/schema/rental.schema";
+import type { TPayment } from "@/schema/payment.schema";
+import { Label } from "@/components/shadcn/ui/label";
+import { Textarea } from "@/components/shadcn/ui/textarea";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 // Status color mapping for badges
 const STATUS_COLORS: Record<string, string> = {
+  pending: "bg-amber-100 text-amber-800 border-amber-200",
   pending_payment: "bg-yellow-100 text-yellow-800 border-yellow-200",
   held: "bg-blue-100 text-blue-800 border-blue-200",
   confirmed: "bg-indigo-100 text-indigo-800 border-indigo-200",
@@ -62,20 +77,22 @@ const STATUS_COLORS: Record<string, string> = {
 
 // Vietnamese labels for booking statuses
 const STATUS_LABELS: Record<string, string> = {
-  pending_payment: "Chờ thanh toán",
-  held: "Đang giữ chỗ",
-  confirmed: "Đã xác nhận",
-  paid: "Đã thanh toán",
-  checked_out: "Đã giao xe",
-  completed: "Hoàn thành",
-  cancelled: "Đã hủy",
-  expired: "Hết hạn",
+  pending: "Ch? x? ly",
+  pending_payment: "Ch? thanh to�n",
+  held: "Dang gi? ch?",
+  confirmed: "Da x�c nh?n",
+  paid: "Da thanh to�n",
+  checked_out: "Da giao xe",
+  completed: "Ho�n th�nh",
+  cancelled: "Da h?y",
+  expired: "H?t h?n",
 };
 
 // Helper: Get next valid statuses based on workflow
 const getNextStatuses = (currentStatus: string): string[] => {
   const workflow: Record<string, string[]> = {
-    pending_payment: ["held", "cancelled"],
+    pending: ["pending_payment", "confirmed", "cancelled"],
+    pending_payment: ["confirmed", "cancelled"],
     held: ["confirmed", "cancelled"],
     confirmed: ["paid", "cancelled"],
     paid: ["checked_out", "cancelled"],
@@ -89,23 +106,41 @@ const getNextStatuses = (currentStatus: string): string[] => {
 
 
 export function StaffBookingManagement() {
-  const { useBookingList } = useBooking();
+  const { useBookingList, confirmBooking } = useBooking();
   const { useVehicleList } = useVehicleHook();
+  const { useRentalList, createRental } = useRentalHook();
+  const { createPayment } = usePaymentHook();
+  const handoverHook = useHandoverHook();
+  const { createHandover } = handoverHook;
 
   // Fetch data
   const bookingQuery = useBookingList();
   const vehicleQuery = useVehicleList();
+  const rentalQuery = useRentalList();
 
   // Extract data from queries
   const bookings = useMemo(
     () => (Array.isArray(bookingQuery.data?.data?.data) ? bookingQuery.data.data.data : []),
     [bookingQuery.data]
   );
-
   const vehicles = useMemo(
     () => (Array.isArray(vehicleQuery.data?.data?.data) ? vehicleQuery.data.data.data : []),
     [vehicleQuery.data]
   );
+  const rentals = useMemo(
+    () => (Array.isArray(rentalQuery.data?.data?.data) ? (rentalQuery.data.data.data as TRental[]) : []),
+    [rentalQuery.data]
+  );
+  const rentalsByBooking = useMemo(() => {
+    const map = new Map<string, TRental>();
+    rentals.forEach((rental) => {
+      const bookingId = rental.booking?._id;
+      if (bookingId) {
+        map.set(bookingId, rental);
+      }
+    });
+    return map;
+  }, [rentals]);
 
   // Local state
   const [searchTerm, setSearchTerm] = useState("");
@@ -114,6 +149,20 @@ export function StaffBookingManagement() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [assignVehicleDialogOpen, setAssignVehicleDialogOpen] = useState(false);
   const [updateStatusDialogOpen, setUpdateStatusDialogOpen] = useState(false);
+  const [paymentBooking, setPaymentBooking] = useState<TBooking | null>(null);
+  const [rentalBooking, setRentalBooking] = useState<TBooking | null>(null);
+  const [handoverContext, setHandoverContext] = useState<{ rental: TRental; type: "pickup" | "return" } | null>(null);
+  const paymentDialogOpen = Boolean(paymentBooking);
+  const rentalDialogOpen = Boolean(rentalBooking);
+  const handoverDialogOpen = handoverContext !== null;
+
+  const refetchAll = async () => {
+    await Promise.all([
+      bookingQuery.refetch(),
+      vehicleQuery.refetch(),
+      rentalQuery.refetch(),
+    ]);
+  };
 
   // Filter bookings based on search and status
   const filteredBookings = useMemo(() => {
@@ -157,9 +206,37 @@ export function StaffBookingManagement() {
     setUpdateStatusDialogOpen(true);
   };
 
+  const handleConfirmBooking = async (booking: TBooking) => {
+    try {
+      await confirmBooking.mutateAsync(booking._id);
+      toast.success("Booking đã được xác nhận.");
+      await refetchAll();
+      if (booking.paymentMethod !== "online") {
+        setPaymentBooking({ ...booking, status: "confirmed" });
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Không thể xác nhận booking.");
+    }
+  };
+
+  const handleOpenPaymentDialog = (booking: TBooking) => {
+    setPaymentBooking(booking);
+  };
+
+  const handleOpenRentalDialog = (booking: TBooking) => {
+    setRentalBooking(booking);
+  };
+
+  const handleOpenHandoverDialog = (rental: TRental, type: "pickup" | "return") => {
+    setHandoverContext({ rental, type });
+  };
+
+  const closePaymentDialog = () => setPaymentBooking(null);
+  const closeRentalDialog = () => setRentalBooking(null);
+  const closeHandoverDialog = () => setHandoverContext(null);
+
   const handleRefresh = () => {
-    bookingQuery.refetch();
-    vehicleQuery.refetch();
+    void refetchAll();
   };
 
   return (
@@ -249,8 +326,16 @@ export function StaffBookingManagement() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredBookings.map((booking) => (
-                    <TableRow key={booking._id} className="hover:bg-gray-50">
+                  {filteredBookings.map((booking) => {
+                    const rental = rentalsByBooking.get(booking._id);
+                    const showManualPayment = booking.paymentMethod !== "online";
+                    const isTerminalStatus =
+                      booking.status === "completed" ||
+                      booking.status === "cancelled" ||
+                      booking.status === "expired";
+
+                    return (
+                      <TableRow key={booking._id} className="hover:bg-gray-50">
                       <TableCell className="font-mono text-sm">{booking.bookingCode || booking._id.slice(-6)}</TableCell>
                       <TableCell><div className="font-medium">{booking.renterName}</div></TableCell>
                       <TableCell>
@@ -279,18 +364,54 @@ export function StaffBookingManagement() {
                         <Badge variant="outline" className={cn("font-medium", STATUS_COLORS[booking.status])}>{STATUS_LABELS[booking.status]}</Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex flex-wrap items-center justify-end gap-2">
                           <Button variant="ghost" size="sm" onClick={() => handleViewDetail(booking)}><Eye className="h-4 w-4 mr-1" />Xem</Button>
-                          {booking.status !== "completed" && booking.status !== "cancelled" && (
+                          {!isTerminalStatus && (
                             <>
-                              {!booking.assignedVehicle && <Button variant="outline" size="sm" onClick={() => handleAssignVehicle(booking)}><Car className="h-4 w-4 mr-1" />Gán xe</Button>}
-                              <Button variant="default" size="sm" onClick={() => handleUpdateStatus(booking)}>Cập nhật</Button>
+                              {booking.status === "pending" && (
+                                <Button variant="default" size="sm" onClick={() => handleConfirmBooking(booking)}>
+                                  <CheckCircle2 className="h-4 w-4 mr-1" />
+                                  Xác nhận
+                                </Button>
+                              )}
+                              {booking.status === "confirmed" && showManualPayment && (
+                                <Button variant="outline" size="sm" onClick={() => handleOpenPaymentDialog(booking)}>
+                                  <Wallet className="h-4 w-4 mr-1" />
+                                  Thu tiền
+                                </Button>
+                              )}
+                              {!rental && booking.status !== "pending" && booking.status !== "pending_payment" && booking.status !== "cancelled" && (
+                                <Button variant="default" size="sm" onClick={() => handleOpenRentalDialog(booking)}>
+                                  <ClipboardCheck className="h-4 w-4 mr-1" />
+                                  Tạo rental
+                                </Button>
+                              )}
+                              {rental && (
+                                <>
+                                  <Button variant="outline" size="sm" onClick={() => handleOpenHandoverDialog(rental, "pickup")}>
+                                    <Key className="h-4 w-4 mr-1" />
+                                    Bàn giao nhận xe
+                                  </Button>
+                                  <Button variant="outline" size="sm" onClick={() => handleOpenHandoverDialog(rental, "return")}>
+                                    <RefreshCcw className="h-4 w-4 mr-1" />
+                                    Bàn giao trả xe
+                                  </Button>
+                                </>
+                              )}
+                              {!booking.assignedVehicle && (
+                                <Button variant="outline" size="sm" onClick={() => handleAssignVehicle(booking)}>
+                                  <Car className="h-4 w-4 mr-1" />
+                                  G�n xe
+                                </Button>
+                              )}
+                              <Button variant="default" size="sm" onClick={() => handleUpdateStatus(booking)}>C?p nh?t</Button>
                             </>
                           )}
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -302,6 +423,57 @@ export function StaffBookingManagement() {
         booking={selectedBooking}
         open={detailDialogOpen}
         onOpenChange={setDetailDialogOpen}
+      />
+
+      <PaymentDialog
+        booking={paymentBooking}
+        open={paymentDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            closePaymentDialog();
+          }
+        }}
+        createPayment={createPayment}
+        onSuccess={() => {
+          toast.success("Đã ghi nhận thanh toán.");
+          closePaymentDialog();
+          void refetchAll();
+        }}
+      />
+
+      <CreateRentalDialog
+        booking={rentalBooking}
+        open={rentalDialogOpen}
+        vehicles={vehicles}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeRentalDialog();
+          }
+        }}
+        createRental={createRental}
+        onSuccess={() => {
+          toast.success("Đã tạo rental mới.");
+          closeRentalDialog();
+          void refetchAll();
+        }}
+      />
+
+      <HandoverDialog
+        context={handoverContext}
+        open={handoverDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            closeHandoverDialog();
+          }
+        }}
+        createHandover={createHandover}
+        onSuccess={(message) => {
+          if (message) {
+            toast.success(message);
+          }
+          closeHandoverDialog();
+          void refetchAll();
+        }}
       />
 
       <AssignVehicleDialog
@@ -325,6 +497,351 @@ export function StaffBookingManagement() {
         }}
       />
     </div>
+  );
+}
+
+// ============================================================================
+// PAYMENT DIALOG - Handle direct payment collection
+// ============================================================================
+
+type PaymentDialogProps = {
+  booking: TBooking | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  createPayment: ReturnType<typeof usePaymentHook>["createPayment"];
+  onSuccess: () => void;
+};
+
+function PaymentDialog({ booking, open, onOpenChange, createPayment, onSuccess }: PaymentDialogProps) {
+  const [method, setMethod] = useState<string>(booking?.paymentMethod ?? "cash");
+  const [amount, setAmount] = useState<number>(booking?.totalPayable ?? 0);
+  const [notes, setNotes] = useState<string>("");
+
+  useEffect(() => {
+    setMethod(booking?.paymentMethod ?? "cash");
+    setAmount(booking?.totalPayable ?? 0);
+    setNotes("");
+  }, [booking]);
+
+  if (!booking) {
+    return null;
+  }
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!amount || amount <= 0) {
+      toast.error("Vui lòng nhập số tiền hợp lệ.");
+      return;
+    }
+
+    try {
+      await createPayment.mutateAsync(
+        {
+          booking: booking._id,
+          method,
+          totalAmount: amount,
+          notes: notes || undefined,
+        } as unknown as Partial<TPayment>
+      );
+      onSuccess();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Không thể ghi nhận thanh toán.");
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Ghi nhận thanh toán</DialogTitle>
+          <DialogDescription>Booking: {booking.bookingCode || booking._id}</DialogDescription>
+        </DialogHeader>
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div className="space-y-2">
+            <Label>Phương thức</Label>
+            <Select value={method} onValueChange={setMethod}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="cash">Tiền mặt</SelectItem>
+                <SelectItem value="bank_transfer">Chuyển khoản</SelectItem>
+                <SelectItem value="credit_card">Thẻ</SelectItem>
+                <SelectItem value="e_wallet">Ví điện tử</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Số tiền</Label>
+            <Input
+              type="number"
+              min={0}
+              step="1000"
+              value={amount}
+              onChange={(event) => setAmount(Number(event.target.value))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Ghi chú</Label>
+            <Textarea
+              value={notes}
+              onChange={(event) => setNotes(event.target.value)}
+              placeholder="Ghi chú thêm (tuỳ chọn)"
+            />
+          </div>
+          <DialogFooter className="flex justify-end gap-3">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={createPayment.isPending}>
+              Huỷ
+            </Button>
+            <Button type="submit" disabled={createPayment.isPending}>
+              {createPayment.isPending ? "Đang lưu..." : "Xác nhận"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============================================================================
+// CREATE RENTAL DIALOG - Create rental record from booking
+// ============================================================================
+
+type CreateRentalDialogProps = {
+  booking: TBooking | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  vehicles: TVehicle[];
+  createRental: ReturnType<typeof useRentalHook>["createRental"];
+  onSuccess: () => void;
+};
+
+function CreateRentalDialog({
+  booking,
+  open,
+  onOpenChange,
+  vehicles,
+  createRental,
+  onSuccess,
+}: CreateRentalDialogProps) {
+  const [vehicleId, setVehicleId] = useState<string>("");
+  const [stationId, setStationId] = useState<string>("");
+  const [notes, setNotes] = useState<string>("");
+
+  useEffect(() => {
+    setVehicleId(booking?.assignedVehicle?._id ?? "");
+    const pickupStation = booking?.pickupStation?._id ?? booking?.station?._id ?? "";
+    setStationId(pickupStation);
+    setNotes("");
+  }, [booking]);
+
+  if (!booking) {
+    return null;
+  }
+
+  const vehiclesForBrand = vehicles.filter((vehicle) => {
+    const brandId = typeof vehicle.brand === "string" ? vehicle.brand : vehicle.brand?._id;
+    return brandId === booking.brand?._id && vehicle.status === "available";
+  });
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!vehicleId) {
+      toast.error("Vui lòng chọn xe để tạo rental.");
+      return;
+    }
+    if (!stationId) {
+      toast.error("Vui lòng nhập mã trạm bàn giao.");
+      return;
+    }
+
+    try {
+      await createRental.mutateAsync(
+        {
+          booking: booking._id,
+          vehicle: vehicleId,
+          pickupStation: stationId,
+          notes: notes || undefined,
+        } as unknown as Partial<TRental>
+      );
+      onSuccess();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Không thể tạo rental.");
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Tạo rental</DialogTitle>
+          <DialogDescription>Booking: {booking.bookingCode || booking._id}</DialogDescription>
+        </DialogHeader>
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div className="space-y-2">
+            <Label>Chọn xe</Label>
+            <Select value={vehicleId} onValueChange={setVehicleId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Chọn xe" />
+              </SelectTrigger>
+              <SelectContent>
+                {vehiclesForBrand.map((vehicle) => (
+                  <SelectItem key={vehicle._id} value={vehicle._id}>
+                    {vehicle.model} · {vehicle.plateNo ?? vehicle.vin}
+                  </SelectItem>
+                ))}
+                {vehiclesForBrand.length === 0 && <SelectItem value="" disabled>Không có xe khả dụng</SelectItem>}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Mã trạm bàn giao</Label>
+            <Input value={stationId} onChange={(event) => setStationId(event.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Ghi chú</Label>
+            <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Ghi chú thêm (tuỳ chọn)" />
+          </div>
+          <DialogFooter className="flex justify-end gap-3">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={createRental.isPending}>
+              Huỷ
+            </Button>
+            <Button type="submit" disabled={createRental.isPending || vehiclesForBrand.length === 0}>
+              {createRental.isPending ? "Đang tạo..." : "Tạo rental"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============================================================================
+// HANDOVER DIALOG - Pickup / Return handover records
+// ============================================================================
+
+type HandoverDialogProps = {
+  context: { rental: TRental; type: "pickup" | "return" } | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  createHandover: ReturnType<typeof useHandoverHook>["createHandover"];
+  onSuccess: (message?: string) => void;
+};
+
+function HandoverDialog({ context, open, onOpenChange, createHandover, onSuccess }: HandoverDialogProps) {
+  const [stationId, setStationId] = useState<string>("");
+  const [odo, setOdo] = useState<string>("");
+  const [battery, setBattery] = useState<string>("");
+  const [notes, setNotes] = useState<string>("");
+  const [files, setFiles] = useState<File[]>([]);
+
+  useEffect(() => {
+    if (!context) {
+      setStationId("");
+      setOdo("");
+      setBattery("");
+      setNotes("");
+      setFiles([]);
+      return;
+    }
+    const defaultStation =
+      context.type === "pickup"
+        ? context.rental.pickupStation?._id ?? ""
+        : context.rental.returnStation?._id ?? context.rental.pickupStation?._id ?? "";
+    setStationId(defaultStation);
+    setOdo("");
+    setBattery("");
+    setNotes("");
+    setFiles([]);
+  }, [context]);
+
+  if (!context) {
+    return null;
+  }
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files) return;
+    setFiles(Array.from(event.target.files));
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!stationId) {
+      toast.error("Vui lòng nhập mã trạm.");
+      return;
+    }
+    try {
+      await createHandover.mutateAsync({
+        rental: context.rental._id,
+        stationId,
+        type: context.type,
+        odoReading: odo ? Number(odo) : undefined,
+        batteryPercent: battery ? Number(battery) : undefined,
+        notes: notes || undefined,
+        photos: files.length > 0 ? files : undefined,
+      });
+      const successMessage =
+        context.type === "pickup" ? "Đã ghi nhận bàn giao nhận xe." : "Đã ghi nhận bàn giao trả xe.";
+      onSuccess(successMessage);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Không thể tạo biên bản bàn giao.");
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>
+            {context.type === "pickup" ? "Bàn giao nhận xe" : "Bàn giao trả xe"}
+          </DialogTitle>
+          <DialogDescription>Rental: {context.rental._id}</DialogDescription>
+        </DialogHeader>
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div className="space-y-2">
+            <Label>Mã trạm</Label>
+            <Input value={stationId} onChange={(event) => setStationId(event.target.value)} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Số km (ODO)</Label>
+              <Input
+                type="number"
+                min={0}
+                value={odo}
+                onChange={(event) => setOdo(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>% pin</Label>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={battery}
+                onChange={(event) => setBattery(event.target.value)}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Ảnh minh chứng (tối đa 6)</Label>
+            <Input type="file" accept="image/*" multiple onChange={handleFileChange} />
+          </div>
+          <div className="space-y-2">
+            <Label>Ghi chú</Label>
+            <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Ghi chú thêm (tuỳ chọn)" />
+          </div>
+          <DialogFooter className="flex justify-end gap-3">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={createHandover.isPending}>
+              Huỷ
+            </Button>
+            <Button type="submit" disabled={createHandover.isPending}>
+              {createHandover.isPending ? "Đang lưu..." : "Xác nhận"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 

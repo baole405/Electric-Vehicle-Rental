@@ -25,20 +25,37 @@ export function money(amount?: number) {
 }
 
 export function statusText(status?: string) {
-  const map: Record<string, string> = {
-    pending: "Pending confirmation",
-    confirmed: "Confirmed",
-    cancelled: "Cancelled",
-    expired: "Expired",
-    ongoing: "Ongoing",
-    completed: "Completed",
-    overdue: "Overdue",
-    paid: "Paid",
-  };
   if (!status) {
     return "";
   }
-  return map[status] ?? status;
+  const normalized = status.toUpperCase();
+  const map: Record<string, string> = {
+    CREATED: "Created",
+    PENDING_APPROVAL: "Pending approval",
+    APPROVED: "Approved",
+    WAITING_PAYMENT: "Waiting payment",
+    WAITING_CHECKOUT: "Waiting checkout",
+    PENDING_PAYMENT: "Waiting payment",
+    HELD: "On hold",
+    CONFIRMED: "Confirmed",
+    PAID: "Paid",
+    CHECKED_OUT: "Checked out",
+    SUCCESS: "Completed",
+    COMPLETED: "Completed",
+    CANCELLED: "Cancelled",
+    EXPIRED: "Expired",
+    REJECTED: "Rejected",
+    FAILED: "Failed",
+    READY_FOR_PICKUP: "Ready for pickup",
+    IN_PROGRESS: "In progress",
+    RETURNED: "Returned",
+    LATE: "Late",
+    OVERDUE: "Overdue",
+    DAMAGED: "Damaged",
+    PENDING: "Pending",
+    ONGOING: "Ongoing",
+  };
+  return map[normalized] ?? status;
 }
 
 export function BadgeStatus({ variant, children }: { variant: string; children: ReactNode }) {
@@ -57,16 +74,30 @@ export function BadgeStatus({ variant, children }: { variant: string; children: 
 }
 
 export function mapStatusColor(status: string): string {
-  switch (status) {
-    case "confirmed":
-    case "completed":
-    case "paid":
+  const normalized = status.toUpperCase();
+  switch (normalized) {
+    case "CONFIRMED":
+    case "APPROVED":
+    case "SUCCESS":
+    case "COMPLETED":
+    case "PAID":
+    case "READY_FOR_PICKUP":
+    case "RETURNED":
       return "green";
-    case "pending":
-    case "overdue":
+    case "PENDING":
+    case "PENDING_APPROVAL":
+    case "PENDING_PAYMENT":
+    case "WAITING_PAYMENT":
+    case "WAITING_CHECKOUT":
+    case "HELD":
+    case "OVERDUE":
+    case "IN_PROGRESS":
+    case "LATE":
       return "amber";
-    case "cancelled":
-    case "failed":
+    case "CANCELLED":
+    case "REJECTED":
+    case "FAILED":
+    case "DAMAGED":
       return "red";
     default:
       return "gray";

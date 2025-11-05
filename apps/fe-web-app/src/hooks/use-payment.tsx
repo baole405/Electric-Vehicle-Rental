@@ -2,19 +2,28 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PaymentApi } from "@/apis/payment.api";
 import type { TPayment } from "@/schema/payment.schema";
 
+type PaymentListParams = {
+  renterId?: string;
+  bookingId?: string;
+  rentalId?: string;
+  status?: string;
+};
+
 export const usePaymentHook = () => {
   const queryClient = useQueryClient();
 
-  const usePaymentList = () =>
+  const usePaymentList = (params?: PaymentListParams, options?: { enabled?: boolean }) =>
     useQuery({
-      queryKey: ["paymentList"],
-      queryFn: () => PaymentApi.getPaymentList(),
+      queryKey: ["paymentList", params],
+      queryFn: () => PaymentApi.getPaymentList(params),
+      enabled: options?.enabled ?? true,
     });
 
-  const usePaymentById = (id: string) =>
+  const usePaymentById = (id: string, options?: { enabled?: boolean }) =>
     useQuery({
       queryKey: ["paymentDetail", id],
       queryFn: () => PaymentApi.getPaymentById(id),
+      enabled: options?.enabled ?? Boolean(id),
     });
 
   const createPayment = useMutation({
@@ -40,11 +49,25 @@ export const usePaymentHook = () => {
     },
   });
 
+  const triggerTestCheckout = useMutation({
+    mutationFn: (payload: { bookingId: string; method: string }) =>
+      PaymentApi.triggerTestCheckout(payload),
+    onSuccess: (_, variables) => {
+      void queryClient.invalidateQueries({ queryKey: ["paymentList"] });
+      if (variables.bookingId) {
+        void queryClient.invalidateQueries({ queryKey: ["bookingList"] });
+        void queryClient.invalidateQueries({ queryKey: ["bookingById", variables.bookingId] });
+      }
+      void queryClient.invalidateQueries({ queryKey: ["rentalList"] });
+    },
+  });
+
   return {
     usePaymentList,
     usePaymentById,
     createPayment,
     updatePayment,
     deletePayment,
+    triggerTestCheckout,
   };
 };
