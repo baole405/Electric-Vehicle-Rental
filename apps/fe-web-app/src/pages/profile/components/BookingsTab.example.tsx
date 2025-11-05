@@ -358,8 +358,7 @@ export default function BookingsTabWithPayOS() {
                                       bookingId,
                                     });
                                   const checkoutUrl =
-                                    response.data?.data?.checkoutData
-                                      ?.checkoutUrl;
+                                    response.data?.checkoutData?.checkoutUrl;
                                   if (checkoutUrl) {
                                     // Open PayOS embedded dialog
                                     setPayosConfig({
