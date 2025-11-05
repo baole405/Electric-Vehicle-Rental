@@ -4,6 +4,7 @@ export const RENTAL_STATUS_VALUES = [
   // New backend enums
   "CREATED",
   "READY_FOR_PICKUP",
+  "CHECKED_IN", // Staff confirmed checkin
   "IN_PROGRESS",
   "RETURNED",
   "LATE",
