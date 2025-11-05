@@ -307,7 +307,7 @@ export default function BookingsTab() {
                             onClick={() =>
                               triggerTestCheckout.mutate({
                                 bookingId,
-                                method: 'BANK_TRANSFER',
+                                method: 'bank_transfer',
                               })
                             }
                           >

@@ -1,24 +1,24 @@
-import React, { useMemo, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { Button } from "@/components/shadcn/ui/button";
-import { Badge } from "@/components/shadcn/ui/badge";
-import { Card } from "@/components/shadcn/ui/card";
+import HeaderMain from '@/components/header/header-main';
+import { Badge } from '@/components/shadcn/ui/badge';
+import { Button } from '@/components/shadcn/ui/button';
+import { Card } from '@/components/shadcn/ui/card';
+import { useVehicleHook } from '@/hooks/use-vehicle';
+import { ROUTES } from '@/routes/route.constants';
+import type { TVehicle } from '@/schema/vehicle.schema';
 import {
-  Battery,
-  Gauge,
-  MapPin,
-  Car,
-  Info,
-  Shield,
-  Luggage,
-  Route, // ✅ thay cho Road
-  Loader2,
   AlertTriangle,
-} from "lucide-react";
-import HeaderMain from "@/components/header/header-main";
-import type { TVehicle } from "@/schema/vehicle.schema";
-import { useVehicleHook } from "@/hooks/use-vehicle";
-import { ROUTES } from "@/routes/route.constants";
+  Battery,
+  Car,
+  Gauge,
+  Info, // ✅ thay cho Road
+  Loader2,
+  Luggage,
+  MapPin,
+  Route,
+  Shield,
+} from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 
 /** Hardcode tạm thông tin mẫu (khi chưa có BE) */
 const modelAssets: Record<
@@ -29,73 +29,87 @@ const modelAssets: Record<
     features: { label: string; icon: React.ReactNode }[];
   }
 > = {
-  "Kia EV6": {
+  'Kia EV6': {
     pricePerDay: 990_000,
     gallery: [
-      "/images/ev6/1.jpg",
-      "/images/ev6/2.jpg",
-      "/images/ev6/3.jpg",
-      "/images/ev6/4.jpg",
-      "/images/ev6/5.jpg",
+      '/images/ev6/1.jpg',
+      '/images/ev6/2.jpg',
+      '/images/ev6/3.jpg',
+      '/images/ev6/4.jpg',
+      '/images/ev6/5.jpg',
     ],
     features: [
-      { label: "5 ch?", icon: <Car size={16} /> },
-      { label: "T? d?ng", icon: <Info size={16} /> },
-      { label: "285L", icon: <Luggage size={16} /> },
-      { label: "Gi?i h?n 300 km/ng�y", icon: <Route size={16} /> },
-      { label: "1 t�i kh�", icon: <Shield size={16} /> },
-      { label: "WLTP ~ 450km*", icon: <Gauge size={16} /> },
+      { label: '5 ch?', icon: <Car size={16} /> },
+      { label: 'T? d?ng', icon: <Info size={16} /> },
+      { label: '285L', icon: <Luggage size={16} /> },
+      { label: 'Gi?i h?n 300 km/ng�y', icon: <Route size={16} /> },
+      { label: '1 t�i kh�', icon: <Shield size={16} /> },
+      { label: 'WLTP ~ 450km*', icon: <Gauge size={16} /> },
     ],
   },
 };
 
 const fallbackAsset = {
   pricePerDay: 700_000,
-  gallery: ["/images/placeholder-car-1.jpg", "/images/placeholder-car-2.jpg"],
+  gallery: ['/images/placeholder-car-1.jpg', '/images/placeholder-car-2.jpg'],
   features: [
-    { label: "5 cho", icon: <Car size={16} /> },
-    { label: "Tu dong", icon: <Info size={16} /> },
-    { label: "Gioi han 300 km/ngay", icon: <Route size={16} /> },
+    { label: '5 cho', icon: <Car size={16} /> },
+    { label: 'Tu dong', icon: <Info size={16} /> },
+    { label: 'Gioi han 300 km/ngay', icon: <Route size={16} /> },
   ],
 };
 
-function StatusPill({ status }: { status: TVehicle["status"] }) {
+function StatusPill({ status }: { status: TVehicle['status'] }) {
   const normalized = status?.toUpperCase() ?? status;
   const map: Record<string, string> = {
-    AVAILABLE: "bg-emerald-100 text-emerald-700",
-    RESERVED: "bg-sky-100 text-sky-700",
-    RENTED: "bg-rose-100 text-rose-700",
-    MAINTENANCE: "bg-amber-100 text-amber-700",
-    DAMAGED: "bg-red-100 text-red-700",
-    UNAVAILABLE: "bg-gray-100 text-gray-700",
-    available: "bg-emerald-100 text-emerald-700",
-    rented: "bg-rose-100 text-rose-700",
-    maintenance: "bg-amber-100 text-amber-700",
-    unavailable: "bg-gray-100 text-gray-700",
+    AVAILABLE: 'bg-emerald-100 text-emerald-700',
+    RESERVED: 'bg-sky-100 text-sky-700',
+    RENTED: 'bg-rose-100 text-rose-700',
+    MAINTENANCE: 'bg-amber-100 text-amber-700',
+    DAMAGED: 'bg-red-100 text-red-700',
+    UNAVAILABLE: 'bg-gray-100 text-gray-700',
+    available: 'bg-emerald-100 text-emerald-700',
+    rented: 'bg-rose-100 text-rose-700',
+    maintenance: 'bg-amber-100 text-amber-700',
+    unavailable: 'bg-gray-100 text-gray-700',
   };
-  const text = normalized === "AVAILABLE" || normalized === "available"
-      ? "Sẵn sàng"
-      : normalized === "RENTED" || normalized === "rented"
-        ? "Đang thuê"
-        : normalized === "MAINTENANCE" || normalized === "maintenance"
-          ? "Bảo trì"
-          : "Không khả dụng";
+  const text =
+    normalized === 'AVAILABLE' || normalized === 'available'
+      ? 'Sẵn sàng'
+      : normalized === 'RENTED' || normalized === 'rented'
+      ? 'Đang thuê'
+      : normalized === 'MAINTENANCE' || normalized === 'maintenance'
+      ? 'Bảo trì'
+      : 'Không khả dụng';
 
-  return <span className={`px-2 py-1 text-xs rounded-md ${map[normalized] ?? map.unavailable}`}>{text}</span>;
+  return (
+    <span
+      className={`px-2 py-1 text-xs rounded-md ${
+        map[normalized] ?? map.unavailable
+      }`}
+    >
+      {text}
+    </span>
+  );
 }
 
 export default function VehicleDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { useVehicleById } = useVehicleHook();
-  const vehicleId = id ?? "";
-  const { data, isLoading, isError } = useVehicleById(vehicleId, { enabled: Boolean(vehicleId) });
+  const vehicleId = id ?? '';
+  const { data, isLoading, isError } = useVehicleById(vehicleId, {
+    enabled: Boolean(vehicleId),
+  });
 
   const [activeIdx, setActiveIdx] = useState(0);
 
   // ✅ tránh lỗi gọi hook conditionally
   const vehicle = data?.data.data;
-  const asset = useMemo(() => modelAssets[vehicle?.model ?? ""] ?? fallbackAsset, [vehicle?.model]);
+  const asset = useMemo(
+    () => modelAssets[vehicle?.model ?? ''] ?? fallbackAsset,
+    [vehicle?.model]
+  );
 
   const mainImg = useMemo(
     () => asset.gallery[Math.min(activeIdx, asset.gallery.length - 1)],
@@ -132,7 +146,7 @@ export default function VehicleDetailPage() {
           <div className="aspect-[16/9] w-full overflow-hidden rounded-2xl bg-gray-100 flex items-center justify-center">
             <img
               src={mainImg}
-              alt={vehicle.model ?? "Xe điện"}
+              alt={vehicle.model ?? 'Xe điện'}
               className="w-full h-full object-cover"
             />
           </div>
@@ -142,10 +156,15 @@ export default function VehicleDetailPage() {
               <button
                 key={i}
                 onClick={() => setActiveIdx(i)}
-                className={`aspect-[4/3] overflow-hidden rounded-xl bg-gray-100 border ${i === activeIdx ? "border-emerald-500" : "border-transparent"
-                  }`}
+                className={`aspect-[4/3] overflow-hidden rounded-xl bg-gray-100 border ${
+                  i === activeIdx ? 'border-emerald-500' : 'border-transparent'
+                }`}
               >
-                <img src={src} alt={`thumb-${i}`} className="w-full h-full object-cover" />
+                <img
+                  src={src}
+                  alt={`thumb-${i}`}
+                  className="w-full h-full object-cover"
+                />
               </button>
             ))}
           </div>
@@ -154,12 +173,12 @@ export default function VehicleDetailPage() {
         {/* RIGHT: Thông tin xe */}
         <div className="lg:col-span-5">
           <h1 className="text-3xl font-extrabold">
-            {vehicle.model ?? "Không rõ model"}
+            {vehicle.model ?? 'Không rõ model'}
           </h1>
 
           <div className="mt-2 flex items-center gap-2">
             <div className="text-emerald-600 text-3xl font-bold">
-              {asset.pricePerDay.toLocaleString("vi-VN")}{" "}
+              {asset.pricePerDay.toLocaleString('vi-VN')}{' '}
               <span className="text-xl">VNĐ/Ngày</span>
             </div>
             <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200">
@@ -169,9 +188,11 @@ export default function VehicleDetailPage() {
 
           <div className="mt-4 flex items-center gap-3 text-sm text-gray-600">
             <StatusPill status={vehicle.status} />
-            <span className="font-mono">{vehicle.plateNo ?? "Chưa có biển số"}</span>
+            <span className="font-mono">
+              {vehicle.plateNo ?? 'Chưa có biển số'}
+            </span>
             <span className="flex items-center gap-1">
-              <MapPin size={16} /> {vehicle.stationId ?? "Chưa có trạm"}
+              <MapPin size={16} /> {vehicle.stationId ?? 'Chưa có trạm'}
             </span>
           </div>
 
@@ -184,28 +205,30 @@ export default function VehicleDetailPage() {
                 </li>
               ))}
               <li className="flex items-center gap-2">
-                <Battery size={16} /> Pin hiện tại:{" "}
+                <Battery size={16} /> Pin hiện tại:{' '}
                 <span
                   className={
                     vehicle.batteryPercent < 30
-                      ? "text-rose-600"
+                      ? 'text-rose-600'
                       : vehicle.batteryPercent < 70
-                        ? "text-amber-600"
-                        : "text-emerald-600"
+                      ? 'text-amber-600'
+                      : 'text-emerald-600'
                   }
                 >
                   {vehicle.batteryPercent ?? 0}%
                 </span>
               </li>
               <li className="flex items-center gap-2">
-                <Gauge size={16} /> Odo:{" "}
+                <Gauge size={16} /> Odo:{' '}
                 {vehicle.odometer
-                  ? `${vehicle.odometer.toLocaleString("vi-VN")} km`
-                  : "Không rõ"}
+                  ? `${vehicle.odometer.toLocaleString('vi-VN')} km`
+                  : 'Không rõ'}
               </li>
               <li className="flex items-center gap-2">
-                <Info size={16} /> VIN:{" "}
-                <span className="font-mono">{vehicle.vin ?? "Chưa có VIN"}</span>
+                <Info size={16} /> VIN:{' '}
+                <span className="font-mono">
+                  {vehicle.vin ?? 'Chưa có VIN'}
+                </span>
               </li>
             </ul>
           </Card>
@@ -213,9 +236,11 @@ export default function VehicleDetailPage() {
           {/* Actions */}
           <div className="mt-6 flex gap-3">
             <Button
-              disabled={vehicle.status !== "available"}
+              disabled={vehicle.status !== 'available'}
               className="bg-emerald-600 hover:bg-emerald-700 text-white px-8"
-              onClick={() => navigate(ROUTES.BOOKING.replace(":id", vehicle._id ?? ""))}
+              onClick={() =>
+                navigate(ROUTES.BOOKING.replace(':id', vehicle._id ?? ''))
+              }
             >
               Đặt xe
             </Button>
@@ -226,12 +251,11 @@ export default function VehicleDetailPage() {
 
           {/* Ghi chú */}
           <p className="mt-4 text-xs text-gray-500">
-            *Số liệu phạm vi/xăng sạc là ước lượng minh hoạ. Xe thật có thể khác tùy cấu hình
-            & điều kiện sử dụng.
+            *Số liệu phạm vi/xăng sạc là ước lượng minh hoạ. Xe thật có thể khác
+            tùy cấu hình & điều kiện sử dụng.
           </p>
         </div>
       </div>
     </div>
   );
 }
-

@@ -22,6 +22,7 @@ import { useAllUserDocuments } from '@/hooks/use-user-document';
 import { useVehicleHook } from '@/hooks/use-vehicle';
 import DashboardLayout from '@/layouts/dashboard/dashboard-layout';
 import { BadgeStatus, cn, fmt, mapStatusColor, statusText } from '@/lib/utils';
+import { StaffBrandView } from '@/pages/dashboard/staff';
 import type { TBooking, TCreateBooking } from '@/schema/booking.schema';
 import type { TBrand } from '@/schema/brand.schema';
 import type { TPayment } from '@/schema/payment.schema';
@@ -31,27 +32,26 @@ import type { TUserDocument } from '@/schema/user-document.schema';
 import type { TUser } from '@/schema/user.schema';
 import type { TVehicle } from '@/schema/vehicle.schema';
 import {
+  Building2,
+  Car,
   Check,
+  ClipboardList,
+  CreditCard,
+  FileText,
+  Landmark,
+  LayoutDashboard,
   Loader2,
+  Package,
   Plus,
   RefreshCw,
   Trash2,
-  X,
-  LayoutDashboard,
   Users,
-  Building2,
-  Car,
-  ClipboardList,
-  Landmark,
-  CreditCard,
-  FileText,
-  Package,
+  X,
   type LucideIcon,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import AdminBrandManagement from './AdminBrandManagement';
-import { StaffBrandView } from '@/pages/dashboard/staff';
 
 // API Request Types (server expects string IDs, not full objects)
 type CreateRentalRequest = {
@@ -208,7 +208,12 @@ const SECTION_CONFIG: SectionConfig[] = [
     icon: FileText,
     roles: ['admin', 'staff'],
   },
-  { key: 'brands', label: 'Brands', icon: Building2, roles: ['admin', 'staff'] },
+  {
+    key: 'brands',
+    label: 'Brands',
+    icon: Building2,
+    roles: ['admin', 'staff'],
+  },
 ];
 const AdminDashboard = () => {
   const { currentUser, role: cachedRole } = useAuthContext();
@@ -223,8 +228,8 @@ const AdminDashboard = () => {
         isAdmin
           ? item.roles.includes('admin')
           : isStaff
-            ? item.roles.includes('staff')
-            : false
+          ? item.roles.includes('staff')
+          : false
       ),
     [isAdmin, isStaff]
   );
@@ -689,7 +694,11 @@ const AdminDashboard = () => {
                       Quản lý danh sách các thương hiệu xe điện trong hệ thống
                     </p>
                     <p className="text-sm text-gray-500">
-                      Tổng số: <strong>{brandQuery.data?.data?.data?.length || 0}</strong> thương hiệu
+                      Tổng số:{' '}
+                      <strong>
+                        {brandQuery.data?.data?.data?.length || 0}
+                      </strong>{' '}
+                      thương hiệu
                     </p>
                   </div>
                   <div className="flex gap-3">
@@ -705,7 +714,12 @@ const AdminDashboard = () => {
                       onClick={() => brandQuery.refetch()}
                       disabled={brandQuery.isLoading}
                     >
-                      <RefreshCw className={cn("mr-2 h-4 w-4", brandQuery.isLoading && "animate-spin")} />
+                      <RefreshCw
+                        className={cn(
+                          'mr-2 h-4 w-4',
+                          brandQuery.isLoading && 'animate-spin'
+                        )}
+                      />
                       Refresh
                     </Button>
                   </div>
@@ -735,7 +749,11 @@ const AdminDashboard = () => {
                       Xem danh sách thương hiệu xe điện
                     </p>
                     <p className="text-sm text-gray-500">
-                      Tổng số: <strong>{brandQuery.data?.data?.data?.length || 0}</strong> thương hiệu
+                      Tổng số:{' '}
+                      <strong>
+                        {brandQuery.data?.data?.data?.length || 0}
+                      </strong>{' '}
+                      thương hiệu
                     </p>
                   </div>
                   <Button
@@ -789,10 +807,14 @@ const AdminDashboard = () => {
                             <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                               <span className="flex items-center gap-1">
                                 <Building2 className="h-3 w-3" />
-                                {booking.station?.name || booking.pickupStation?.name || 'Unknown station'}
+                                {booking.station?.name ||
+                                  booking.pickupStation?.name ||
+                                  'Unknown station'}
                               </span>
                               <span>•</span>
-                              <span>{booking.pickupDate} {booking.pickupTime}</span>
+                              <span>
+                                {booking.pickupDate} {booking.pickupTime}
+                              </span>
                             </div>
                             <p className="text-xs text-muted-foreground">
                               Brand: {booking.brand?.name || 'TBD'}
@@ -1441,7 +1463,9 @@ const AdminDashboard = () => {
                       <SelectContent>
                         <SelectItem value="online">Online</SelectItem>
                         <SelectItem value="cash">Cash</SelectItem>
-                        <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                        <SelectItem value="bank_transfer">
+                          Bank Transfer
+                        </SelectItem>
                         <SelectItem value="credit_card">Credit Card</SelectItem>
                         <SelectItem value="e_wallet">E-Wallet</SelectItem>
                       </SelectContent>
@@ -1610,7 +1634,8 @@ const AdminDashboard = () => {
                   </p>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  Total: <span className="font-semibold">{bookings.length}</span>
+                  Total:{' '}
+                  <span className="font-semibold">{bookings.length}</span>
                 </div>
               </div>
             </div>
@@ -1672,7 +1697,9 @@ const AdminDashboard = () => {
                           </td>
                           <td className="px-6 py-4">
                             <div className="text-sm text-muted-foreground">
-                              {booking.station?.name || booking.pickupStation?.name || 'Unknown'}
+                              {booking.station?.name ||
+                                booking.pickupStation?.name ||
+                                'Unknown'}
                             </div>
                           </td>
                           <td className="px-6 py-4">
@@ -1681,7 +1708,9 @@ const AdminDashboard = () => {
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <BadgeStatus variant={mapStatusColor(booking.status)}>
+                            <BadgeStatus
+                              variant={mapStatusColor(booking.status)}
+                            >
                               {statusText(booking.status)}
                             </BadgeStatus>
                           </td>
@@ -1691,7 +1720,9 @@ const AdminDashboard = () => {
                                 variant="ghost"
                                 size="sm"
                                 disabled={deleteBooking.isPending}
-                                onClick={() => deleteBooking.mutate(booking._id)}
+                                onClick={() =>
+                                  deleteBooking.mutate(booking._id)
+                                }
                               >
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
@@ -1989,7 +2020,10 @@ const AdminDashboard = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="text-sm text-muted-foreground">
-                    Total: <span className="font-semibold">{userDocuments.length}</span>
+                    Total:{' '}
+                    <span className="font-semibold">
+                      {userDocuments.length}
+                    </span>
                   </div>
                   <RefreshButton
                     onClick={() => documentQuery.refetch()}
@@ -2049,7 +2083,9 @@ const AdminDashboard = () => {
                           </td>
                           <td className="px-6 py-4">
                             <div className="font-mono text-xs text-muted-foreground">
-                              {doc.identityNumber || doc.drivingLicenseNumber || 'N/A'}
+                              {doc.identityNumber ||
+                                doc.drivingLicenseNumber ||
+                                'N/A'}
                             </div>
                           </td>
                           <td className="px-6 py-4">
@@ -2058,8 +2094,8 @@ const AdminDashboard = () => {
                                 isVerified
                                   ? 'success'
                                   : isPending
-                                    ? 'warning'
-                                    : 'destructive'
+                                  ? 'warning'
+                                  : 'destructive'
                               }
                             >
                               {statusText(doc.status)}
@@ -2080,12 +2116,18 @@ const AdminDashboard = () => {
                                     className="text-green-600 hover:bg-green-50 hover:text-green-700"
                                     onClick={async () => {
                                       try {
-                                        await UserDocumentApi.updateDocument(doc._id, {
-                                          status: 'verified',
-                                        });
+                                        await UserDocumentApi.updateDocument(
+                                          doc._id,
+                                          {
+                                            status: 'verified',
+                                          }
+                                        );
                                         documentQuery.refetch();
                                       } catch (error) {
-                                        console.error('Failed to update document', error);
+                                        console.error(
+                                          'Failed to update document',
+                                          error
+                                        );
                                       }
                                     }}
                                   >
@@ -2098,12 +2140,18 @@ const AdminDashboard = () => {
                                     className="text-red-600 hover:bg-red-50 hover:text-red-700"
                                     onClick={async () => {
                                       try {
-                                        await UserDocumentApi.updateDocument(doc._id, {
-                                          status: 'rejected',
-                                        });
+                                        await UserDocumentApi.updateDocument(
+                                          doc._id,
+                                          {
+                                            status: 'rejected',
+                                          }
+                                        );
                                         documentQuery.refetch();
                                       } catch (error) {
-                                        console.error('Failed to update document', error);
+                                        console.error(
+                                          'Failed to update document',
+                                          error
+                                        );
                                       }
                                     }}
                                   >
@@ -2118,10 +2166,15 @@ const AdminDashboard = () => {
                                   size="sm"
                                   onClick={async () => {
                                     try {
-                                      await UserDocumentApi.deleteDocument(doc._id);
+                                      await UserDocumentApi.deleteDocument(
+                                        doc._id
+                                      );
                                       documentQuery.refetch();
                                     } catch (error) {
-                                      console.error('Failed to delete document', error);
+                                      console.error(
+                                        'Failed to delete document',
+                                        error
+                                      );
                                     }
                                   }}
                                 >
@@ -2149,13 +2202,17 @@ const AdminDashboard = () => {
             />
             <StatCard
               label="Verified"
-              value={userDocuments.filter((d) => d.status === 'verified').length}
+              value={
+                userDocuments.filter((d) => d.status === 'verified').length
+              }
               meta="Approved documents"
               icon={Check}
             />
             <StatCard
               label="Rejected"
-              value={userDocuments.filter((d) => d.status === 'rejected').length}
+              value={
+                userDocuments.filter((d) => d.status === 'rejected').length
+              }
               meta="Declined documents"
               icon={X}
             />

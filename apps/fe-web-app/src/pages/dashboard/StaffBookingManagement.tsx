@@ -1,20 +1,3 @@
-import { useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import {
-  Building2,
-  Check,
-  ClipboardList,
-  Loader2,
-  Plus,
-  RefreshCw,
-  Trash2,
-} from 'lucide-react';
-import { useBooking } from '@/hooks/use-booking';
-import { useBrandHook } from '@/hooks/use-brand';
-import { useStationHook } from '@/hooks/use-station';
-import type { TBooking, TCreateBooking } from '@/schema/booking.schema';
-import type { TBrand } from '@/schema/brand.schema';
-import type { TStation } from '@/schema/station.schema';
 import { Button } from '@/components/shadcn/ui/button';
 import { Card } from '@/components/shadcn/ui/card';
 import { Input } from '@/components/shadcn/ui/input';
@@ -26,7 +9,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/shadcn/ui/select';
+import { useBooking } from '@/hooks/use-booking';
+import { useBrandHook } from '@/hooks/use-brand';
+import { useStationHook } from '@/hooks/use-station';
 import { cn } from '@/lib/utils';
+import type { TBooking, TCreateBooking } from '@/schema/booking.schema';
+import type { TBrand } from '@/schema/brand.schema';
+import type { TStation } from '@/schema/station.schema';
+import {
+  Building2,
+  Check,
+  ClipboardList,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Trash2,
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
 
 // Utility functions
 const ensureArray = <T,>(data: T[] | undefined | null): T[] => {
@@ -323,7 +323,9 @@ export const StaffBookingManagement = () => {
               </Label>
               <Select
                 value={bookingForm.watch('brandId')}
-                onValueChange={(value) => bookingForm.setValue('brandId', value)}
+                onValueChange={(value) =>
+                  bookingForm.setValue('brandId', value)
+                }
               >
                 <SelectTrigger id="bookingBrand">
                   <SelectValue placeholder="Chọn thương hiệu" />
@@ -545,8 +547,7 @@ export const StaffBookingManagement = () => {
               </p>
             </div>
             <div className="text-sm text-muted-foreground">
-              Tổng số:{' '}
-              <span className="font-semibold">{bookings.length}</span>
+              Tổng số: <span className="font-semibold">{bookings.length}</span>
             </div>
           </div>
         </div>
