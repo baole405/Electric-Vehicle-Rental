@@ -249,7 +249,10 @@ export default function CreateBookingPage() {
       return;
     }
     if (!/^[a-fA-F0-9]{24}$/.test(currentUser._id)) {
-      console.error('✖ Invalid renterId format for current user:', currentUser._id);
+      console.error(
+        '✖ Invalid renterId format for current user:',
+        currentUser._id
+      );
       setFieldErrors({
         auth: 'Tài khoản hiện tại không hợp lệ để tạo booking. Vui lòng đăng xuất và thử lại hoặc liên hệ hỗ trợ.',
       });
@@ -562,7 +565,7 @@ export default function CreateBookingPage() {
                           }));
                         }
                       }}
-                      placeholder="Nguyễn Văn A"
+                      placeholder="user"
                       className={`h-12 ${
                         fieldErrors.renterName
                           ? 'border-red-500 focus:border-red-500'
