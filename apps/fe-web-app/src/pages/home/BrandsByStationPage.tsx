@@ -143,9 +143,36 @@ export default function BrandsByStationPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end">
             {/* Station Selector with Map Button */}
             <div className="lg:col-span-3">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tỉnh/Thành phố
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Tỉnh/Thành phố
+                </label>
+                <Dialog open={mapOpen} onOpenChange={setMapOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex items-center gap-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+                    >
+                      <Map className="w-4 h-4" />
+                      Xem bản đồ
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl">
+                    <DialogHeader>
+                      <DialogTitle>Bản đồ các trạm</DialogTitle>
+                      <DialogDescription>
+                        Chọn trạm thuê xe gần bạn nhất
+                      </DialogDescription>
+                    </DialogHeader>
+                    <MapStations
+                      stations={stations}
+                      selectedStationId={selectedStationId}
+                      onSelectStation={handleStationSelect}
+                    />
+                  </DialogContent>
+                </Dialog>
+              </div>
               {stationsLoading ? (
                 <div className="flex items-center justify-center h-12 border rounded-lg">
                   <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
