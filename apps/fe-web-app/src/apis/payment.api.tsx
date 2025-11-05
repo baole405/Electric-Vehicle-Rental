@@ -54,11 +54,53 @@ export interface PayOSCheckoutResponse {
   };
 }
 
-const createPayOSCheckout = async (payload: { bookingId: string }) =>
-  await apiRequest.post<BaseResponse<PayOSCheckoutResponse>>(
-    '/api/payos/checkout',
-    payload
-  );
+const createPayOSCheckout = async (payload: { bookingId: string }) => {
+  console.log('[PaymentApi] createPayOSCheckout called with:', payload);
+  try {
+    const response = await apiRequest.post<PayOSCheckoutResponse>(
+      '/api/payos/checkout',
+      payload
+    );
+    console.log('[PaymentApi] createPayOSCheckout response:', response);
+    return response;
+  } catch (error) {
+    console.error('[PaymentApi] createPayOSCheckout error:', error);
+    throw error;
+  }
+};
+
+// PayOS Payment Verification
+export interface PayOSVerifyRequest {
+  bookingId: string;
+  orderCode: string;
+}
+
+export interface PayOSVerifyResponse {
+  success: boolean;
+  data: {
+    verified: boolean;
+    paymentStatus: string;
+    bookingStatus: string;
+    amount: number;
+    transactionDate: string;
+    orderCode: string;
+  };
+}
+
+const verifyPayOSPayment = async (payload: PayOSVerifyRequest) => {
+  console.log('[PaymentApi] verifyPayOSPayment called with:', payload);
+  try {
+    const response = await apiRequest.post<PayOSVerifyResponse>(
+      '/api/payos/verify-payment',
+      payload
+    );
+    console.log('[PaymentApi] verifyPayOSPayment response:', response);
+    return response;
+  } catch (error) {
+    console.error('[PaymentApi] verifyPayOSPayment error:', error);
+    throw error;
+  }
+};
 
 export const PaymentApi = {
   getPaymentList,
@@ -68,4 +110,5 @@ export const PaymentApi = {
   deletePayment,
   triggerTestCheckout,
   createPayOSCheckout,
+  verifyPayOSPayment,
 };
