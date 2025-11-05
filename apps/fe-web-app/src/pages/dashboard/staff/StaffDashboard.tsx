@@ -14,6 +14,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/shadcn/ui/table';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/shadcn/ui/tabs';
 import BookingDetailDialog from '@/components/shared/BookingDetailDialog';
 import { useBooking } from '@/hooks/use-booking';
 import { cn } from '@/lib/utils';
@@ -21,6 +27,8 @@ import type { TBooking } from '@/schema/booking.schema';
 import { Eye, Loader2, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { StaffCheckinList } from './components/StaffCheckinList';
+import { StaffDocumentVerification } from './components/StaffDocumentVerification';
 
 // Status colors
 const STATUS_COLORS: Record<string, string> = {
@@ -136,7 +144,7 @@ export default function StaffDashboard() {
             <h1 className="text-3xl font-bold text-gray-900">
               Staff Dashboard
             </h1>
-            <p className="text-gray-600 mt-1">Quản lý booking và xử lý duyệt</p>
+            <p className="text-gray-600 mt-1">Quản lý booking và check-in</p>
           </div>
           <Button
             variant="outline"
@@ -205,116 +213,149 @@ export default function StaffDashboard() {
           </Card>
         </div>
 
-        {/* Bookings Table */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Tất cả Bookings</CardTitle>
-                <p className="text-sm text-gray-600 mt-1">
-                  Tổng cộng: {bookings.length} bookings
-                </p>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {bookingQuery.isLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-                <span className="ml-3 text-gray-600">Đang tải...</span>
-              </div>
-            ) : bookings.length === 0 ? (
-              <div className="py-12 text-center text-gray-500">
-                <p className="text-lg font-medium">Không có booking nào</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gray-50">
-                      <TableHead className="w-[140px]">Mã Booking</TableHead>
-                      <TableHead className="w-[150px]">Khách hàng</TableHead>
-                      <TableHead className="w-[120px]">Dòng xe</TableHead>
-                      <TableHead className="w-[180px]">Trạm</TableHead>
-                      <TableHead className="w-[180px]">Thời gian</TableHead>
-                      <TableHead className="w-[120px]">Tổng tiền</TableHead>
-                      <TableHead className="w-[140px]">Trạng thái</TableHead>
-                      <TableHead className="w-[100px] text-right">
-                        Thao tác
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {bookings.map((booking) => {
-                      return (
-                        <TableRow
-                          key={booking._id}
-                          className="hover:bg-gray-50"
-                        >
-                          <TableCell className="font-mono text-sm">
-                            {booking.bookingCode || booking._id.slice(-6)}
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-medium">
-                              {booking.renterName}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {booking.phoneNumber}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-medium">
-                              {booking.brand?.name}
-                            </div>
-                            <div className="text-xs text-gray-500">
-                              {booking.brand?.code}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm">
-                              {booking.pickupStation?.name || 'N/A'}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm">{booking.pickupDate}</div>
-                            <div className="text-xs text-gray-500">
-                              {booking.rentalDays} ngày
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="font-semibold text-blue-600">
-                              {booking.totalPayable?.toLocaleString('vi-VN')} ₫
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                'font-medium',
-                                STATUS_COLORS[booking.status]
-                              )}
-                            >
-                              {STATUS_LABELS[booking.status] || booking.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleViewDetail(booking)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
+        {/* Tabs for Bookings, Check-in, and Documents */}
+        <Tabs defaultValue="bookings" className="space-y-4">
+          <TabsList className="grid w-full max-w-2xl grid-cols-3">
+            <TabsTrigger value="bookings">📋 Bookings</TabsTrigger>
+            <TabsTrigger value="checkin">✅ Check-in</TabsTrigger>
+            <TabsTrigger value="documents">📄 Duyệt hồ sơ</TabsTrigger>
+          </TabsList>
+
+          {/* Bookings Tab */}
+          <TabsContent value="bookings" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Tất cả Bookings</CardTitle>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Tổng cộng: {bookings.length} bookings
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {bookingQuery.isLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+                    <span className="ml-3 text-gray-600">Đang tải...</span>
+                  </div>
+                ) : bookings.length === 0 ? (
+                  <div className="py-12 text-center text-gray-500">
+                    <p className="text-lg font-medium">Không có booking nào</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-gray-50">
+                          <TableHead className="w-[140px]">
+                            Mã Booking
+                          </TableHead>
+                          <TableHead className="w-[150px]">
+                            Khách hàng
+                          </TableHead>
+                          <TableHead className="w-[120px]">Dòng xe</TableHead>
+                          <TableHead className="w-[180px]">Trạm</TableHead>
+                          <TableHead className="w-[180px]">Thời gian</TableHead>
+                          <TableHead className="w-[120px]">Tổng tiền</TableHead>
+                          <TableHead className="w-[140px]">
+                            Trạng thái
+                          </TableHead>
+                          <TableHead className="w-[100px] text-right">
+                            Thao tác
+                          </TableHead>
                         </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                      </TableHeader>
+                      <TableBody>
+                        {bookings.map((booking) => {
+                          return (
+                            <TableRow
+                              key={booking._id}
+                              className="hover:bg-gray-50"
+                            >
+                              <TableCell className="font-mono text-sm">
+                                {booking.bookingCode || booking._id.slice(-6)}
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-medium">
+                                  {booking.renterName}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {booking.phoneNumber}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-medium">
+                                  {booking.brand?.name}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {booking.brand?.code}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm">
+                                  {booking.pickupStation?.name || 'N/A'}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="text-sm">
+                                  {booking.pickupDate}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                  {booking.rentalDays} ngày
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-semibold text-blue-600">
+                                  {booking.totalPayable?.toLocaleString(
+                                    'vi-VN'
+                                  )}{' '}
+                                  ₫
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    'font-medium',
+                                    STATUS_COLORS[booking.status]
+                                  )}
+                                >
+                                  {STATUS_LABELS[booking.status] ||
+                                    booking.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleViewDetail(booking)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Check-in Tab */}
+          <TabsContent value="checkin" className="space-y-4">
+            <StaffCheckinList />
+          </TabsContent>
+
+          {/* Documents Tab */}
+          <TabsContent value="documents" className="space-y-4">
+            <StaffDocumentVerification />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Detail Dialog */}

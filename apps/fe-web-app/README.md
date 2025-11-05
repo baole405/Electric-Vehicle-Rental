@@ -75,12 +75,7 @@ API mới trả về danh sách brands với **availability status** và **vehic
       "baseDailyRate": 590000,
       "depositAmount": 2000000,
       "imageUrl": "https://...",
-      "images": [
-        "https://vinfastauto.com/.../vf3-1.jpg",
-        "https://vinfastauto.com/.../vf3-2.jpg",
-        "https://vinfastauto.com/.../vf3-3.jpg",
-        "https://vinfastauto.com/.../vf3-4.jpg"
-      ],
+      "images": ["https://vinfastauto.com/.../vf3-1.jpg", "https://vinfastauto.com/.../vf3-2.jpg", "https://vinfastauto.com/.../vf3-3.jpg", "https://vinfastauto.com/.../vf3-4.jpg"],
       "specs": {
         "seats": 4,
         "range": 210,
@@ -99,13 +94,7 @@ API mới trả về danh sách brands với **availability status** và **vehic
         "country": "Vietnam",
         "website": "https://www.vinfastauto.com"
       },
-      "features": [
-        "Gọn nhẹ",
-        "Đỗ xe dễ dàng",
-        "Màn hình LCD 10 inch",
-        "Kết nối Bluetooth",
-        "La-zăng 16 inch"
-      ],
+      "features": ["Gọn nhẹ", "Đỗ xe dễ dàng", "Màn hình LCD 10 inch", "Kết nối Bluetooth", "La-zăng 16 inch"],
       "isActive": true,
       "availability": {
         "status": "available",
@@ -894,11 +883,7 @@ Content-Type: application/json
 {
   "success": false,
   "message": "Dữ liệu không hợp lệ",
-  "errors": [
-    "Số điện thoại không hợp lệ (phải là 10 số bắt đầu bằng 0)",
-    "Email không hợp lệ",
-    "Ngày nhận xe không được trong quá khứ"
-  ]
+  "errors": ["Số điện thoại không hợp lệ (phải là 10 số bắt đầu bằng 0)", "Email không hợp lệ", "Ngày nhận xe không được trong quá khứ"]
 }
 ```
 
@@ -1060,7 +1045,7 @@ expiryDate: 2030-12-31
 ### React Example - Brand List by Station
 
 ```jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 
 function BrandListByStation({ stationId }) {
   const [brands, setBrands] = useState([]);
@@ -1074,7 +1059,7 @@ function BrandListByStation({ stationId }) {
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Error fetching brands:", err);
+        console.error('Error fetching brands:', err);
         setLoading(false);
       });
   }, [stationId]);
@@ -1093,9 +1078,9 @@ function BrandListByStation({ stationId }) {
 function BrandCard({ brand }) {
   const getStatusBadge = (status) => {
     const badges = {
-      available: { text: "Miễn phí sạc", color: "green" },
-      out_of_stock: { text: "Hết xe", color: "red" },
-      no_vehicles: { text: "Không có xe", color: "gray" },
+      available: { text: 'Miễn phí sạc', color: 'green' },
+      out_of_stock: { text: 'Hết xe', color: 'red' },
+      no_vehicles: { text: 'Không có xe', color: 'gray' },
     };
     return badges[status] || badges.no_vehicles;
   };
@@ -1109,9 +1094,7 @@ function BrandCard({ brand }) {
       <div className={`badge badge-${badge.color}`}>{badge.text}</div>
 
       <h3>{brand.name}</h3>
-      <p className="price">
-        Từ {brand.baseDailyRate.toLocaleString("vi-VN")} VND/Ngày
-      </p>
+      <p className="price">Từ {brand.baseDailyRate.toLocaleString('vi-VN')} VND/Ngày</p>
 
       <div className="specs-grid">
         <div className="spec">
@@ -1145,9 +1128,9 @@ function BrandCard({ brand }) {
 ### React Example - Brand Detail with Carousel
 
 ```jsx
-import { useState, useEffect } from "react";
-import { Carousel } from "react-responsive-carousel";
-import "react-responsive-carousel/lib/styles/carousel.min.css";
+import { useState, useEffect } from 'react';
+import { Carousel } from 'react-responsive-carousel';
+import 'react-responsive-carousel/lib/styles/carousel.min.css';
 
 function BrandDetail({ brandCode, stationId }) {
   const [brand, setBrand] = useState(null);
@@ -1167,29 +1150,24 @@ function BrandDetail({ brandCode, stationId }) {
   if (!brand) return <div>Brand not found</div>;
 
   const transmissionMap = {
-    "single-speed": "Số tự động",
-    automatic: "Số tự động",
-    manual: "Số sàn",
-    cvt: "CVT",
+    'single-speed': 'Số tự động',
+    automatic: 'Số tự động',
+    manual: 'Số sàn',
+    cvt: 'CVT',
   };
 
   const carTypeMap = {
-    minicar: "Minicar",
-    sedan: "Sedan",
-    suv: "SUV",
-    crossover: "Crossover",
-    hatchback: "Hatchback",
+    minicar: 'Minicar',
+    sedan: 'Sedan',
+    suv: 'SUV',
+    crossover: 'Crossover',
+    hatchback: 'Hatchback',
   };
 
   return (
     <div className="brand-detail">
       {/* Image Carousel */}
-      <Carousel
-        showThumbs={true}
-        infiniteLoop={true}
-        autoPlay={true}
-        interval={3000}
-      >
+      <Carousel showThumbs={true} infiniteLoop={true} autoPlay={true} interval={3000}>
         {brand.images.map((img, idx) => (
           <div key={idx}>
             <img src={img} alt={`${brand.name} ${idx + 1}`} />
@@ -1198,49 +1176,19 @@ function BrandDetail({ brandCode, stationId }) {
       </Carousel>
 
       <h1>{brand.name}</h1>
-      <h2 className="price">
-        {brand.baseDailyRate.toLocaleString("vi-VN")} VND/Ngày
-      </h2>
+      <h2 className="price">{brand.baseDailyRate.toLocaleString('vi-VN')} VND/Ngày</h2>
       <p className="description">{brand.description}</p>
 
       {/* Main Specs */}
       <div className="specs-grid">
         <SpecItem icon="👥" label="Số chỗ" value={`${brand.specs.seats} chỗ`} />
-        <SpecItem
-          icon="⚡"
-          label="Quãng đường"
-          value={`${brand.specs.range}km (NEDC)`}
-        />
-        <SpecItem
-          icon="🎛️"
-          label="Hộp số"
-          value={transmissionMap[brand.specs.transmission]}
-        />
-        <SpecItem
-          icon="💨"
-          label="Túi khí"
-          value={`${brand.specs.airbags} túi khí`}
-        />
-        <SpecItem
-          icon="🔋"
-          label="Công suất"
-          value={`${brand.specs.horsePower} HP`}
-        />
-        <SpecItem
-          icon="🚙"
-          label="Loại xe"
-          value={carTypeMap[brand.specs.carType]}
-        />
-        <SpecItem
-          icon="🧳"
-          label="Dung tích cốp"
-          value={`${brand.specs.trunkCapacity}L`}
-        />
-        <SpecItem
-          icon="📏"
-          label="Giới hạn KM/ngày"
-          value={`${brand.specs.dailyKmLimit} km`}
-        />
+        <SpecItem icon="⚡" label="Quãng đường" value={`${brand.specs.range}km (NEDC)`} />
+        <SpecItem icon="🎛️" label="Hộp số" value={transmissionMap[brand.specs.transmission]} />
+        <SpecItem icon="💨" label="Túi khí" value={`${brand.specs.airbags} túi khí`} />
+        <SpecItem icon="🔋" label="Công suất" value={`${brand.specs.horsePower} HP`} />
+        <SpecItem icon="🚙" label="Loại xe" value={carTypeMap[brand.specs.carType]} />
+        <SpecItem icon="🧳" label="Dung tích cốp" value={`${brand.specs.trunkCapacity}L`} />
+        <SpecItem icon="📏" label="Giới hạn KM/ngày" value={`${brand.specs.dailyKmLimit} km`} />
       </div>
 
       {/* Features */}
@@ -1258,9 +1206,7 @@ function BrandDetail({ brandCode, stationId }) {
         <h3>Tình trạng xe tại trạm</h3>
         <div className="availability-stats">
           <div>Tổng: {brand.availability.total} xe</div>
-          <div className="available">
-            Sẵn sàng: {brand.availability.available} xe
-          </div>
+          <div className="available">Sẵn sàng: {brand.availability.available} xe</div>
           <div>Đang thuê: {brand.availability.rented} xe</div>
           <div>Bảo trì: {brand.availability.maintenance} xe</div>
         </div>
@@ -1300,17 +1246,13 @@ function StationSelector({ onChange, selectedStation }) {
   const [stations, setStations] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:4000/api/stations")
+    fetch('http://localhost:4000/api/stations')
       .then((res) => res.json())
       .then((data) => setStations(data));
   }, []);
 
   return (
-    <select
-      value={selectedStation}
-      onChange={(e) => onChange(e.target.value)}
-      className="station-selector"
-    >
+    <select value={selectedStation} onChange={(e) => onChange(e.target.value)} className="station-selector">
       <option value="">Chọn trạm</option>
       {stations.map((station) => (
         <option key={station.code} value={station.code}>
@@ -1325,15 +1267,15 @@ function StationSelector({ onChange, selectedStation }) {
 ### Authentication Hook
 
 ```jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 
 function useAuth() {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem("token"));
+  const [token, setToken] = useState(localStorage.getItem('token'));
 
   useEffect(() => {
     if (token) {
-      fetch("http://localhost:4000/api/users/me", {
+      fetch('http://localhost:4000/api/users/me', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -1341,28 +1283,28 @@ function useAuth() {
         .then((res) => res.json())
         .then((data) => setUser(data))
         .catch(() => {
-          localStorage.removeItem("token");
+          localStorage.removeItem('token');
           setToken(null);
         });
     }
   }, [token]);
 
   const login = async (email, password) => {
-    const response = await fetch("http://localhost:4000/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    const response = await fetch('http://localhost:4000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
 
     const data = await response.json();
-    localStorage.setItem("token", data.token);
+    localStorage.setItem('token', data.token);
     setToken(data.token);
     setUser(data.user);
     return data;
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
+    localStorage.removeItem('token');
     setToken(null);
     setUser(null);
   };
@@ -1374,23 +1316,23 @@ function useAuth() {
 ### React Example - Booking Form (Đăng ký thuê xe) ⭐ NEW
 
 ```jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 
 function BookingForm({ brandId, stationId }) {
   const [formData, setFormData] = useState({
-    renterName: "",
-    phoneNumber: "",
-    email: "",
-    pickupDate: "",
-    pickupTime: "10:00",
-    returnDate: "",
-    returnTime: "10:00",
-    paymentMethod: "online",
+    renterName: '',
+    phoneNumber: '',
+    email: '',
+    pickupDate: '',
+    pickupTime: '10:00',
+    returnDate: '',
+    returnTime: '10:00',
+    paymentMethod: 'online',
     agreedToPaymentTerms: false,
     agreedToDataSharing: false,
-    pickupLocation: "",
-    promoCode: "",
-    notes: "",
+    pickupLocation: '',
+    promoCode: '',
+    notes: '',
   });
 
   const [pricing, setPricing] = useState(null);
@@ -1407,20 +1349,12 @@ function BookingForm({ brandId, stationId }) {
 
   const calculatePricing = async () => {
     // Gọi API để lấy thông tin brand và tính giá
-    const brand = await fetch(
-      `http://localhost:4000/api/brands/${brandId}`
-    ).then((res) => res.json());
+    const brand = await fetch(`http://localhost:4000/api/brands/${brandId}`).then((res) => res.json());
 
-    const pickupDateTime = new Date(
-      `${formData.pickupDate}T${formData.pickupTime}`
-    );
-    const returnDateTime = new Date(
-      `${formData.returnDate}T${formData.returnTime}`
-    );
+    const pickupDateTime = new Date(`${formData.pickupDate}T${formData.pickupTime}`);
+    const returnDateTime = new Date(`${formData.returnDate}T${formData.returnTime}`);
 
-    const diffDays = Math.ceil(
-      (returnDateTime - pickupDateTime) / (1000 * 60 * 60 * 24)
-    );
+    const diffDays = Math.ceil((returnDateTime - pickupDateTime) / (1000 * 60 * 60 * 24));
     const rentalDays = Math.max(diffDays, 1);
 
     // Tính phụ phí cuối tuần
@@ -1453,7 +1387,7 @@ function BookingForm({ brandId, stationId }) {
     const { name, value, type, checked } = e.target;
     setFormData({
       ...formData,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === 'checkbox' ? checked : value,
     });
   };
 
@@ -1463,10 +1397,10 @@ function BookingForm({ brandId, stationId }) {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:4000/api/bookings", {
-        method: "POST",
+      const response = await fetch('http://localhost:4000/api/bookings', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           ...formData,
@@ -1487,9 +1421,9 @@ function BookingForm({ brandId, stationId }) {
       setLoading(false);
 
       // Redirect hoặc hiển thị success message
-      console.log("Booking created:", data);
+      console.log('Booking created:', data);
     } catch (error) {
-      setErrors(["Đã có lỗi xảy ra. Vui lòng thử lại."]);
+      setErrors(['Đã có lỗi xảy ra. Vui lòng thử lại.']);
       setLoading(false);
     }
   };
@@ -1502,10 +1436,7 @@ function BookingForm({ brandId, stationId }) {
           Mã booking: <strong>{success.data.bookingCode}</strong>
         </p>
         <p>
-          Tổng tiền:{" "}
-          <strong>
-            {success.data.pricing.totalPayable.toLocaleString("vi-VN")}đ
-          </strong>
+          Tổng tiền: <strong>{success.data.pricing.totalPayable.toLocaleString('vi-VN')}đ</strong>
         </p>
         <p>Chúng tôi đã gửi email xác nhận đến {success.data.email}</p>
       </div>
@@ -1532,40 +1463,18 @@ function BookingForm({ brandId, stationId }) {
 
         <div className="form-group">
           <label>Họ và tên *</label>
-          <input
-            type="text"
-            name="renterName"
-            value={formData.renterName}
-            onChange={handleChange}
-            placeholder="Nguyễn Văn A"
-            required
-          />
+          <input type="text" name="renterName" value={formData.renterName} onChange={handleChange} placeholder="user" required />
         </div>
 
         <div className="form-group">
           <label>Số điện thoại *</label>
-          <input
-            type="tel"
-            name="phoneNumber"
-            value={formData.phoneNumber}
-            onChange={handleChange}
-            placeholder="0912345678"
-            pattern="^0[0-9]{9}$"
-            required
-          />
+          <input type="tel" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} placeholder="0912345678" pattern="^0[0-9]{9}$" required />
           <small>10 số, bắt đầu bằng 0</small>
         </div>
 
         <div className="form-group">
           <label>Email *</label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            placeholder="example@email.com"
-            required
-          />
+          <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="example@email.com" required />
         </div>
       </div>
 
@@ -1576,52 +1485,24 @@ function BookingForm({ brandId, stationId }) {
         <div className="form-row">
           <div className="form-group">
             <label>Ngày nhận xe *</label>
-            <input
-              type="date"
-              name="pickupDate"
-              value={formData.pickupDate}
-              onChange={handleChange}
-              min={new Date().toISOString().split("T")[0]}
-              required
-            />
+            <input type="date" name="pickupDate" value={formData.pickupDate} onChange={handleChange} min={new Date().toISOString().split('T')[0]} required />
           </div>
 
           <div className="form-group">
             <label>Giờ nhận xe *</label>
-            <input
-              type="time"
-              name="pickupTime"
-              value={formData.pickupTime}
-              onChange={handleChange}
-              required
-            />
+            <input type="time" name="pickupTime" value={formData.pickupTime} onChange={handleChange} required />
           </div>
         </div>
 
         <div className="form-row">
           <div className="form-group">
             <label>Ngày trả xe *</label>
-            <input
-              type="date"
-              name="returnDate"
-              value={formData.returnDate}
-              onChange={handleChange}
-              min={
-                formData.pickupDate || new Date().toISOString().split("T")[0]
-              }
-              required
-            />
+            <input type="date" name="returnDate" value={formData.returnDate} onChange={handleChange} min={formData.pickupDate || new Date().toISOString().split('T')[0]} required />
           </div>
 
           <div className="form-group">
             <label>Giờ trả xe *</label>
-            <input
-              type="time"
-              name="returnTime"
-              value={formData.returnTime}
-              onChange={handleChange}
-              required
-            />
+            <input type="time" name="returnTime" value={formData.returnTime} onChange={handleChange} required />
           </div>
         </div>
       </div>
@@ -1632,35 +1513,17 @@ function BookingForm({ brandId, stationId }) {
 
         <div className="form-group">
           <label>Địa chỉ cụ thể nhận xe</label>
-          <input
-            type="text"
-            name="pickupLocation"
-            value={formData.pickupLocation}
-            onChange={handleChange}
-            placeholder="123 Đường ABC, Quận 1"
-          />
+          <input type="text" name="pickupLocation" value={formData.pickupLocation} onChange={handleChange} placeholder="123 Đường ABC, Quận 1" />
         </div>
 
         <div className="form-group">
           <label>Mã giới thiệu/khuyến mãi</label>
-          <input
-            type="text"
-            name="promoCode"
-            value={formData.promoCode}
-            onChange={handleChange}
-            placeholder="NEWUSER10"
-          />
+          <input type="text" name="promoCode" value={formData.promoCode} onChange={handleChange} placeholder="NEWUSER10" />
         </div>
 
         <div className="form-group">
           <label>Ghi chú</label>
-          <textarea
-            name="notes"
-            value={formData.notes}
-            onChange={handleChange}
-            placeholder="Yêu cầu đặc biệt..."
-            rows="3"
-          />
+          <textarea name="notes" value={formData.notes} onChange={handleChange} placeholder="Yêu cầu đặc biệt..." rows="3" />
         </div>
       </div>
 
@@ -1670,57 +1533,27 @@ function BookingForm({ brandId, stationId }) {
 
         <div className="payment-methods">
           <label>
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="online"
-              checked={formData.paymentMethod === "online"}
-              onChange={handleChange}
-            />
+            <input type="radio" name="paymentMethod" value="online" checked={formData.paymentMethod === 'online'} onChange={handleChange} />
             <span>💳 Thanh toán online</span>
           </label>
 
           <label>
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="cash"
-              checked={formData.paymentMethod === "cash"}
-              onChange={handleChange}
-            />
+            <input type="radio" name="paymentMethod" value="cash" checked={formData.paymentMethod === 'cash'} onChange={handleChange} />
             <span>💵 Tiền mặt</span>
           </label>
 
           <label>
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="bank_transfer"
-              checked={formData.paymentMethod === "bank_transfer"}
-              onChange={handleChange}
-            />
+            <input type="radio" name="paymentMethod" value="bank_transfer" checked={formData.paymentMethod === 'bank_transfer'} onChange={handleChange} />
             <span>🏦 Chuyển khoản ngân hàng</span>
           </label>
 
           <label>
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="credit_card"
-              checked={formData.paymentMethod === "credit_card"}
-              onChange={handleChange}
-            />
+            <input type="radio" name="paymentMethod" value="credit_card" checked={formData.paymentMethod === 'credit_card'} onChange={handleChange} />
             <span>💳 Thẻ tín dụng</span>
           </label>
 
           <label>
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="e_wallet"
-              checked={formData.paymentMethod === "e_wallet"}
-              onChange={handleChange}
-            />
+            <input type="radio" name="paymentMethod" value="e_wallet" checked={formData.paymentMethod === 'e_wallet'} onChange={handleChange} />
             <span>📱 Ví điện tử</span>
           </label>
         </div>
@@ -1732,29 +1565,25 @@ function BookingForm({ brandId, stationId }) {
           <h3>💰 Chi tiết giá</h3>
           <div className="pricing-row">
             <span>Giá thuê cơ bản ({pricing.rentalDays} ngày):</span>
-            <span>{pricing.basePrice.toLocaleString("vi-VN")}đ</span>
+            <span>{pricing.basePrice.toLocaleString('vi-VN')}đ</span>
           </div>
           {pricing.additionalFees > 0 && (
             <div className="pricing-row highlight">
               <span>Phụ phí cuối tuần:</span>
-              <span>+{pricing.additionalFees.toLocaleString("vi-VN")}đ</span>
+              <span>+{pricing.additionalFees.toLocaleString('vi-VN')}đ</span>
             </div>
           )}
           <div className="pricing-row">
             <span>Tổng tiền thuê:</span>
-            <span className="bold">
-              {pricing.totalRentalFee.toLocaleString("vi-VN")}đ
-            </span>
+            <span className="bold">{pricing.totalRentalFee.toLocaleString('vi-VN')}đ</span>
           </div>
           <div className="pricing-row">
             <span>Tiền cọc:</span>
-            <span>{pricing.depositAmount.toLocaleString("vi-VN")}đ</span>
+            <span>{pricing.depositAmount.toLocaleString('vi-VN')}đ</span>
           </div>
           <div className="pricing-row total">
             <span>Tổng thanh toán:</span>
-            <span className="total-amount">
-              {pricing.totalPayable.toLocaleString("vi-VN")}đ
-            </span>
+            <span className="total-amount">{pricing.totalPayable.toLocaleString('vi-VN')}đ</span>
           </div>
         </div>
       )}
@@ -1763,31 +1592,19 @@ function BookingForm({ brandId, stationId }) {
       <div className="form-section">
         <div className="checkbox-group">
           <label>
-            <input
-              type="checkbox"
-              name="agreedToPaymentTerms"
-              checked={formData.agreedToPaymentTerms}
-              onChange={handleChange}
-              required
-            />
+            <input type="checkbox" name="agreedToPaymentTerms" checked={formData.agreedToPaymentTerms} onChange={handleChange} required />
             <span>Tôi đồng ý với điều khoản thanh toán *</span>
           </label>
 
           <label>
-            <input
-              type="checkbox"
-              name="agreedToDataSharing"
-              checked={formData.agreedToDataSharing}
-              onChange={handleChange}
-              required
-            />
+            <input type="checkbox" name="agreedToDataSharing" checked={formData.agreedToDataSharing} onChange={handleChange} required />
             <span>Tôi đồng ý chia sẻ dữ liệu cá nhân *</span>
           </label>
         </div>
       </div>
 
       <button type="submit" className="btn-submit" disabled={loading}>
-        {loading ? "Đang xử lý..." : "🚗 Đặt xe ngay"}
+        {loading ? 'Đang xử lý...' : '🚗 Đặt xe ngay'}
       </button>
     </form>
   );
