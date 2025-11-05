@@ -12,7 +12,7 @@ export const PaymentSchema = z.object({
   surchargeAmount: z.number().nonnegative().optional(),
   totalAmount: z.number().nonnegative().optional(),
   txnRef: z.string().nullable().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
 });

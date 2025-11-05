@@ -1,86 +1,105 @@
-import { useMemo, useState } from "react";
-import { useAuthContext } from "@/contexts/auth-context";
-import { useBooking } from "@/hooks/use-booking";
-import { usePaymentHook } from "@/hooks/use-payment";
-import { useRentalHook } from "@/hooks/use-rental";
+import { Button } from '@/components/shadcn/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/shadcn/ui/card";
-import { Button } from "@/components/shadcn/ui/button";
-import { Input } from "@/components/shadcn/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/shadcn/ui/select";
-import { BadgeStatus, mapStatusColor, statusText, fmt, money } from "@/lib/utils";
-import { AlertTriangle, ArrowRight, Calendar, Car, CreditCard, Loader2 } from "lucide-react";
-import BookingDetailDialog from "@/components/shared/BookingDetailDialog";
-import type { TBooking } from "@/schema/booking.schema";
-import type { TRental } from "@/schema/rental.schema";
-import type { TPayment } from "@/schema/payment.schema";
+} from '@/components/shadcn/ui/card';
+import { Input } from '@/components/shadcn/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/shadcn/ui/select';
+import BookingDetailDialog from '@/components/shared/BookingDetailDialog';
+import { useAuthContext } from '@/contexts/auth-context';
+import { useBooking } from '@/hooks/use-booking';
+import { usePaymentHook } from '@/hooks/use-payment';
+import { useRentalHook } from '@/hooks/use-rental';
+import {
+  BadgeStatus,
+  fmt,
+  mapStatusColor,
+  money,
+  statusText,
+} from '@/lib/utils';
+import type { TBooking } from '@/schema/booking.schema';
+import type { TPayment } from '@/schema/payment.schema';
+import type { TRental } from '@/schema/rental.schema';
+import {
+  AlertTriangle,
+  ArrowRight,
+  Calendar,
+  Car,
+  CreditCard,
+  Loader2,
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 const STATUS_FILTERS = [
-  { value: "ALL", label: "Tất cả" },
-  { value: "PENDING_APPROVAL", label: "Chờ duyệt" },
-  { value: "WAITING_PAYMENT", label: "Chờ thanh toán" },
-  { value: "PAID", label: "Đã thanh toán" },
-  { value: "SUCCESS", label: "Hoàn tất" },
-  { value: "CANCELLED", label: "Đã hủy" },
+  { value: 'ALL', label: 'Tất cả' },
+  { value: 'PENDING_APPROVAL', label: 'Chờ duyệt' },
+  { value: 'WAITING_PAYMENT', label: 'Chờ thanh toán' },
+  { value: 'PAID', label: 'Đã thanh toán' },
+  { value: 'SUCCESS', label: 'Hoàn tất' },
+  { value: 'CANCELLED', label: 'Đã hủy' },
 ];
 
 const WAITING_PAYMENT_SET = new Set([
-  "WAITING_PAYMENT",
-  "PENDING_PAYMENT",
-  "WAITING_CHECKOUT",
+  'WAITING_PAYMENT',
+  'PENDING_PAYMENT',
+  'WAITING_CHECKOUT',
 ]);
 
 const CANCELLABLE_SET = new Set([
-  "PENDING_APPROVAL",
-  "WAITING_PAYMENT",
-  "PENDING_PAYMENT",
+  'PENDING_APPROVAL',
+  'WAITING_PAYMENT',
+  'PENDING_PAYMENT',
 ]);
 
 export default function BookingsTab() {
   const { currentUser, isVerified } = useAuthContext();
-  const renterId = currentUser?._id ?? "";
+  const renterId = currentUser?._id ?? '';
   const isValidRenterId = /^[a-fA-F0-9]{24}$/.test(renterId);
 
   const { useBookingList, cancelBooking } = useBooking();
   const { usePaymentList, triggerTestCheckout } = usePaymentHook();
   const { useRentalList } = useRentalHook();
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL");
-  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(
+    null
+  );
 
   const shouldFetch = isVerified && isValidRenterId;
 
-  const bookingsQuery = useBookingList(
-    shouldFetch ? { renterId } : undefined,
-    { enabled: shouldFetch },
-  );
+  const bookingsQuery = useBookingList(shouldFetch ? { renterId } : undefined, {
+    enabled: shouldFetch,
+  });
 
-  const paymentsQuery = usePaymentList(
-    shouldFetch ? { renterId } : undefined,
-    { enabled: shouldFetch },
-  );
+  const paymentsQuery = usePaymentList(shouldFetch ? { renterId } : undefined, {
+    enabled: shouldFetch,
+  });
 
-  const rentalsQuery = useRentalList(
-    shouldFetch ? { renterId } : undefined,
-    { enabled: shouldFetch },
-  );
+  const rentalsQuery = useRentalList(shouldFetch ? { renterId } : undefined, {
+    enabled: shouldFetch,
+  });
 
   const bookings = useMemo(
     () => (bookingsQuery.data?.data?.data ?? []) as TBooking[],
-    [bookingsQuery.data?.data?.data],
+    [bookingsQuery.data?.data?.data]
   );
 
   const paymentsByBooking = useMemo(() => {
     const map = new Map<string, TPayment>();
     const list = paymentsQuery.data?.data?.data ?? [];
     for (const item of list as TPayment[]) {
-      const bookingId = (item.bookingId as string) ?? (item.rental?.booking?._id as string);
+      const bookingId =
+        (item.bookingId as string) ?? (item.rental?.booking?._id as string);
       if (bookingId) {
         map.set(bookingId, item);
       }
@@ -103,25 +122,30 @@ export default function BookingsTab() {
   const filteredBookings = useMemo(() => {
     return bookings.filter((booking) => {
       const matchesSearch =
-        booking.bookingCode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        booking.bookingCode
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
         booking.brand?.name?.toLowerCase().includes(searchQuery.toLowerCase());
 
       const normalizedStatus = booking.status?.toUpperCase();
       const matchesStatus =
-        statusFilter === "ALL" ||
+        statusFilter === 'ALL' ||
         normalizedStatus === statusFilter ||
-        (statusFilter === "WAITING_PAYMENT" && WAITING_PAYMENT_SET.has(normalizedStatus ?? ""));
+        (statusFilter === 'WAITING_PAYMENT' &&
+          WAITING_PAYMENT_SET.has(normalizedStatus ?? ''));
 
       return matchesSearch && matchesStatus;
     });
   }, [bookings, searchQuery, statusFilter]);
 
   const isLoading =
-    bookingsQuery.isLoading || paymentsQuery.isLoading || rentalsQuery.isLoading;
+    bookingsQuery.isLoading ||
+    paymentsQuery.isLoading ||
+    rentalsQuery.isLoading;
 
-  const selectedBooking =
-    selectedBookingId &&
-    bookings.find((booking) => booking._id === selectedBookingId);
+  const selectedBooking = selectedBookingId
+    ? bookings.find((booking) => booking._id === selectedBookingId) ?? null
+    : null;
 
   const relatedPayment = selectedBookingId
     ? paymentsByBooking.get(selectedBookingId) ?? undefined
@@ -136,7 +160,8 @@ export default function BookingsTab() {
         <CardHeader>
           <CardTitle>Bookings</CardTitle>
           <CardDescription>
-            Hồ sơ của bạn chưa được xác minh. Vui lòng hoàn tất xác minh giấy tờ để bắt đầu đặt xe.
+            Hồ sơ của bạn chưa được xác minh. Vui lòng hoàn tất xác minh giấy tờ
+            để bắt đầu đặt xe.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -148,7 +173,9 @@ export default function BookingsTab() {
       <Card>
         <CardHeader>
           <CardTitle>Bookings</CardTitle>
-          <CardDescription>Tài khoản chưa sẵn sàng để lấy dữ liệu booking.</CardDescription>
+          <CardDescription>
+            Tài khoản chưa sẵn sàng để lấy dữ liệu booking.
+          </CardDescription>
         </CardHeader>
       </Card>
     );
@@ -159,7 +186,9 @@ export default function BookingsTab() {
       <Card>
         <CardHeader>
           <CardTitle>Lịch sử đặt xe</CardTitle>
-          <CardDescription>Theo dõi trạng thái booking, thanh toán và giao nhận xe.</CardDescription>
+          <CardDescription>
+            Theo dõi trạng thái booking, thanh toán và giao nhận xe.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -192,7 +221,9 @@ export default function BookingsTab() {
           ) : filteredBookings.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed py-16">
               <AlertTriangle className="h-6 w-6 text-amber-500" />
-              <p className="text-sm text-muted-foreground">Chưa có booking nào phù hợp bộ lọc.</p>
+              <p className="text-sm text-muted-foreground">
+                Chưa có booking nào phù hợp bộ lọc.
+              </p>
             </div>
           ) : (
             <div className="grid gap-4">
@@ -206,8 +237,10 @@ export default function BookingsTab() {
                   depositAmount: booking.depositAmount,
                 };
 
-                const isWaitingPayment = WAITING_PAYMENT_SET.has(normalizedStatus ?? "");
-                const canCancel = CANCELLABLE_SET.has(normalizedStatus ?? "");
+                const isWaitingPayment = WAITING_PAYMENT_SET.has(
+                  normalizedStatus ?? ''
+                );
+                const canCancel = CANCELLABLE_SET.has(normalizedStatus ?? '');
 
                 return (
                   <div
@@ -234,18 +267,27 @@ export default function BookingsTab() {
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Calendar className="h-4 w-4" />
                             <span>
-                              {fmt(booking.pickupDateTime ?? booking.pickupDate)} →{" "}
-                              {fmt(booking.returnDateTime ?? booking.returnDate)}
+                              {fmt(
+                                booking.pickupDateTime ?? booking.pickupDate
+                              )}{' '}
+                              →{' '}
+                              {fmt(
+                                booking.returnDateTime ?? booking.returnDate
+                              )}
                             </span>
                           </div>
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <CreditCard className="h-4 w-4" />
-                            <span>Tổng phải thanh toán: {money(pricing?.totalPayable)}</span>
+                            <span>
+                              Tổng phải thanh toán:{' '}
+                              {money(pricing?.totalPayable)}
+                            </span>
                           </div>
                           {rental && (
                             <div className="flex items-center gap-2 text-muted-foreground text-xs">
                               <ArrowRight className="h-3 w-3" />
-                              Rental: {statusText(rental.status)} • {fmt(rental.pickupTime)}
+                              Rental: {statusText(rental.status)} •{' '}
+                              {fmt(rental.pickupTime)}
                             </div>
                           )}
                         </div>
@@ -265,7 +307,7 @@ export default function BookingsTab() {
                             onClick={() =>
                               triggerTestCheckout.mutate({
                                 bookingId,
-                                method: "BANK_TRANSFER",
+                                method: 'BANK_TRANSFER',
                               })
                             }
                           >
@@ -275,7 +317,7 @@ export default function BookingsTab() {
                                 Đang xử lý…
                               </>
                             ) : (
-                              "Thanh toán thử"
+                              'Thanh toán thử'
                             )}
                           </Button>
                         )}
@@ -284,7 +326,11 @@ export default function BookingsTab() {
                             variant="ghost"
                             className="text-rose-600 hover:bg-rose-50"
                             onClick={() => {
-                              if (confirm("Bạn chắc chắn muốn hủy booking này?")) {
+                              if (
+                                window.confirm(
+                                  'Bạn chắc chắn muốn hủy booking này?'
+                                )
+                              ) {
                                 cancelBooking.mutate(bookingId);
                               }
                             }}
@@ -308,7 +354,7 @@ export default function BookingsTab() {
       </Card>
 
       <BookingDetailDialog
-        booking={selectedBooking ?? null}
+        booking={selectedBooking}
         rental={relatedRental}
         payment={relatedPayment}
         open={Boolean(selectedBooking)}

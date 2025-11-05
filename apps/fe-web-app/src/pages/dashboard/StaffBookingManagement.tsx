@@ -208,7 +208,6 @@ export const StaffBookingManagement = () => {
         paymentMethod: values.paymentMethod as TCreateBooking['paymentMethod'],
         agreedToPaymentTerms: true,
         agreedToDataSharing: true,
-        status: "pending",
         surchargeAmount: 0,
         notes: values.notes,
       });

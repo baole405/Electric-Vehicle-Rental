@@ -14,7 +14,14 @@ const VehicleCardList: React.FC<VehicleCardListProps> = ({ vehicles = [] }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-6 py-10 bg-white">
       {vehicles.map((vehicle) => {
-        const statusColors: Record<TVehicle["status"], string> = {
+        const normalized = vehicle.status?.toUpperCase() ?? vehicle.status;
+        const statusColors: Record<string, string> = {
+          AVAILABLE: "bg-[#E6F9F0] text-[#00CC66]",
+          RESERVED: "bg-sky-100 text-sky-700",
+          RENTED: "bg-red-100 text-red-600",
+          MAINTENANCE: "bg-yellow-100 text-yellow-700",
+          DAMAGED: "bg-rose-100 text-rose-700",
+          UNAVAILABLE: "bg-gray-100 text-gray-600",
           available: "bg-[#E6F9F0] text-[#00CC66]",
           rented: "bg-red-100 text-red-600",
           maintenance: "bg-yellow-100 text-yellow-700",
@@ -40,14 +47,16 @@ const VehicleCardList: React.FC<VehicleCardListProps> = ({ vehicles = [] }) => {
               {/* Badge trạng thái */}
               <div className="flex justify-between items-center mb-3">
                 <span
-                  className={`text-xs font-semibold px-2 py-1 rounded-md ${statusColors[vehicle.status]}`}
+                  className={`text-xs font-semibold px-2 py-1 rounded-md ${statusColors[normalized] ?? statusColors.UNAVAILABLE}`}
                 >
-                  {vehicle.status === "rented"
+                  {normalized === "RENTED" || normalized === "rented"
                     ? "Đang thuê"
-                    : vehicle.status === "maintenance"
+                    : normalized === "MAINTENANCE" || normalized === "maintenance"
                     ? "Bảo trì"
-                    : vehicle.status === "unavailable"
+                    : normalized === "UNAVAILABLE" || normalized === "unavailable"
                     ? "Không khả dụng"
+                    : normalized === "RESERVED"
+                    ? "Đã đặt"
                     : "Sẵn sàng"}
                 </span>
                 <span className="text-xs text-gray-500 font-mono">{vehicle.plateNo}</span>

@@ -178,16 +178,20 @@ export default function BrandDetailPage() {
 
   // Vehicle status mapping
   const getVehicleStatusBadge = (status: TVehicle['status']) => {
-    const statusConfig = {
+    const normalized = status?.toUpperCase() ?? status;
+    const statusConfig: Record<string, { text: string; class: string }> = {
+      AVAILABLE: { text: 'Sẵn sàng', class: 'bg-green-100 text-green-700' },
+      RESERVED: { text: 'Đã đặt', class: 'bg-sky-100 text-sky-700' },
+      RENTED: { text: 'Đang thuê', class: 'bg-red-100 text-red-700' },
+      MAINTENANCE: { text: 'Bảo trì', class: 'bg-yellow-100 text-yellow-700' },
+      DAMAGED: { text: 'Hỏng hóc', class: 'bg-rose-100 text-rose-700' },
+      UNAVAILABLE: { text: 'Không khả dụng', class: 'bg-gray-100 text-gray-700' },
       available: { text: 'Sẵn sàng', class: 'bg-green-100 text-green-700' },
       rented: { text: 'Đang thuê', class: 'bg-red-100 text-red-700' },
       maintenance: { text: 'Bảo trì', class: 'bg-yellow-100 text-yellow-700' },
-      unavailable: {
-        text: 'Không khả dụng',
-        class: 'bg-gray-100 text-gray-700',
-      },
+      unavailable: { text: 'Không khả dụng', class: 'bg-gray-100 text-gray-700' },
     };
-    const config = statusConfig[status] || statusConfig.unavailable;
+    const config = statusConfig[normalized] || statusConfig.UNAVAILABLE;
     return (
       <span
         className={`px-2 py-1 text-xs font-medium rounded-full ${config.class}`}
