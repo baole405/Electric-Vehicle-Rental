@@ -38,7 +38,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { usePayOS } from 'payos-checkout';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 const STATUS_FILTERS = [
@@ -129,6 +129,56 @@ export default function BookingsTab() {
   const rentalsQuery = useRentalList(shouldFetch ? { renterId } : undefined, {
     enabled: shouldFetch,
   });
+
+  // Handle PayOS return URL params
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    // Log ALL params to see what PayOS returns
+    console.log('[PayOS Return] Full URL:', window.location.href);
+    console.log(
+      '[PayOS Return] All params:',
+      Object.fromEntries(params.entries())
+    );
+
+    const status = params.get('status');
+    const orderCode = params.get('orderCode');
+    const code = params.get('code');
+    const id = params.get('id');
+    const cancel = params.get('cancel');
+
+    // If any PayOS param exists, handle it
+    if (status || orderCode || code || id || cancel) {
+      console.log('[PayOS Return] Detected PayOS redirect');
+      console.log('- status:', status);
+      console.log('- orderCode:', orderCode);
+      console.log('- code:', code);
+      console.log('- id:', id);
+      console.log('- cancel:', cancel);
+
+      // Check for success (adjust this based on actual PayOS params)
+      const isSuccess =
+        status === 'PAID' || status === 'SUCCESS' || code === '00' || !cancel;
+
+      if (isSuccess && !cancel) {
+        toast.success('Thanh toán thành công! Đang cập nhật trạng thái...');
+        // Refetch bookings to get updated status
+        setTimeout(() => {
+          bookingsQuery.refetch();
+          paymentsQuery.refetch();
+        }, 1000);
+      } else if (cancel === 'true' || status === 'CANCELLED') {
+        toast.warning('Bạn đã hủy thanh toán');
+      }
+
+      // Clean up URL params
+      window.history.replaceState(
+        {},
+        '',
+        window.location.pathname + '?tab=bookings'
+      );
+    }
+  }, [bookingsQuery, paymentsQuery]);
 
   const bookings = useMemo(
     () => (bookingsQuery.data?.data?.data ?? []) as TBooking[],
@@ -346,46 +396,49 @@ export default function BookingsTab() {
                             className="bg-blue-600 hover:bg-blue-700"
                             disabled={createPayOSCheckout.isPending}
                             onClick={async () => {
+                              console.log(
+                                '[PayOS] Button clicked, bookingId:',
+                                bookingId
+                              );
                               try {
+                                console.log(
+                                  '[PayOS] Calling createPayOSCheckout API...'
+                                );
                                 const response =
                                   await createPayOSCheckout.mutateAsync({
                                     bookingId,
                                   });
+                                console.log('[PayOS] API Response:', response);
+
                                 const checkoutUrl =
-                                  response.data?.data?.checkoutData
-                                    ?.checkoutUrl;
+                                  response.data?.checkoutData?.checkoutUrl;
+                                console.log(
+                                  '[PayOS] Extracted checkoutUrl:',
+                                  checkoutUrl
+                                );
+
                                 if (checkoutUrl) {
-                                  // Open PayOS embedded dialog
-                                  setPayosConfig({
-                                    RETURN_URL:
-                                      window.location.origin +
-                                      '/profile?tab=bookings',
-                                    ELEMENT_ID: 'payos-checkout',
-                                    CHECKOUT_URL: checkoutUrl,
-                                    embedded: true,
-                                    onSuccess: (event) => {
-                                      console.log('PayOS Success:', event);
-                                      toast.success('Thanh toán thành công!');
-                                      // Refetch booking to get updated status
-                                      bookingsQuery.refetch();
-                                      exit();
-                                    },
-                                    onCancel: (event) => {
-                                      console.log('PayOS Cancel:', event);
-                                      toast.warning('Bạn đã hủy thanh toán');
-                                      exit();
-                                    },
-                                    onExit: (event) => {
-                                      console.log('PayOS Exit:', event);
-                                      setPayosConfig(null);
-                                    },
-                                  });
-                                  // Open the dialog
-                                  setTimeout(() => open(), 100);
+                                  console.log(
+                                    '[PayOS] Redirecting to PayOS...'
+                                  );
+                                  // Redirect to PayOS checkout page (simpler & more reliable)
+                                  window.location.href = checkoutUrl;
+                                } else {
+                                  console.warn(
+                                    '[PayOS] No checkoutUrl in response!'
+                                  );
+                                  toast.error(
+                                    'Không nhận được link thanh toán từ server'
+                                  );
                                 }
                               } catch (error) {
-                                console.error('PayOS checkout error:', error);
-                                toast.error('Không thể tạo link thanh toán');
+                                console.error('[PayOS] Checkout error:', error);
+                                toast.error(
+                                  'Không thể tạo link thanh toán: ' +
+                                    (error instanceof Error
+                                      ? error.message
+                                      : String(error))
+                                );
                               }
                             }}
                           >
@@ -446,8 +499,19 @@ export default function BookingsTab() {
         }}
       />
 
-      {/* PayOS Checkout Dialog Container */}
-      <div id="payos-checkout" />
+      {/* PayOS Checkout Dialog Container - Must be rendered in DOM */}
+      <div
+        id="payos-checkout"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 9999,
+          display: payosConfig ? 'block' : 'none',
+        }}
+      />
     </div>
   );
 }
