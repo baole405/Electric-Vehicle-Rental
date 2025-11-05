@@ -60,20 +60,28 @@ const fallbackAsset = {
 };
 
 function StatusPill({ status }: { status: TVehicle["status"] }) {
-  const map: Record<TVehicle["status"], string> = {
+  const normalized = status?.toUpperCase() ?? status;
+  const map: Record<string, string> = {
+    AVAILABLE: "bg-emerald-100 text-emerald-700",
+    RESERVED: "bg-sky-100 text-sky-700",
+    RENTED: "bg-rose-100 text-rose-700",
+    MAINTENANCE: "bg-amber-100 text-amber-700",
+    DAMAGED: "bg-red-100 text-red-700",
+    UNAVAILABLE: "bg-gray-100 text-gray-700",
     available: "bg-emerald-100 text-emerald-700",
     rented: "bg-rose-100 text-rose-700",
     maintenance: "bg-amber-100 text-amber-700",
     unavailable: "bg-gray-100 text-gray-700",
   };
-  const text =
-    status === "available"
+  const text = normalized === "AVAILABLE" || normalized === "available"
       ? "Sẵn sàng"
-      : status === "rented"
+      : normalized === "RENTED" || normalized === "rented"
         ? "Đang thuê"
-        : "Bảo trì";
+        : normalized === "MAINTENANCE" || normalized === "maintenance"
+          ? "Bảo trì"
+          : "Không khả dụng";
 
-  return <span className={`px-2 py-1 text-xs rounded-md ${map[status]}`}>{text}</span>;
+  return <span className={`px-2 py-1 text-xs rounded-md ${map[normalized] ?? map.unavailable}`}>{text}</span>;
 }
 
 export default function VehicleDetailPage() {
