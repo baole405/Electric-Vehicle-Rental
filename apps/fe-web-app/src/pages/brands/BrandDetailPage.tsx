@@ -185,11 +185,17 @@ export default function BrandDetailPage() {
       RENTED: { text: 'Đang thuê', class: 'bg-red-100 text-red-700' },
       MAINTENANCE: { text: 'Bảo trì', class: 'bg-yellow-100 text-yellow-700' },
       DAMAGED: { text: 'Hỏng hóc', class: 'bg-rose-100 text-rose-700' },
-      UNAVAILABLE: { text: 'Không khả dụng', class: 'bg-gray-100 text-gray-700' },
+      UNAVAILABLE: {
+        text: 'Không khả dụng',
+        class: 'bg-gray-100 text-gray-700',
+      },
       available: { text: 'Sẵn sàng', class: 'bg-green-100 text-green-700' },
       rented: { text: 'Đang thuê', class: 'bg-red-100 text-red-700' },
       maintenance: { text: 'Bảo trì', class: 'bg-yellow-100 text-yellow-700' },
-      unavailable: { text: 'Không khả dụng', class: 'bg-gray-100 text-gray-700' },
+      unavailable: {
+        text: 'Không khả dụng',
+        class: 'bg-gray-100 text-gray-700',
+      },
     };
     const config = statusConfig[normalized] || statusConfig.UNAVAILABLE;
     return (

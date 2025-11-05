@@ -1,8 +1,8 @@
-import { Button } from "@/components/shadcn/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/shadcn/ui/card";
-import type { TVehicle } from "@/schema/vehicle.schema";
-import { Battery, MapPin, Car } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Button } from '@/components/shadcn/ui/button';
+import { Card, CardContent, CardFooter } from '@/components/shadcn/ui/card';
+import type { TVehicle } from '@/schema/vehicle.schema';
+import { Battery, Car, MapPin } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface VehicleCardListProps {
   vehicles: TVehicle[];
@@ -16,16 +16,16 @@ const VehicleCardList: React.FC<VehicleCardListProps> = ({ vehicles = [] }) => {
       {vehicles.map((vehicle) => {
         const normalized = vehicle.status?.toUpperCase() ?? vehicle.status;
         const statusColors: Record<string, string> = {
-          AVAILABLE: "bg-[#E6F9F0] text-[#00CC66]",
-          RESERVED: "bg-sky-100 text-sky-700",
-          RENTED: "bg-red-100 text-red-600",
-          MAINTENANCE: "bg-yellow-100 text-yellow-700",
-          DAMAGED: "bg-rose-100 text-rose-700",
-          UNAVAILABLE: "bg-gray-100 text-gray-600",
-          available: "bg-[#E6F9F0] text-[#00CC66]",
-          rented: "bg-red-100 text-red-600",
-          maintenance: "bg-yellow-100 text-yellow-700",
-          unavailable: "bg-gray-100 text-gray-600",
+          AVAILABLE: 'bg-[#E6F9F0] text-[#00CC66]',
+          RESERVED: 'bg-sky-100 text-sky-700',
+          RENTED: 'bg-red-100 text-red-600',
+          MAINTENANCE: 'bg-yellow-100 text-yellow-700',
+          DAMAGED: 'bg-rose-100 text-rose-700',
+          UNAVAILABLE: 'bg-gray-100 text-gray-600',
+          available: 'bg-[#E6F9F0] text-[#00CC66]',
+          rented: 'bg-red-100 text-red-600',
+          maintenance: 'bg-yellow-100 text-yellow-700',
+          unavailable: 'bg-gray-100 text-gray-600',
         };
 
         const handleClick = () => {
@@ -47,24 +47,32 @@ const VehicleCardList: React.FC<VehicleCardListProps> = ({ vehicles = [] }) => {
               {/* Badge trạng thái */}
               <div className="flex justify-between items-center mb-3">
                 <span
-                  className={`text-xs font-semibold px-2 py-1 rounded-md ${statusColors[normalized] ?? statusColors.UNAVAILABLE}`}
+                  className={`text-xs font-semibold px-2 py-1 rounded-md ${
+                    statusColors[normalized] ?? statusColors.UNAVAILABLE
+                  }`}
                 >
-                  {normalized === "RENTED" || normalized === "rented"
-                    ? "Đang thuê"
-                    : normalized === "MAINTENANCE" || normalized === "maintenance"
-                    ? "Bảo trì"
-                    : normalized === "UNAVAILABLE" || normalized === "unavailable"
-                    ? "Không khả dụng"
-                    : normalized === "RESERVED"
-                    ? "Đã đặt"
-                    : "Sẵn sàng"}
+                  {normalized === 'RENTED' || normalized === 'rented'
+                    ? 'Đang thuê'
+                    : normalized === 'MAINTENANCE' ||
+                      normalized === 'maintenance'
+                    ? 'Bảo trì'
+                    : normalized === 'UNAVAILABLE' ||
+                      normalized === 'unavailable'
+                    ? 'Không khả dụng'
+                    : normalized === 'RESERVED'
+                    ? 'Đã đặt'
+                    : 'Sẵn sàng'}
                 </span>
-                <span className="text-xs text-gray-500 font-mono">{vehicle.plateNo}</span>
+                <span className="text-xs text-gray-500 font-mono">
+                  {vehicle.plateNo}
+                </span>
               </div>
 
               {/* Thông tin xe */}
               <div className="space-y-1 text-sm text-gray-700">
-                <h3 className="text-base font-bold text-[#000000]">{vehicle.model}</h3>
+                <h3 className="text-base font-bold text-[#000000]">
+                  {vehicle.model}
+                </h3>
                 <p className="flex items-center gap-1">
                   <Battery size={14} className="text-[#00CC66]" />
                   {vehicle.batteryPercent}%
@@ -74,13 +82,15 @@ const VehicleCardList: React.FC<VehicleCardListProps> = ({ vehicles = [] }) => {
                   {vehicle.stationId}
                 </p>
                 <p>Quãng đường: {vehicle.odometer.toLocaleString()} km</p>
-                <p className="font-mono text-xs text-gray-500">VIN: {vehicle.vin}</p>
+                <p className="font-mono text-xs text-gray-500">
+                  VIN: {vehicle.vin}
+                </p>
               </div>
             </CardContent>
 
             {/* Footer */}
             <CardFooter className="p-0 mt-4">
-              {vehicle.status === "available" ? (
+              {vehicle.status === 'available' ? (
                 <Button
                   className="w-full bg-[#00CC66] hover:bg-[#00b85c] text-white font-medium text-sm"
                   onClick={(e) => {
