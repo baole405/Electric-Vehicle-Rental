@@ -1,6 +1,8 @@
+'use client';
+
 import { PaymentApi } from '@/apis/payment.api';
 import { CheckCircle, Loader2, XCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -10,10 +12,20 @@ export default function PayOSReturnPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState<Status>('processing');
+  const hasVerified = useRef(false); // Prevent double execution
 
   useEffect(() => {
+    // Guard against double execution in React Strict Mode
+    if (hasVerified.current) {
+      console.log('[PayOS Return] Already verified, skipping...');
+      return;
+    }
+
     const handlePaymentReturn = async () => {
       try {
+        // Mark as verified immediately
+        hasVerified.current = true;
+
         // 1. Parse query parameters
         const bookingId = searchParams.get('b');
         const payosCode = searchParams.get('code');
